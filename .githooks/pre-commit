@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Reject commits whose staged R files are not air-formatted.
+# Enable once per clone:  git config core.hooksPath .githooks
+set -euo pipefail
+
+air_bin="$(command -v air 2>/dev/null || true)"
+[ -n "$air_bin" ] || air_bin="$HOME/.local/bin/air"
+if [ ! -x "$air_bin" ]; then
+  echo "air not found on PATH; skipping R format check." >&2
+  exit 0
+fi
+
+r_files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.[Rr]$' || true)
+[ -z "$r_files" ] && exit 0
+
+# shellcheck disable=SC2086
+if ! echo "$r_files" | xargs "$air_bin" format --check; then
+  echo "" >&2
+  echo "ERROR: staged R files are not air-formatted." >&2
+  echo "Fix with:  air format <files>   then re-stage and commit." >&2
+  exit 1
+fi
+exit 0

@@ -1,0 +1,6 @@
+field,match_type,pattern,replacement,note
+adm0_name,contains,IVOIRE,COTE D IVOIRE,"Cote d'Ivoire name variants -> canonical uppercase form"
+adm1_name,exact,KHYBER PAKHTOON,NWFP,"Pakistan 2008/09 province recode (legacy boundaries)"
+adm1_name,exact,FATA,NWFP,"Pakistan 2008/09 province recode (legacy boundaries)"
+location,substr,ISLAMIC REPUBLIC OF IRAN,IRAN (ISLAMIC REPUBLIC OF),"Iran official-name normalization in virus location string"
+location,substr,UNITED KINGDOM OF GREAT BRITAIN AND NORTHERN IRELAND,THE UNITED KINGDOM,"UK long-form -> short form in virus location string"
