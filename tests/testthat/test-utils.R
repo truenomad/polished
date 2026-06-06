@@ -2,32 +2,32 @@
 
 test_that(".polis_check_format accepts the supported formats", {
   for (fmt in c("rds", "rda", "csv", "parquet", "qs2")) {
-    expect_silent(polisapi2:::.polis_check_format(fmt))
+    expect_silent(polished:::.polis_check_format(fmt))
   }
 })
 
 test_that(".polis_check_format aborts on unsupported formats", {
   expect_error(
-    polisapi2:::.polis_check_format("xlsx"),
+    polished:::.polis_check_format("xlsx"),
     "Unsupported"
   )
   expect_error(
-    polisapi2:::.polis_check_format("json"),
+    polished:::.polis_check_format("json"),
     "Unsupported"
   )
 })
 
 test_that(".polis_pretty_num formats numbers with thousands separators", {
-  expect_identical(polisapi2:::.polis_pretty_num(0), "0")
-  expect_identical(polisapi2:::.polis_pretty_num(123), "123")
-  expect_identical(polisapi2:::.polis_pretty_num(1234), "1,234")
-  expect_identical(polisapi2:::.polis_pretty_num(1991076), "1,991,076")
-  expect_identical(polisapi2:::.polis_pretty_num(NA), "0")
-  expect_identical(polisapi2:::.polis_pretty_num(Inf), "0")
+  expect_identical(polished:::.polis_pretty_num(0), "0")
+  expect_identical(polished:::.polis_pretty_num(123), "123")
+  expect_identical(polished:::.polis_pretty_num(1234), "1,234")
+  expect_identical(polished:::.polis_pretty_num(1991076), "1,991,076")
+  expect_identical(polished:::.polis_pretty_num(NA), "0")
+  expect_identical(polished:::.polis_pretty_num(Inf), "0")
 })
 
 test_that(".polis_build_id_filter year-aligns the date bounds", {
-  flt <- polisapi2:::.polis_build_id_filter(
+  flt <- polished:::.polis_build_id_filter(
     date_field = "LastUpdateDate",
     min_date = "2016-04-06",
     max_date = "2020-09-30",
@@ -40,7 +40,7 @@ test_that(".polis_build_id_filter year-aligns the date bounds", {
 })
 
 test_that(".polis_build_id_filter adds region for non-Global", {
-  flt <- polisapi2:::.polis_build_id_filter(
+  flt <- polished:::.polis_build_id_filter(
     date_field = "LastUpdateDate",
     min_date = "2020-01-01",
     max_date = "2020-12-31",
@@ -51,7 +51,7 @@ test_that(".polis_build_id_filter adds region for non-Global", {
   expect_match(flt, "WHORegion eq 'AFRO'", fixed = TRUE)
 
   # Virus uses RegionName, not WHORegion
-  flt_v <- polisapi2:::.polis_build_id_filter(
+  flt_v <- polished:::.polis_build_id_filter(
     date_field = "UpdatedDate",
     min_date = "2020-01-01",
     max_date = "2020-12-31",
@@ -62,7 +62,7 @@ test_that(".polis_build_id_filter adds region for non-Global", {
   expect_match(flt_v, "RegionName eq 'EMRO'", fixed = TRUE)
 
   # Global stays unfiltered
-  flt_g <- polisapi2:::.polis_build_id_filter(
+  flt_g <- polished:::.polis_build_id_filter(
     date_field = "LastUpdateDate",
     min_date = "2020-01-01",
     max_date = "2020-12-31",
@@ -74,7 +74,7 @@ test_that(".polis_build_id_filter adds region for non-Global", {
 })
 
 test_that(".polis_build_id_filter adds country and Id-range clauses", {
-  flt <- polisapi2:::.polis_build_id_filter(
+  flt <- polished:::.polis_build_id_filter(
     date_field = "LastUpdateDate",
     min_date = "2020-01-01",
     max_date = "2020-12-31",
@@ -89,7 +89,7 @@ test_that(".polis_build_id_filter adds country and Id-range clauses", {
 
 test_that(".polis_build_id_filter doesn't add region for Im or LabSpecimen", {
   for (ep in c("Im", "LabSpecimen")) {
-    flt <- polisapi2:::.polis_build_id_filter(
+    flt <- polished:::.polis_build_id_filter(
       date_field = "PublishDate",
       min_date = "2020-01-01",
       max_date = "2020-12-31",
@@ -114,7 +114,7 @@ test_that(".polis_dedup keeps the row with the highest date per Id", {
     payload = c("a", "b", "c", "d", "e"),
     stringsAsFactors = FALSE
   )
-  out <- polisapi2:::.polis_dedup(
+  out <- polished:::.polis_dedup(
     df,
     id_col = "Id",
     date_col = "LastUpdateDate"
@@ -128,12 +128,12 @@ test_that(".polis_dedup keeps the row with the highest date per Id", {
 
 test_that(".polis_dedup is a no-op on empty / missing-column input", {
   expect_identical(
-    polisapi2:::.polis_dedup(data.frame(), date_col = "LastUpdateDate"),
+    polished:::.polis_dedup(data.frame(), date_col = "LastUpdateDate"),
     data.frame()
   )
   df_no_id <- data.frame(x = 1:3, LastUpdateDate = c("a", "b", "c"))
   expect_equal(
-    nrow(polisapi2:::.polis_dedup(df_no_id, date_col = "LastUpdateDate")),
+    nrow(polished:::.polis_dedup(df_no_id, date_col = "LastUpdateDate")),
     3L
   )
 })
@@ -141,24 +141,24 @@ test_that(".polis_dedup is a no-op on empty / missing-column input", {
 test_that(".polis_io_read/write round-trips through rds", {
   tmp <- withr::local_tempfile(fileext = ".rds")
   df <- data.frame(Id = 1:3, x = letters[1:3])
-  polisapi2:::.polis_io_write(df, tmp, "rds")
-  out <- polisapi2:::.polis_io_read(tmp, "rds")
+  polished:::.polis_io_write(df, tmp, "rds")
+  out <- polished:::.polis_io_read(tmp, "rds")
   expect_equal(out, df)
 })
 
 test_that(".polis_io_read/write round-trips through rda", {
   tmp <- withr::local_tempfile(fileext = ".rda")
   df <- data.frame(Id = 1:3, x = letters[1:3])
-  polisapi2:::.polis_io_write(df, tmp, "rda")
-  out <- polisapi2:::.polis_io_read(tmp, "rda")
+  polished:::.polis_io_write(df, tmp, "rda")
+  out <- polished:::.polis_io_read(tmp, "rda")
   expect_equal(out, df)
 })
 
 test_that(".polis_io_read/write round-trips through csv", {
   tmp <- withr::local_tempfile(fileext = ".csv")
   df <- data.frame(Id = 1:3, x = c("a", "b", "c"), stringsAsFactors = FALSE)
-  polisapi2:::.polis_io_write(df, tmp, "csv")
-  out <- polisapi2:::.polis_io_read(tmp, "csv")
+  polished:::.polis_io_write(df, tmp, "csv")
+  out <- polished:::.polis_io_read(tmp, "csv")
   expect_equal(out$Id, df$Id)
   expect_equal(out$x, df$x)
 })
@@ -175,8 +175,8 @@ test_that(".polis_log_window appends rows to an rds log", {
     cumulative_rows = 200,
     timestamp = Sys.time()
   )
-  polisapi2:::.polis_log_window(log_file, row1)
-  polisapi2:::.polis_log_window(log_file, row2)
+  polished:::.polis_log_window(log_file, row1)
+  polished:::.polis_log_window(log_file, row2)
   out <- readRDS(log_file)
   expect_equal(nrow(out), 2L)
   expect_equal(out$cumulative_rows, c(100, 200))
@@ -184,7 +184,7 @@ test_that(".polis_log_window appends rows to an rds log", {
 
 test_that(".polis_log_window is a no-op when log_file is NULL", {
   expect_silent(
-    polisapi2:::.polis_log_window(
+    polished:::.polis_log_window(
       NULL,
       data.frame(table = "x", cumulative_rows = 1)
     )
@@ -199,7 +199,7 @@ test_that(".polis_archive copies into data/archive and prunes", {
   saveRDS(data.frame(Id = 1:3), out_file)
 
   for (i in seq_len(3L)) {
-    polisapi2:::.polis_archive(
+    polished:::.polis_archive(
       out_file,
       root,
       "case",
@@ -218,7 +218,7 @@ test_that(".polis_archive is a no-op when keep_n <= 0", {
   dir.create(file.path(root, "data"), recursive = TRUE)
   out_file <- file.path(root, "data", "case.rds")
   saveRDS(data.frame(Id = 1:3), out_file)
-  polisapi2:::.polis_archive(
+  polished:::.polis_archive(
     out_file,
     root,
     "case",
@@ -249,7 +249,7 @@ test_that(".polis_migrate_to_parts splits an existing file by year", {
   saveRDS(df, out_file)
 
   parts_dir <- file.path(data_dir, ".parts", "case")
-  polisapi2:::.polis_migrate_to_parts(
+  polished:::.polis_migrate_to_parts(
     out_file,
     parts_dir,
     "rds",
@@ -277,7 +277,7 @@ test_that(".polis_compute_part_meta extracts shape + Id range + max date", {
     LastUpdateDate = c("2024-01-01", "2024-06-15", "2024-03-01", NA),
     stringsAsFactors = FALSE
   )
-  meta <- polisapi2:::.polis_compute_part_meta(df, "LastUpdateDate")
+  meta <- polished:::.polis_compute_part_meta(df, "LastUpdateDate")
   expect_equal(meta$n_rows, 4L)
   expect_equal(meta$min_id, 10)
   expect_equal(meta$max_id, 30)
@@ -285,7 +285,7 @@ test_that(".polis_compute_part_meta extracts shape + Id range + max date", {
 })
 
 test_that(".polis_compute_part_meta handles empty input safely", {
-  meta <- polisapi2:::.polis_compute_part_meta(
+  meta <- polished:::.polis_compute_part_meta(
     data.frame(),
     "LastUpdateDate"
   )
@@ -302,13 +302,13 @@ test_that(".polis_io_write_part writes both part + meta sidecar", {
     LastUpdateDate = c("2024-01-01", "2024-06-01", "2024-12-01"),
     stringsAsFactors = FALSE
   )
-  polisapi2:::.polis_io_write_part(
+  polished:::.polis_io_write_part(
     df,
     part_file,
     "rds",
     "LastUpdateDate"
   )
-  meta_file <- polisapi2:::.polis_meta_path(part_file)
+  meta_file <- polished:::.polis_meta_path(part_file)
   expect_true(file.exists(part_file))
   expect_true(file.exists(meta_file))
   m <- readRDS(meta_file)
@@ -320,7 +320,7 @@ test_that(".polis_io_write_part writes both part + meta sidecar", {
 test_that(".polis_read_meta backfills when sidecar is missing", {
   tmp_dir <- withr::local_tempdir()
   part_file <- file.path(tmp_dir, "year_2024.rds")
-  meta_file <- polisapi2:::.polis_meta_path(part_file)
+  meta_file <- polished:::.polis_meta_path(part_file)
   saveRDS(
     data.frame(
       Id = 1:5,
@@ -331,7 +331,7 @@ test_that(".polis_read_meta backfills when sidecar is missing", {
   )
   expect_false(file.exists(meta_file))
 
-  m <- polisapi2:::.polis_read_meta(part_file, "rds", "LastUpdateDate")
+  m <- polished:::.polis_read_meta(part_file, "rds", "LastUpdateDate")
   expect_equal(m$n_rows, 5L)
   # Backfill should have created the sidecar.
   expect_true(file.exists(meta_file))
@@ -340,7 +340,7 @@ test_that(".polis_read_meta backfills when sidecar is missing", {
 test_that(".polis_read_meta returns empty meta when nothing exists", {
   tmp_dir <- withr::local_tempdir()
   part_file <- file.path(tmp_dir, "year_2099.rds")
-  m <- polisapi2:::.polis_read_meta(part_file, "rds", "LastUpdateDate")
+  m <- polished:::.polis_read_meta(part_file, "rds", "LastUpdateDate")
   expect_equal(m$n_rows, 0L)
 })
 
@@ -350,23 +350,23 @@ test_that(".polis_id_ranges_overlap detects pairwise overlap", {
     list(min_id = 200, max_id = 300),
     list(min_id = 500, max_id = 800)
   )
-  expect_false(polisapi2:::.polis_id_ranges_overlap(no_overlap))
+  expect_false(polished:::.polis_id_ranges_overlap(no_overlap))
 
   yes_overlap <- list(
     list(min_id = 1, max_id = 250),
     list(min_id = 200, max_id = 300)
   )
-  expect_true(polisapi2:::.polis_id_ranges_overlap(yes_overlap))
+  expect_true(polished:::.polis_id_ranges_overlap(yes_overlap))
 
   # Touching at a single Id counts as overlap.
   touching <- list(
     list(min_id = 1, max_id = 100),
     list(min_id = 100, max_id = 200)
   )
-  expect_true(polisapi2:::.polis_id_ranges_overlap(touching))
+  expect_true(polished:::.polis_id_ranges_overlap(touching))
 
   # Singleton list -> false (nothing to overlap with).
-  expect_false(polisapi2:::.polis_id_ranges_overlap(
+  expect_false(polished:::.polis_id_ranges_overlap(
     list(list(min_id = 1, max_id = 5))
   ))
 })
@@ -378,7 +378,7 @@ test_that(".polis_merge_parts skips dedup when ranges are disjoint", {
   dir.create(parts_dir, recursive = TRUE)
 
   # Write two disjoint year parts via the meta-aware writer.
-  polisapi2:::.polis_io_write_part(
+  polished:::.polis_io_write_part(
     data.frame(
       Id = 1:3,
       LastUpdateDate = "2020-01-01",
@@ -388,7 +388,7 @@ test_that(".polis_merge_parts skips dedup when ranges are disjoint", {
     "rds",
     "LastUpdateDate"
   )
-  polisapi2:::.polis_io_write_part(
+  polished:::.polis_io_write_part(
     data.frame(
       Id = 4:6,
       LastUpdateDate = "2021-01-01",
@@ -400,7 +400,7 @@ test_that(".polis_merge_parts skips dedup when ranges are disjoint", {
   )
 
   out_file <- file.path(data_dir, "case.rds")
-  polisapi2:::.polis_merge_parts(
+  polished:::.polis_merge_parts(
     parts_dir,
     out_file,
     "rds",
@@ -422,7 +422,7 @@ test_that(".polis_migrate_to_parts handles a corrupt file gracefully", {
   parts_dir <- file.path(data_dir, ".parts", "case")
   # cli::cli_alert_warning emits via `message()`, not `warning()`.
   expect_message(
-    polisapi2:::.polis_migrate_to_parts(
+    polished:::.polis_migrate_to_parts(
       out_file,
       parts_dir,
       "rds",
@@ -448,7 +448,7 @@ test_that(".polis_merge_parts binds parts and dedups by Id", {
     file.path(parts_dir, "year_2021.rds")
   )
   out_file <- file.path(data_dir, "case.rds")
-  polisapi2:::.polis_merge_parts(
+  polished:::.polis_merge_parts(
     parts_dir,
     out_file,
     "rds",

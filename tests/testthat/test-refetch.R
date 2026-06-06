@@ -40,7 +40,7 @@ test_that("auto_refetch adds a missing Id to the canonical file", {
         stringsAsFactors = FALSE
       )
     },
-    .package = "polisapi2"
+    .package = "polished"
   )
 
   get_polis_data(

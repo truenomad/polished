@@ -1,4 +1,4 @@
-# Build the polisapi2 hex sticker.
+# Build the polished hex sticker.
 # Writes man/figures/logo.png. Not part of the package build — see
 # .Rbuildignore — this script lives here so the artifact is
 # reproducible. Run from the package root with:
@@ -66,7 +66,7 @@ subplot_curve <- ggplot2::ggplot() +
 # sticker call -----------------------------------------------------------
 hexSticker::sticker(
   subplot = subplot_curve,
-  package = "polisapi2",
+  package = "polished",
   p_size = 40,
   p_color = charcoal,
   p_family = "inter",

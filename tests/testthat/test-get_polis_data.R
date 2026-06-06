@@ -74,7 +74,7 @@ test_that("get_polis_data skips a fully-up-to-date table cleanly", {
   testthat::local_mocked_bindings(
     .polis_get_count = function(...) 5,
     .polis_fetch_id_list = function(...) 1:5,
-    .package = "polisapi2"
+    .package = "polished"
   )
 
   res <- get_polis_data(
@@ -106,7 +106,7 @@ test_that("get_polis_data return = \"paths\" returns the canonical file", {
   testthat::local_mocked_bindings(
     .polis_get_count = function(...) 3,
     .polis_fetch_id_list = function(...) 1:3,
-    .package = "polisapi2"
+    .package = "polished"
   )
   paths <- get_polis_data(
     tables = "im",
@@ -138,7 +138,7 @@ test_that("get_polis_data return = \"invisible\" yields NULL", {
   testthat::local_mocked_bindings(
     .polis_get_count = function(...) 3,
     .polis_fetch_id_list = function(...) 1:3,
-    .package = "polisapi2"
+    .package = "polished"
   )
   result <- get_polis_data(
     tables = "im",
@@ -172,7 +172,7 @@ test_that("force = TRUE deletes existing parts before running", {
     .polis_get_count = function(...) 0,
     .polis_fetch_id_page = function(...) data.frame(),
     .polis_fetch_id_list = function(...) integer(0),
-    .package = "polisapi2"
+    .package = "polished"
   )
 
   get_polis_data(
