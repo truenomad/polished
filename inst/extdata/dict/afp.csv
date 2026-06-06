@@ -1,0 +1,23 @@
+raw,clean,note
+id,id,POLIS row Id; dedup key
+epid,epid,case EPID number
+last_update_date,last_update_date,POLIS update timestamp; dedup recency key
+date_onset,date_onset,
+date_notification,date_notify,
+date_investigation,date_invest,
+date_stool1_collection,date_stool1,
+date_stool2_collection,date_stool2,
+,year_onset,derived from date_onset
+,month_onset,derived from date_onset
+admin0_name,adm0,
+admin1_name,adm1,
+admin2_name,adm2,
+admin0_guid,adm0_guid,
+admin1_guid,adm1_guid,
+admin2_guid,adm2_guid,
+country_iso3_code,country_iso3,
+who_region,who_region,
+age_in_months,age_months,
+final_classification,classification,final AFP classification (no vendor prefix)
+stool_adequacy,adequate_stool,
+days_notification_to_investigation,nottoinvest,
