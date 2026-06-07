@@ -8,7 +8,6 @@ format:
   html:
     toc: true
     toc-depth: 3
-    df-print: paged
 knitr:
   opts_chunk:
     collapse: true
@@ -17,410 +16,51 @@ knitr:
     warning: false
 ---
 
-```{r}
-#| label: setup
-library(polished)
-library(tibble)
-library(dplyr)
-```
-
 ::: callout-note
-Every data frame in this vignette is **synthetic** — fabricated EPIDs and
-place names, never real case data. The geography names are illustrative.
+Every table in this vignette is **synthetic** — fabricated EPIDs and place
+names, never real case data. Calls are namespace-qualified (`polished::`,
+`dplyr::`, `tibble::`) rather than attached with `library()`.
 :::
 
-## What this module does
+## The problem this solves
 
-An **EPID** is a hierarchical case identifier, conventionally shaped as
+Surveillance extracts are rarely complete. The same pull will often contain:
+
+- rows that are **fully geocoded** — country, province, district, and the
+  matching GUIDs all present; and
+- rows where some or all of that admin geography is **missing** — but which
+  still carry an **EPID**.
+
+An EPID is a structured case identifier, conventionally
 `COUNTRY-PROVINCE-DISTRICT-YEAR-SERIAL` (e.g. `NIE-BOR-MMC-24-001`). The leading
-three characters are a country code; the next segments encode province/district
-abbreviations. When a line-list arrives with **missing admin names or GUIDs**
-but a populated EPID, the EPID is a recovery key for geography.
+three characters are a country code; the next segments are province and district
+abbreviations. So even when the *names* are blank, the EPID still encodes
+*where* the case is.
 
-The module separates two concerns:
+That is the whole idea: **when one row tells us that the code `NIE-BOR-MMC` means
+Maiduguri, Borno, Nigeria, we can carry that geography to every other row whose
+EPID shares the same code** — without ever inventing a place that the data
+doesn't already vouch for.
 
-- **Parsing (A)** — pure functions that pull *codes* out of an EPID string.
-- **Imputation (B)** — a provenance-stamped cascade that fills *names and GUIDs*
-  from sibling records or an external reference.
-
-Three principles hold throughout:
-
-1. **Never overwrite** a value that is already present.
-2. **Never fabricate** on ambiguity — if two candidates disagree, leave `NA` and
-   flag it.
-3. **Always stamp provenance** — every filled cell records *how* it was filled.
-
-### The public surface
-
-These eight functions are exported and documented here:
-
-| Function | Role |
-|---|---|
-| `epid_split()` | parse an EPID into its segments |
-| `epid_country_code()` | extract the country code |
-| `epid_prefix()` | the geographic prefix used for matching |
-| `epid_strip_contact()` | split a contact marker off the base EPID |
-| `build_admin_ref()` | most-recent value per EPID |
-| `build_prefix_ref()` | unique value per (prefix, year) |
-| `resolve_epid_country()` | code → country name / ISO3 |
-| `impute_geo_from_epid()` | the orchestrator running the full cascade |
-
-Everything else in the module (`.epid_normalise()`, `.epid_prefix_match()`,
-`.epid_fill_target()`, …) is an **internal helper** — `.`-prefixed, not
-exported, and not part of the public API.
-
-## Parsing EPIDs (capability A)
-
-### `epid_split()` — segments
-
-`epid_split()` never errors, whatever you throw at it: short EPIDs pad on the
-right with `NA`, blank/`NA` rows come back all-`NA`.
+`polished::impute_geo_from_epid()` does exactly this triangulation. Here is the
+kind of messy input it is built for:
 
 ```{r}
-#| label: epid-split
-epid_split(c(
-  "NIE-BOR-MMC-24-001", # canonical
-  "AGO-LUA", # short — trailing parts NA
-  "nie-yob-dam-24-014", # lowercase still splits
-  "  ", # blank -> all NA
-  NA # NA -> all NA
-))
-```
-
-By default extra segments are dropped. Use `extra = "merge"` to keep an
-unexpected tail (e.g. a free-text suffix) in the last column:
-
-```{r}
-#| label: epid-split-merge
-epid_split("NIE-BOR-MMC-24-001-RECHECK", extra = "merge")
-```
-
-### `epid_country_code()` — the country code
-
-The code is the first run of three word-characters, so it tolerates leading
-whitespace and mixed case. It works equally on a local abbreviation (`NIE`) or
-an ISO3 (`NGA`) — resolving *which* is the job of `resolve_epid_country()`.
-
-```{r}
-#| label: epid-country-code
-epid_country_code(c("NIE-BOR-1", "  nga-bor-1", "AGO-LUA", NA))
-
-# `upper = FALSE` keeps the original case
-epid_country_code("ago-lua-01", upper = FALSE)
-```
-
-### `epid_prefix()` — the matching stem
-
-The prefix is the leading slice of the *normalised* EPID (trimmed,
-whitespace-collapsed, upper-cased). The default length of 11 captures
-country+province+district for a `CCC-PPP-DDD` layout.
-
-```{r}
-#| label: epid-prefix
-epid_prefix(c("NIE-BOR-MMC-24-001", "nie-bor-mmc-24-002", "  ", NA))
-```
-
-### `epid_strip_contact()` — contacts vs cases
-
-Contact records reuse a case EPID with a trailing marker (`C`, `CC`, `HC`, or
-`C` + digits). Stripping it lets a contact **collapse onto its parent case** so
-it inherits the case's geography.
-
-```{r}
-#| label: epid-strip-contact
-epid_strip_contact(c(
-  "NIE-BOR-MMC-24-001", # a case — no marker
-  "NIE-BOR-MMC-24-001CC", # community contact
-  "NIE-BOR-MMC-24-001-HC", # health-facility contact
-  "NIE-BOR-MMC-24-001C2" # numbered contact
-))
-```
-
-Note all four share the same `epid_base` — which is exactly why the cascade can
-fill a contact's missing district from its case.
-
-## Building references (capability B inputs)
-
-### `build_admin_ref()` — most-recent per EPID
-
-For each EPID, `build_admin_ref()` keeps the **most recent non-blank** value of a
-column. Older and missing values are ignored.
-
-```{r}
-#| label: build-admin-ref
-case_history <- tibble(
-  epid = c("NIE-BOR-MMC-24-001", "NIE-BOR-MMC-24-001", "NIE-BOR-MMC-24-001"),
-  year = c(2022, 2024, 2023),
-  district = c("MAIDUGURI (OLD)", NA, "MAIDUGURI")
-)
-build_admin_ref(case_history, "district")
-```
-
-The 2024 row is blank, so the most recent *non-blank* value (2023's
-`"MAIDUGURI"`) wins — not the stale 2022 spelling.
-
-### `build_prefix_ref()` — unique per (prefix, year)
-
-`build_prefix_ref()` is deliberately conservative: it only returns a value when
-the prefix maps to **exactly one** district that year. `n_candidates` records how
-many distinct values competed, so you can see where geography is genuinely
-ambiguous.
-
-```{r}
-#| label: build-prefix-ref
-prefix_cases <- tibble(
+#| label: messy-input
+cases <- tibble::tibble(
   epid = c(
-    "NIE-BOR-MMC-24-001", "NIE-BOR-MMC-24-050", # both Maiduguri
-    "NIE-YOB-DAM-24-001", "NIE-YOB-DAM-24-002" # disagree!
+    "NIE-BOR-MMC-24-001", # fully geocoded — a donor
+    "NIE-BOR-MMC-24-014", # same district, district + GUID missing
+    "NIE-BOR-MMC-24-001CC", # a contact of case 001, geography blank
+    "NIE-BOR-JER-23-007", # fully geocoded, previous year
+    "NIE-BOR-JER-24-021", # same district as 007, names missing
+    "AGO-LUA-CAC-24-002", # country name missing
+    "NIE-YOB-DAM-24-001", # donor: Damaturu
+    "NIE-YOB-DAM-24-002", # donor: Potiskum (same code, different district!)
+    "NIE-YOB-DAM-24-009", # district missing — and the code is ambiguous
+    "NIE-KAN-XYZ-24-001" # district missing — nothing to triangulate from
   ),
-  year = c(2024, 2024, 2024, 2024),
-  district = c("MAIDUGURI", "MAIDUGURI", "DAMATURU", "POTISKUM")
-)
-build_prefix_ref(prefix_cases, "district", prefix_length = 11)
-```
-
-The `NIE-BOR-MMC` prefix resolves cleanly; `NIE-YOB-DAM` has two rival districts
-(`n_candidates = 2`) so its value is `NA` — the module would rather leave a gap
-than guess.
-
-## Resolving the country (capability A → name)
-
-`resolve_epid_country()` maps the country code to a name + ISO3 via a crosswalk
-you supply. It matches on **either** the code or the ISO3 column, and refuses to
-guess when a code maps to more than one country.
-
-```{r}
-#| label: country-crosswalk
-country_ref <- tibble(
-  code = c("NIE", "AGO", "TCD", "CMR"),
-  name = c("NIGERIA", "ANGOLA", "CHAD", "CAMEROON"),
-  iso3 = c("NGA", "AGO", "TCD", "CMR")
-)
-
-# Matches a local abbreviation and an ISO3 alike
-resolve_epid_country(c("NIE-BOR-1", "NGA-BOR-1", "AGO-LUA-1"), ref = country_ref)
-```
-
-With no crosswalk, you still get the raw code back (with `resolved = FALSE`) —
-never a fabricated name:
-
-```{r}
-#| label: country-no-ref
-resolve_epid_country("NIE-BOR-1")
-```
-
-A code that maps to two different names is flagged `ambiguous` and left `NA`:
-
-```{r}
-#| label: country-ambiguous
-clashing_ref <- tibble(
-  code = c("CHA", "CHA"),
-  name = c("CHAD", "CENTRAL AFRICAN REPUBLIC"),
-  iso3 = c("TCD", "CAF")
-)
-resolve_epid_country("CHA-XXX-1", ref = clashing_ref)
-```
-
-## The imputation cascade — `impute_geo_from_epid()`
-
-The orchestrator fills each admin level (Admin0, then Admin1, then Admin2) by
-trying strategies in order, stamping a `<col>_source` provenance factor as it
-goes. The strategies:
-
-1. **`self_ref`** — the same exact EPID elsewhere in the data.
-2. **`prefix_match`** — a unique value among records sharing the prefix within
-   `year_window` years, with a **parent tie-break** before declaring ambiguity.
-3. **`reference`** — an external table keyed on `epid` or `prefix`.
-4. **`country_prefix`** — Admin0 only, via the country crosswalk.
-
-### `self_ref` — same EPID, including contacts
-
-Here a community contact (`…001CC`) is missing its district; its parent case
-carries it. Because contacts strip to the same base EPID, `self_ref` fills it.
-
-```{r}
-#| label: cascade-self-ref
-contacts <- tibble(
-  epid = c("NIE-BOR-MMC-24-001", "NIE-BOR-MMC-24-001CC"),
-  yronset = c(2024, 2024),
-  place.admin.2 = c("MAIDUGURI", NA)
-)
-self_ref_out <- impute_geo_from_epid(
-  contacts,
-  admin0_var = NULL, admin1_var = NULL, guid_vars = NULL,
-  strategies = "self_ref",
-  verbose = FALSE
-)
-self_ref_out$data |>
-  select(epid, place.admin.2, place.admin.2_source)
-```
-
-### `prefix_match` — siblings within a year window
-
-Different serials under the same `CCC-PPP-DDD` prefix share a district. With
-`year_window = 1`, a case can borrow from a neighbour in an adjacent year.
-
-```{r}
-#| label: cascade-prefix
-siblings <- tibble(
-  epid = c(
-    "NIE-BOR-JER-23-014", # known, prior year
-    "NIE-BOR-JER-24-002" # missing district
-  ),
-  yronset = c(2023, 2024),
-  place.admin.2 = c("JERE", NA)
-)
-impute_geo_from_epid(
-  siblings,
-  admin0_var = NULL, admin1_var = NULL, guid_vars = NULL,
-  strategies = "prefix_match", prefix_length = 11, year_window = 1,
-  verbose = FALSE
-)$data |>
-  select(epid, place.admin.2, place.admin.2_source)
-```
-
-### Ambiguity is left unresolved, not guessed
-
-When one prefix maps to two districts in the same year and the parent province
-can't break the tie, the cell stays `NA`, the run counts it as ambiguous, and
-the provenance is `unresolved`.
-
-```{r}
-#| label: cascade-ambiguous
-ambiguous <- tibble(
-  epid = c(
-    "NIE-YOB-DAM-24-001", "NIE-YOB-DAM-24-002", "NIE-YOB-DAM-24-003"
-  ),
-  yronset = c(2024, 2024, 2024),
-  place.admin.1 = c("YOBE", "YOBE", "YOBE"),
-  place.admin.2 = c("DAMATURU", "POTISKUM", NA)
-)
-amb_out <- impute_geo_from_epid(
-  ambiguous,
-  admin0_var = NULL, guid_vars = NULL,
-  strategies = "prefix_match", prefix_length = 11,
-  verbose = FALSE
-)
-amb_out$data |> select(epid, place.admin.2, place.admin.2_source)
-amb_out$qa |> select(column, n_missing_before, n_ambiguous, n_unresolved)
-```
-
-### The parent tie-break
-
-If two districts share a prefix but sit in **different provinces**, a row whose
-province *is* known resolves cleanly to the matching district.
-
-```{r}
-#| label: cascade-tiebreak
-tiebreak <- tibble(
-  epid = c(
-    "NIE-XXX-AAA-24-001", "NIE-XXX-AAA-24-002", "NIE-XXX-AAA-24-003"
-  ),
-  yronset = c(2024, 2024, 2024),
-  place.admin.1 = c("BORNO", "YOBE", "BORNO"), # row 3's province is known
-  place.admin.2 = c("MAIDUGURI", "DAMATURU", NA)
-)
-impute_geo_from_epid(
-  tiebreak,
-  admin0_var = NULL, guid_vars = NULL,
-  strategies = "prefix_match", prefix_length = 11,
-  verbose = FALSE
-)$data |>
-  select(epid, place.admin.1, place.admin.2, place.admin.2_source)
-```
-
-Row 3 is in `BORNO`, so it takes `MAIDUGURI`, not `DAMATURU`.
-
-### `reference` — a dataset with no names of its own
-
-Some extracts carry only EPIDs. An external `reference` keyed on `epid` (or
-`prefix`) fills them. Here there are no in-data names to borrow at all.
-
-```{r}
-#| label: cascade-reference
-nameless <- tibble(
-  epid = c("NIE-BOR-MMC-24-001", "AGO-LUA-CAC-24-001"),
-  place.admin.2 = c(NA_character_, NA_character_)
-)
-district_lookup <- tibble(
-  epid = c("NIE-BOR-MMC-24-001", "AGO-LUA-CAC-24-001"),
-  place.admin.2 = c("MAIDUGURI", "CACUACO")
-)
-impute_geo_from_epid(
-  nameless,
-  admin0_var = NULL, admin1_var = NULL, guid_vars = NULL,
-  reference = district_lookup, strategies = "reference",
-  verbose = FALSE
-)$data |>
-  select(epid, place.admin.2, place.admin.2_source)
-```
-
-### `country_prefix` — Admin0 from the crosswalk
-
-Admin0 is best recovered from the country code. With a crosswalk, a missing
-country name is filled from the leading code.
-
-```{r}
-#| label: cascade-country
-no_country <- tibble(
-  epid = c("NIE-BOR-MMC-24-001", "AGO-LUA-CAC-24-001"),
-  place.admin.0 = c(NA_character_, NA_character_)
-)
-impute_geo_from_epid(
-  no_country,
-  admin1_var = NULL, admin2_var = NULL, guid_vars = NULL,
-  country_ref = country_ref, strategies = "country_prefix",
-  canonicalise = FALSE,
-  verbose = FALSE
-)$data |>
-  select(epid, place.admin.0, place.admin.0_source)
-```
-
-### Filling GUIDs too
-
-GUID columns ride the same cascade. Point `guid_vars` at them, keyed by level:
-
-```{r}
-#| label: cascade-guid
-with_guids <- tibble(
-  epid = c("NIE-BOR-MMC-24-001", "NIE-BOR-MMC-24-002"),
-  yronset = c(2024, 2024),
-  place.admin.2 = c("MAIDUGURI", "MAIDUGURI"),
-  Admin2GUID = c("guid-maiduguri", NA)
-)
-impute_geo_from_epid(
-  with_guids,
-  admin0_var = NULL, admin1_var = NULL,
-  guid_vars = c(adm2 = "Admin2GUID"),
-  strategies = "prefix_match", prefix_length = 11,
-  verbose = FALSE
-)$data |>
-  select(epid, Admin2GUID, Admin2GUID_source)
-```
-
-## Putting it together: a messy line-list
-
-A realistic extract mixes all of the above — complete rows, contacts, sibling
-gaps, a lowercase EPID, a missing country, a genuinely ambiguous prefix, and a
-row nothing can rescue. Run the full cascade with both reference tables and a
-one-year window, and let the cli summary report what happened.
-
-```{r}
-#| label: messy-linelist
-afp_linelist <- tibble(
-  epid = c(
-    "NIE-BOR-MMC-24-001", # complete
-    "NIE-BOR-MMC-24-002", # district gap -> prefix_match
-    "NIE-BOR-MMC-24-001CC", # contact -> self_ref off its case
-    "nie-bor-jer-24-014", # lowercase, complete
-    "NIE-BOR-JER-24-021", # district gap -> prefix_match
-    "AGO-LUA-CAC-24-001", # country gap -> country_prefix
-    "NIE-YOB-DAM-24-001", # rival district A
-    "NIE-YOB-DAM-24-002", # rival district B
-    "NIE-YOB-DAM-24-009", # ambiguous -> unresolved
-    "NIE-KAN-XYZ-24-001" # unique, no help anywhere -> unresolved
-  ),
-  yronset = c(2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024),
+  yronset = c(2024, 2024, 2024, 2023, 2024, 2024, 2024, 2024, 2024, 2024),
   place.admin.0 = c(
     "NIGERIA", "NIGERIA", "NIGERIA", "NIGERIA", "NIGERIA",
     NA, "NIGERIA", "NIGERIA", "NIGERIA", "NIGERIA"
@@ -434,104 +74,271 @@ afp_linelist <- tibble(
     "CACUACO", "DAMATURU", "POTISKUM", NA, NA
   ),
   Admin2GUID = c(
-    "guid-maiduguri", NA, NA, "guid-jere", NA,
-    "guid-cacuaco", "guid-damaturu", "guid-potiskum", NA, NA
+    "guid-mmc", NA, NA, "guid-jere", NA,
+    "guid-cac", "guid-dam", "guid-pot", NA, NA
   )
 )
+cases |> dplyr::select(epid, place.admin.0, place.admin.2, Admin2GUID)
+```
 
-reference_districts <- tibble(
-  prefix = c("AGO-LUA-CAC"),
-  place.admin.2 = c("CACUACO")
+Five rows are missing their district (and four their GUID); one is missing its
+country. Each gap is recoverable from a *different* kind of evidence — and one
+or two are deliberately **not** recoverable, so you can see what the function
+does when it cannot be sure.
+
+## One call
+
+You hand `polished::impute_geo_from_epid()` the data, tell it which columns hold
+the EPID, the year, and each admin level, and (optionally) give it a country
+crosswalk for resolving Admin0. It returns a list.
+
+```{r}
+#| label: the-call
+country_ref <- tibble::tibble(
+  code = c("NIE", "AGO"),
+  name = c("NIGERIA", "ANGOLA"),
+  iso3 = c("NGA", "AGO")
 )
 
-result <- impute_geo_from_epid(
-  afp_linelist,
-  reference = reference_districts,
-  country_ref = country_ref,
+result <- polished::impute_geo_from_epid(
+  cases,
+  epid_var = "epid",
+  year_var = "yronset",
+  admin0_var = "place.admin.0",
+  admin1_var = "place.admin.1",
+  admin2_var = "place.admin.2",
   guid_vars = c(adm2 = "Admin2GUID"),
-  prefix_length = 11,
+  country_ref = country_ref,
   year_window = 1
 )
 ```
 
-The returned `data` carries every original column plus one provenance factor per
-filled level:
+The console summary (shown when `verbose = TRUE`, the default) reports, per admin
+level, how many cells were missing and how each gap was closed. The detail lives
+in the returned object, which we now unpack.
+
+## What `impute_geo_from_epid()` returns
+
+The result is a named list with four elements:
+
+| Element | What it is |
+|---|---|
+| `$data` | your input, with gaps filled and a provenance column per level |
+| `$qa` | a one-row-per-level audit of what was filled and what wasn't |
+| `$ref` | the lookups it built, exposed so you can inspect the evidence |
+| `$meta` | the settings the run used |
+
+### `$data` — the filled table, with provenance
+
+`$data` is your original data frame, **unchanged except that blank cells are
+filled**, plus one new `<column>_source` column for every level it touched. That
+companion column is the audit trail: it records *how* each cell got its value.
 
 ```{r}
-#| label: messy-data
+#| label: data-out
 result$data |>
-  select(
-    epid, place.admin.0, place.admin.0_source,
-    place.admin.2, place.admin.2_source
+  dplyr::select(epid, place.admin.2, place.admin.2_source, Admin2GUID)
+```
+
+Every `<col>_source` is a factor with these levels:
+
+| Provenance | Meaning |
+|---|---|
+| `original` | the cell already had a value — left untouched |
+| `self_ref` | filled from another row with the **exact same EPID** |
+| `prefix_match` | filled from rows sharing the EPID's geographic **prefix** |
+| `reference` | filled from an external lookup table you supplied |
+| `country_prefix` | Admin0 filled from the country code via the crosswalk |
+| `unresolved` | was missing and **could not be filled** — left `NA` |
+
+Reading the district column above, row by row:
+
+- `…MMC-24-014` and `…JER-24-021` were filled by **`prefix_match`** — a sibling
+  case in the same district (the `JER` donor was a year earlier, reached because
+  we set `year_window = 1`).
+- `…MMC-24-001CC`, a **contact**, was filled by **`self_ref`**: contacts reuse
+  their case's EPID with a trailing marker, so it collapses onto case `001` and
+  inherits its district.
+- `…DAM-24-009` is **`unresolved`**: the `NIE-YOB-DAM` code points at *two*
+  different districts in the donors (Damaturu and Potiskum), so the function
+  refuses to guess.
+- `…KAN-XYZ-24-001` is **`unresolved`** too: nothing else in the data shares its
+  prefix, and no external reference was given.
+
+The two key guarantees are visible here: a present value is **never
+overwritten** (everything that started with a district still reads `original`),
+and an ambiguous or unsupported gap is **never invented** — it stays `NA` and is
+labelled `unresolved`, so silent fabrication is impossible.
+
+Admin0 tells the same story through a different strategy:
+
+```{r}
+#| label: data-admin0
+result$data |>
+  dplyr::filter(place.admin.0_source != "original") |>
+  dplyr::select(epid, place.admin.0, place.admin.0_source)
+```
+
+The Angola row had no country name; `country_prefix` recovered it from the `AGO`
+code via the crosswalk.
+
+### `$qa` — the audit, one row per level
+
+`$qa` is the reconciliation table. It has one row per column the function tried
+to fill, and it accounts for **every** missing cell.
+
+```{r}
+#| label: qa
+result$qa
+```
+
+Column by column:
+
+| QA column | What it counts |
+|---|---|
+| `level` / `column` | the admin level and the data column it refers to |
+| `n_missing_before` | blank cells in that column when the run started |
+| `n_filled_self_ref` | filled from the same exact EPID |
+| `n_filled_prefix_match` | filled from a shared prefix |
+| `n_filled_reference` | filled from the external reference table |
+| `n_filled_country_prefix` | Admin0 filled from the country code |
+| `n_ambiguous` | gaps left blank because the evidence disagreed |
+| `n_unresolved` | gaps still blank after every strategy |
+| `pct_resolved` | share of the originally-missing cells that got filled |
+
+The counts always reconcile — every missing cell is either filled by exactly one
+strategy or left unresolved:
+
+```{r}
+#| label: qa-reconcile
+result$qa |>
+  dplyr::transmute(
+    column,
+    n_missing_before,
+    filled = n_filled_self_ref + n_filled_prefix_match +
+      n_filled_reference + n_filled_country_prefix,
+    n_unresolved,
+    reconciles = n_missing_before == filled + n_unresolved
   )
 ```
 
-The `qa` tibble is the audit trail — and its counts always reconcile
-(`n_missing_before == filled + n_unresolved`):
+`n_ambiguous` is a **diagnostic, not a separate bucket**: an ambiguous cell is
+also counted in `n_unresolved` (it was missing and stayed missing). It is broken
+out so you can tell "we had no evidence" apart from "we had conflicting
+evidence" — the latter is where a manual review or a better reference table
+pays off.
+
+### `$ref` — the evidence it built
+
+To fill from sibling rows, the function first builds most-recent-per-EPID
+lookups. It hands them back in `$ref` so you can audit *what* it considered
+authoritative:
 
 ```{r}
-#| label: messy-qa
-result$qa
-
-# reconciliation check
-result$qa |>
-  mutate(
-    filled = n_filled_self_ref + n_filled_prefix_match +
-      n_filled_reference + n_filled_country_prefix,
-    reconciles = n_missing_before == filled + n_unresolved
-  ) |>
-  select(column, n_missing_before, filled, n_unresolved, reconciles)
+#| label: ref
+result$ref$admin2
 ```
 
-`meta` records exactly how the run was configured:
+Each row is one EPID and the most recent non-blank value seen for it. This is
+the table that powers the `self_ref` step; inspecting it is the quickest way to
+see why a given EPID resolved the way it did.
+
+### `$meta` — the settings used
+
+`$meta` records exactly how the run was configured — useful for logging a
+pipeline so a result is reproducible.
 
 ```{r}
-#| label: messy-meta
+#| label: meta
 result$meta
 ```
 
-## Idempotency
+## The strategies, and when each earns its keep
 
-Running the cleaner on its own output changes nothing — the second pass sees the
-filled values as `original` and has nothing left to do.
+`impute_geo_from_epid()` tries strategies in order and stops as soon as a cell is
+filled. You control which run, and in what order, with `strategies`.
+
+| Strategy | Use it when… | Evidence |
+|---|---|---|
+| `self_ref` | the same case (or its contacts) appears more than once | another row with the **identical** EPID |
+| `prefix_match` | different cases sit in the same district | rows sharing the `CCC-PPP-DDD` **prefix**, within `year_window` |
+| `reference` | the data has *no* names of its own to borrow | an external `epid`- or `prefix`-keyed table you pass in |
+| `country_prefix` | only the country is missing | the `country_ref` code → name crosswalk |
+
+Two knobs shape the matching:
+
+- **`year_window`** widens prefix-matching to neighbouring years (we used `1`
+  above so a 2023 donor could fill a 2024 case). `0` keeps it strict.
+- **`prefix_length`** sets how much of the EPID must agree. The default `11`
+  covers `CCC-PPP-DDD`; shorten it to match on country+province only.
+
+When a prefix maps to two districts, `impute_geo_from_epid()` first tries a
+**parent tie-break** — if the row's province is known, it keeps only candidates
+from that province. It declares a gap ambiguous only when even that cannot
+single out one answer (as with the Yobe row above).
+
+### Filling only from an external table
+
+If an extract carries EPIDs but no usable names at all, skip the in-data
+strategies and lean entirely on a reference table keyed on `epid` or `prefix`:
+
+```{r}
+#| label: reference-only
+nameless <- tibble::tibble(
+  epid = c("NIE-BOR-MMC-24-031", "AGO-LUA-CAC-24-050"),
+  place.admin.2 = c(NA_character_, NA_character_)
+)
+district_lookup <- tibble::tibble(
+  prefix = c("NIE-BOR-MMC", "AGO-LUA-CAC"),
+  place.admin.2 = c("MAIDUGURI", "CACUACO")
+)
+polished::impute_geo_from_epid(
+  nameless,
+  admin0_var = NULL, admin1_var = NULL, guid_vars = NULL,
+  reference = district_lookup,
+  strategies = "reference",
+  verbose = FALSE
+)$data |>
+  dplyr::select(epid, place.admin.2, place.admin.2_source)
+```
+
+## Running it twice is safe
+
+Because filled cells become `original` on the next pass, re-running the cleaner
+on its own output changes nothing — handy when it sits inside a pipeline that
+may execute more than once.
 
 ```{r}
 #| label: idempotent
-second_pass <- impute_geo_from_epid(
+second <- polished::impute_geo_from_epid(
   result$data,
-  reference = reference_districts,
-  country_ref = country_ref,
   guid_vars = c(adm2 = "Admin2GUID"),
-  prefix_length = 11,
+  country_ref = country_ref,
   year_window = 1,
   verbose = FALSE
 )
-identical(second_pass$data$place.admin.2, result$data$place.admin.2)
+identical(second$data$place.admin.2, result$data$place.admin.2)
 ```
 
-## Edge cases, in one place
+## Building blocks (advanced)
 
-- **Malformed / short / `NA` / blank / lowercase / whitespace EPIDs** are handled
-  without error — parsers return `NA`, the cascade skips them.
-- **Contacts** (`CC` / `HC` / `C2` suffixes) collapse onto their case EPID for
-  matching.
-- **Ambiguous prefixes** are never guessed — they stay `NA`, counted in
-  `n_ambiguous`, labelled `unresolved`.
-- **Present values are never overwritten**; provenance for them is `original`.
-- **No crosswalk, no reference, no siblings** → the cell is honestly
-  `unresolved`, and the cli summary tells you how many such gaps remain.
+`impute_geo_from_epid()` is the function you will reach for. The cascade is
+assembled from smaller exported pieces, exposed for the rare cases where you want
+to parse or match EPIDs yourself:
+
+- `epid_split()`, `epid_country_code()`, `epid_prefix()`,
+  `epid_strip_contact()` — pure parsers that pull codes out of an EPID.
+- `build_admin_ref()`, `build_prefix_ref()` — the lookups behind `self_ref` and
+  `prefix_match`.
+- `resolve_epid_country()` — the code → country resolver behind
+  `country_prefix`.
+
+You almost never need these directly; see each function's help page (e.g.
+`?epid_prefix`) for details.
 
 ```{r}
-#| label: edge-recap
-messy_epids <- tibble(
-  epid = c("nie-bor-mmc-24-001", "  ", NA, "AB", "NIE-BOR-MMC-24-002CC"),
-  yronset = c(2024, 2024, 2024, 2024, 2024),
-  place.admin.2 = c("MAIDUGURI", NA, NA, NA, NA)
-)
-impute_geo_from_epid(
-  messy_epids,
-  admin0_var = NULL, admin1_var = NULL, guid_vars = NULL,
-  verbose = FALSE
-)$data |>
-  select(epid, place.admin.2, place.admin.2_source)
+#| label: building-blocks
+polished::epid_country_code("NIE-BOR-MMC-24-001")
+polished::epid_prefix("NIE-BOR-MMC-24-001", length = 11)
+polished::epid_strip_contact("NIE-BOR-MMC-24-001CC")
 ```
