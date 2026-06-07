@@ -4,6 +4,14 @@ template:
   bootstrap: 5
 
 reference:
+- title: Download POLIS data
+  desc: >
+    The download entry point and the table catalogue it fetches: a one-call pull
+    that works around POLIS's pagination and date-filter quirks, with on-disk
+    caching, resume, and post-download completeness verification.
+  contents:
+  - get_polis_data
+  - polis_tables_mapping
 - title: Impute geography from EPIDs
   desc: >
     The main entry point: a provenance-stamped cascade that fills missing admin
@@ -29,4 +37,5 @@ articles:
 - title: Get started
   navbar: ~
   contents:
+  - downloading-polis-data
   - epid-geo-cleaning
