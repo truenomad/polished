@@ -130,8 +130,8 @@ The result is a named list with four elements:
 | `$ref` | the lookups it built, exposed so you can inspect the evidence |
 | `$meta` | the settings the run used |
 
-::: {.callout-note collapse="false"}
-#### `$data` — the filled table, with provenance
+<details open>
+<summary><code>$data</code> — the filled table, with provenance</summary>
 
 `$data` is your original data frame, **unchanged except that blank cells are
 filled**, plus one new `<column>_source` column for every level it touched. That
@@ -185,10 +185,10 @@ result$data |>
 The Angola row had no country name; `country_prefix` recovered it from the `AGO`
 code via the crosswalk.
 
-:::
+</details>
 
-::: {.callout-note collapse="true"}
-#### `$qa` — the audit, one row per level
+<details>
+<summary><code>$qa</code> — the audit, one row per level</summary>
 
 `$qa` is the reconciliation table. It has one row per column the function tried
 to fill, and it accounts for **every** missing cell.
@@ -234,10 +234,10 @@ out so you can tell "we had no evidence" apart from "we had conflicting
 evidence" — the latter is where a manual review or a better reference table
 pays off.
 
-:::
+</details>
 
-::: {.callout-note collapse="true"}
-#### `$ref` — the evidence it built
+<details>
+<summary><code>$ref</code> — the evidence it built</summary>
 
 To fill from sibling rows, the function first builds most-recent-per-EPID
 lookups. It hands them back in `$ref` so you can audit *what* it considered
@@ -252,10 +252,10 @@ Each row is one EPID and the most recent non-blank value seen for it. This is
 the table that powers the `self_ref` step; inspecting it is the quickest way to
 see why a given EPID resolved the way it did.
 
-:::
+</details>
 
-::: {.callout-note collapse="true"}
-#### `$meta` — the settings used
+<details>
+<summary><code>$meta</code> — the settings used</summary>
 
 `$meta` records exactly how the run was configured — useful for logging a
 pipeline so a result is reproducible.
@@ -265,7 +265,7 @@ pipeline so a result is reproducible.
 result$meta
 ```
 
-:::
+</details>
 
 ## The strategies, and when each earns its keep
 
