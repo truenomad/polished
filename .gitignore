@@ -6,3 +6,8 @@
 *.tgz
 .DS_Store
 docs/
+.githooks/
+vignettes/*.html
+vignettes/*_files/
+/.quarto/
+inst/doc/
