@@ -1,0 +1,38 @@
+/* Collapsible <details> blocks styled like a note callout. */
+details {
+  border: 1px solid #d0d7de;
+  border-left: 4px solid #4a86c5;
+  border-radius: 6px;
+  padding: 0.6em 1em;
+  margin: 1em 0;
+  background: #f7fafd;
+}
+
+details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::before {
+  content: "\25B6";
+  color: #4a86c5;
+  display: inline-block;
+  margin-right: 0.5em;
+  font-size: 0.8em;
+  transition: transform 0.15s ease;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+details[open] > summary {
+  margin-bottom: 0.6em;
+  border-bottom: 1px solid #e6ebf1;
+  padding-bottom: 0.4em;
+}
