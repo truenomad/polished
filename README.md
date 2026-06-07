@@ -15,67 +15,29 @@ analysis-ready.
 
 ## Installation
 
-```r
-# install.packages("pak")
-pak::pak("truenomad/polished")
-```
+Install the development version from GitHub with
+`pak::pak("truenomad/polished")`. Downloading requires a POLIS API key, read
+from the `POLIS_API_KEY` environment variable.
 
-Set your POLIS API key once per session (or in `.Renviron`):
+## Key functions
 
-```r
-Sys.setenv(POLIS_API_KEY = "your-key")
-```
+### Download
 
-## Download POLIS data
+| Function | Purpose |
+|---|---|
+| `get_polis_data()` | Pull one or many POLIS tables into a local cache. Works around POLIS's year-aligned date filters and Id-range pagination, checkpoints each batch so an interrupted pull resumes cleanly, optionally fetches years in parallel, and verifies completeness against POLIS when it finishes. |
+| `polis_tables_mapping` | The catalogue of supported POLIS tables — their short names, OData endpoints, and the date column used for filtering. |
 
-`get_polis_data()` is the entry point. It fetches a table (or all of them) into a
-local cache, resuming from where a previous pull left off and verifying
-completeness against POLIS when it finishes.
+### Clean & standardise
 
-```r
-# Pull one table; data is cached on disk, nothing returned
-polished::get_polis_data(tables = "im")
+| Function | Purpose |
+|---|---|
+| `impute_geo_from_epid()` | Recover missing administrative geography (names and GUIDs) from the EPID through an ordered, provenance-stamped cascade. Fills only blank cells, never overwrites present values, and leaves ambiguous gaps `unresolved` rather than fabricating them. |
+| `epid_split()`, `epid_country_code()`, `epid_prefix()`, `epid_strip_contact()` | Parse structure out of an EPID — its component segments, country code, geographic prefix, and contact marker. |
+| `build_admin_ref()`, `build_prefix_ref()`, `resolve_epid_country()` | Build the sibling-record lookups and country crosswalk the cascade draws on. |
 
-# Same call, but get the data.frame back
-im <- polished::get_polis_data(tables = "im", return = "df")
-
-# All tables in parallel into a project folder, just the file paths
-polished::get_polis_data(
-  polis_folder = "data/polis",
-  workers = parallel::detectCores() - 1L,
-  return = "paths"
-)
-```
-
-It handles the POLIS-specific traps for you: year-aligned date filters, Id-range
-pagination (POLIS rejects OData `$skip`), per-table "update" date columns,
-per-batch checkpointing so a dropped connection resumes cleanly, and an optional
-post-download Id-completeness check that refetches anything missing. See
-`?get_polis_data` and the *Downloading POLIS data* vignette for the full set of
-arguments.
-
-## Clean the data
-
-`impute_geo_from_epid()` recovers missing admin columns from the EPID through an
-ordered, provenance-stamped cascade (self-reference → prefix-match → external
-reference → country code), filling only blank cells and leaving ambiguous ones
-as `unresolved`.
-
-```r
-result <- polished::impute_geo_from_epid(cases)
-result$data   # repaired frame + a <col>_source provenance factor per column
-result$qa     # per-level fill counts and pct_resolved
-```
-
-Supporting functions:
-
-- **EPID parsing** — `epid_split()`, `epid_country_code()`, `epid_prefix()`,
-  `epid_strip_contact()`
-- **Reference builders** — `build_admin_ref()`, `build_prefix_ref()`,
-  `resolve_epid_country()`
-
-See the vignettes for the full cascade, data-formatting requirements, and worked
-examples.
+See the vignettes and each function's help page (e.g. `?get_polis_data`) for
+usage, the full cascade, and data-formatting requirements.
 
 ## License
 
