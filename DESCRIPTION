@@ -42,7 +42,9 @@ Suggests:
     data.table,
     fs,
     qs2,
+    quarto,
     skimr,
     testthat (>= 3.0.0),
     withr
+VignetteBuilder: quarto
 Config/testthat/edition: 3
