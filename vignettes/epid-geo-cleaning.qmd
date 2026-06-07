@@ -123,12 +123,16 @@ in the returned object, which we now unpack.
 
 The result is a named list with four elements:
 
+<div class="desc-table">
+
 | Element | What it is |
 |---|---|
 | `$data` | your input, with gaps filled and a provenance column per level |
 | `$qa` | a one-row-per-level audit of what was filled and what wasn't |
 | `$ref` | the lookups it built, exposed so you can inspect the evidence |
 | `$meta` | the settings the run used |
+
+</div>
 
 <details>
 <summary><code>$data</code> — the filled table, with provenance</summary>
