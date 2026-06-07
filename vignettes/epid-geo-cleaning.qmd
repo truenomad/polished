@@ -130,7 +130,7 @@ The result is a named list with four elements:
 | `$ref` | the lookups it built, exposed so you can inspect the evidence |
 | `$meta` | the settings the run used |
 
-<details open>
+<details>
 <summary><code>$data</code> — the filled table, with provenance</summary>
 
 `$data` is your original data frame, **unchanged except that blank cells are
