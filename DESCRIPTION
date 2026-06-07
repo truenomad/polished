@@ -23,12 +23,12 @@ Depends:
     R (>= 4.1.0)
 Imports:
     cli,
-    cluster,
     dplyr,
     httr2,
     janitor,
     lifecycle,
     lubridate,
+    parallel,
     purrr,
     readr,
     sf,
@@ -36,7 +36,8 @@ Imports:
     stringr,
     tibble,
     tidyr,
-    tools
+    tools,
+    utils
 Suggests:
     arrow,
     data.table,
