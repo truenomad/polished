@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   downloading-polis-data: downloading-polis-data.html
   epid-geo-cleaning: epid-geo-cleaning.html
-last_built: 2026-06-07T14:38Z
+last_built: 2026-06-07T14:42Z
 urls:
   reference: https://truenomad.github.io/polished/reference
   article: https://truenomad.github.io/polished/articles
