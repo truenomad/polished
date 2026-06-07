@@ -82,23 +82,17 @@
 </h3>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="6%">
+<col width="93%">
 </colgroup>
 <thead><tr>
 <th>Function</th>
 <th>Purpose</th>
 </tr></thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td><code><a href="reference/get_polis_data.html">get_polis_data()</a></code></td>
 <td>Pull one or many POLIS tables into a local cache. Works around POLIS’s year-aligned date filters and Id-range pagination, checkpoints each batch so an interrupted pull resumes cleanly, optionally fetches years in parallel, and verifies completeness against POLIS when it finishes.</td>
-</tr>
-<tr>
-<td><code>polis_tables_mapping</code></td>
-<td>The catalogue of supported POLIS tables — their short names, OData endpoints, and the date column used for filtering.</td>
-</tr>
-</tbody>
+</tr></tbody>
 </table>
 </div>
 <div class="section level3">
@@ -106,31 +100,17 @@
 </h3>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="8%">
+<col width="91%">
 </colgroup>
 <thead><tr>
 <th>Function</th>
 <th>Purpose</th>
 </tr></thead>
-<tbody>
-<tr>
+<tbody><tr>
 <td><code><a href="reference/impute_geo_from_epid.html">impute_geo_from_epid()</a></code></td>
 <td>Recover missing administrative geography (names and GUIDs) from the EPID through an ordered, provenance-stamped cascade. Fills only blank cells, never overwrites present values, and leaves ambiguous gaps <code>unresolved</code> rather than fabricating them.</td>
-</tr>
-<tr>
-<td>
-<code><a href="reference/epid_split.html">epid_split()</a></code>, <code><a href="reference/epid_country_code.html">epid_country_code()</a></code>, <code><a href="reference/epid_prefix.html">epid_prefix()</a></code>, <code><a href="reference/epid_strip_contact.html">epid_strip_contact()</a></code>
-</td>
-<td>Parse structure out of an EPID — its component segments, country code, geographic prefix, and contact marker.</td>
-</tr>
-<tr>
-<td>
-<code><a href="reference/build_admin_ref.html">build_admin_ref()</a></code>, <code><a href="reference/build_prefix_ref.html">build_prefix_ref()</a></code>, <code><a href="reference/resolve_epid_country.html">resolve_epid_country()</a></code>
-</td>
-<td>Build the sibling-record lookups and country crosswalk the cascade draws on.</td>
-</tr>
-</tbody>
+</tr></tbody>
 </table>
 <p>See the vignettes and each function’s help page (e.g. <code><a href="reference/get_polis_data.html">?get_polis_data</a></code>) for usage, the full cascade, and data-formatting requirements.</p>
 </div>
