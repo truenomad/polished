@@ -8,6 +8,7 @@ format:
   html:
     toc: true
     toc-depth: 3
+    df-print: kable
 knitr:
   opts_chunk:
     collapse: true
@@ -48,6 +49,7 @@ kind of messy input it is built for:
 ```{r}
 #| label: messy-input
 #| echo: false
+#| code-fold: true
 cases <- tibble::tibble(
   epid = c(
     "NIE-BOR-MMC-24-001", # fully geocoded — a donor
