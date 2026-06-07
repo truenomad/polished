@@ -94,3 +94,19 @@ details[open] > summary {
 .template-quarto main table tbody tr:last-child td {
   border-bottom: none;
 }
+
+/* Key/description tables: narrow first column, wide description column.
+   Pandoc emits inline `<col style="width: 50%">`, so override with !important. */
+.template-quarto main .desc-table table {
+  width: 100%;
+}
+.template-quarto main .desc-table table col:first-child {
+  width: 1% !important;
+}
+.template-quarto main .desc-table table col:last-child {
+  width: auto !important;
+}
+.template-quarto main .desc-table table th:first-child,
+.template-quarto main .desc-table table td:first-child {
+  white-space: nowrap;
+}
