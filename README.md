@@ -23,18 +23,15 @@ from the `POLIS_API_KEY` environment variable.
 
 ### Download
 
-| Function | Purpose |
-|---|---|
+| Function           | Purpose                                                                                                                                                                                                                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_polis_data()` | Pull one or many POLIS tables into a local cache. Works around POLIS's year-aligned date filters and Id-range pagination, checkpoints each batch so an interrupted pull resumes cleanly, optionally fetches years in parallel, and verifies completeness against POLIS when it finishes. |
-| `polis_tables_mapping` | The catalogue of supported POLIS tables — their short names, OData endpoints, and the date column used for filtering. |
 
 ### Clean & standardise
 
-| Function | Purpose |
-|---|---|
+| Function                 | Purpose                                                                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `impute_geo_from_epid()` | Recover missing administrative geography (names and GUIDs) from the EPID through an ordered, provenance-stamped cascade. Fills only blank cells, never overwrites present values, and leaves ambiguous gaps `unresolved` rather than fabricating them. |
-| `epid_split()`, `epid_country_code()`, `epid_prefix()`, `epid_strip_contact()` | Parse structure out of an EPID — its component segments, country code, geographic prefix, and contact marker. |
-| `build_admin_ref()`, `build_prefix_ref()`, `resolve_epid_country()` | Build the sibling-record lookups and country crosswalk the cascade draws on. |
 
 See the vignettes and each function's help page (e.g. `?get_polis_data`) for
 usage, the full cascade, and data-formatting requirements.
