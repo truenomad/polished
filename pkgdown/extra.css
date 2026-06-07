@@ -36,3 +36,61 @@ details[open] > summary {
   border-bottom: 1px solid #e6ebf1;
   padding-bottom: 0.4em;
 }
+
+/* Styled content tables in quarto vignettes (kable outputs + prose tables). */
+
+/* Wide tables scroll inside their wrapper instead of being clipped. */
+.template-quarto main .kable-table {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.template-quarto main table {
+  /* undo quarto's bare `table { display: block }` so width shrinks to content */
+  display: table;
+  overflow: visible;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1.25px solid #444;
+  border-radius: 10px;
+  /* size to content, not stretched to full container width */
+  width: -moz-fit-content;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 14px;
+  table-layout: auto;
+  margin: 1rem 0;
+}
+
+.template-quarto main .kable-table table {
+  margin: 0;
+}
+
+.template-quarto main table th {
+  background-color: #efefef;
+  border-top: none;
+  border-bottom: 1.5px solid #444;
+  font-weight: bold;
+  text-align: left;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+/* round the header corners to match the table's rounded border */
+.template-quarto main table th:first-child {
+  border-top-left-radius: 9px;
+}
+.template-quarto main table th:last-child {
+  border-top-right-radius: 9px;
+}
+
+.template-quarto main table td {
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.template-quarto main table tbody tr:last-child td {
+  border-bottom: none;
+}
