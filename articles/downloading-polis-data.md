@@ -1,0 +1,262 @@
+# Downloading POLIS data
+
+> **Note**
+>
+> The download calls in this vignette talk to the live POLIS service and
+> are shown **unevaluated** — they need a valid `POLIS_API_KEY` and
+> network access. The only chunk that runs at build time is the table
+> catalogue, which is static package data. Copy the calls into a session
+> with a key set to try them.
+
+## What `get_polis_data()` is for
+
+POLIS exposes its data through an OData API, but three quirks make a
+naive OData client silently lose rows.
+[`polished::get_polis_data()`](https://truenomad.github.io/polished/reference/get_polis_data.md)
+is a single entry point that works around all three, caches results on
+disk, and resumes cleanly if a pull is interrupted.
+
+The three traps it handles for you:
+
+- **Date filters are year-aligned only.** POLIS honours a
+  `field le YYYY-12-31` bound but returns **zero rows** for any sub-year
+  `le`.
+  [`get_polis_data()`](https://truenomad.github.io/polished/reference/get_polis_data.md)
+  aligns your `min_date` / `max_date` to year boundaries before building
+  a filter, so a mid-year range never silently empties the result.
+- **`$skip` is rejected and there is no `@odata.nextLink`.** POLIS caps
+  `$top` at 2000 rows and refuses the standard OData paging mechanism.
+  The only way past 2000 rows is *Id-range pagination* —
+  `…&$orderby=Id&$top=2000&$filter=… and Id gt <last>` — which the
+  function does for you, one page at a time.
+- **The clinical date columns are sparsely populated.** Columns like
+  `CaseDate` and `VirusDate` are `NULL` for many historical records, so
+  filtering on them drops rows. The function instead filters on each
+  table’s *update* column (`LastUpdateDate` / `UpdatedDate` / `Start` /
+  `PublishDate`), which probes confirm is fully populated.
+
+## Quick start
+
+Set your key once, then pull a table. By default nothing is returned —
+the data lands on disk and you read it when you need it.
+
+``` r
+
+Sys.setenv(POLIS_API_KEY = "your-key") # or set it in .Renviron
+
+# Pull the immunization (`im`) table into the per-user cache
+polished::get_polis_data(tables = "im")
+
+# Same call, but hand the data.frame straight back
+im <- polished::get_polis_data(tables = "im", return = "df")
+```
+
+## The table catalogue
+
+`tables` accepts any of the names in `polis_tables_mapping`, the static
+catalogue the function ships with. Passing `tables = NULL` (the default)
+downloads them all. This is the one chunk in the vignette that runs at
+build time, because it is just package data:
+
+``` r
+
+polished::polis_tables_mapping
+```
+
+| table_name                | endpoint                | date_field     |
+|:--------------------------|:------------------------|:---------------|
+| virus                     | Virus                   | UpdatedDate    |
+| case                      | Case                    | LastUpdateDate |
+| human_specimen            | LabSpecimen             | LastUpdateDate |
+| environmental_sample      | EnvSample               | LastUpdateDate |
+| activity                  | Activity                | LastUpdateDate |
+| sub_activity              | SubActivity             | UpdatedDate    |
+| lqas                      | Lqas                    | Start          |
+| im                        | Im                      | PublishDate    |
+| historized_synonyms       | HistorizedSynonyms      | LastUpdateDate |
+| historized_geoplace_names | HistorizedGeoplaceNames | LastUpdateDate |
+
+Each row records the short `table_name` you pass to `tables =`, the
+OData `endpoint` it maps to, and the `date_field` used for both
+filtering and the duplicate-resolution tiebreak. An unknown name aborts
+with the list of valid ones, so a typo fails fast rather than fetching
+nothing.
+
+## Choosing what to fetch
+
+Four arguments narrow the pull:
+
+| Argument | Effect |
+|----|----|
+| `min_date` / `max_date` | the date range, aligned to whole years (default `2000-01-01` to today) |
+| `region` | a WHO region filter (`"Global"`, `"AFRO"`, `"EMRO"`, …) |
+| `country_code` | an ISO3 code (e.g. `"NGA"`) added as an exact-match clause |
+
+``` r
+
+# Nigeria only, 2018 through last year, AFRO region
+polished::get_polis_data(
+  tables = "case",
+  min_date = "2018-01-01",
+  max_date = "2024-12-31",
+  region = "AFRO",
+  country_code = "NGA",
+  return = "df"
+)
+```
+
+Because date bounds are year-aligned, `min_date = "2018-06-30"` fetches
+from `2018-01-01` regardless — the function never returns fewer rows
+than the year covering your bound.
+
+## Where the data lives, and how resume works
+
+Every table is fetched into a per-year *part file* under the cache
+folder, with a tiny metadata sidecar, before being merged into one
+canonical file:
+
+    <polis_folder>/data/
+    ├── im.rds                      # canonical, merged file you read
+    └── .parts/im/
+        ├── year_2023.rds           # one part per calendar year
+        ├── year_2023.meta.rds      # row count + Id range sidecar
+        └── year_2024.rds
+
+The part files **are the resume marker**. Each year is an independent
+Id-range walk that flushes to its part after every 2000-row batch, so if
+a run dies mid-pull — a dropped connection, a Ctrl-C, an OOM — the next
+call picks up at `Id gt max(Id)` for each year. Worst-case lost work is
+the single in-flight batch.
+
+`polis_folder` defaults to
+`tools::R_user_dir("polished", which = "cache")`, the standard per-user
+cache location, so incremental updates persist across sessions without
+you choosing a path. Pass an explicit folder to keep data alongside a
+project instead:
+
+``` r
+
+polished::get_polis_data(tables = "im", polis_folder = "data/polis")
+```
+
+### Incremental updates
+
+Re-running the same call is the update path. The function asks POLIS for
+the current row count, compares it against what the part files already
+hold, and:
+
+- if the cache already covers the count, it **skips the pull entirely**
+  (just re-merging parts to the canonical file); otherwise
+- it walks each year from its last cached `Id` forward, fetching only
+  the new rows.
+
+So a daily cron that calls `get_polis_data(tables = "case")` downloads
+the full history once and only the delta thereafter.
+
+To force a clean re-pull instead of resuming, pass `force = TRUE` (this
+deletes the table’s parts and canonical file first).
+
+## Going faster with parallel workers
+
+Each calendar year is an independent walk, so years can be fetched
+concurrently. `workers > 1` dispatches them across a
+[`parallel::makePSOCKcluster()`](https://rdrr.io/r/parallel/makeCluster.html)
+— the same transport on Windows, macOS, and Linux — while a single live
+progress bar polls the part files so you watch rows accumulate across
+workers in real time:
+
+``` r
+
+polished::get_polis_data(
+  tables = "virus",
+  workers = parallel::detectCores() - 1L
+)
+```
+
+> **Important**
+>
+> PSOCK workers start fresh R sessions and load `polished` with
+> [`library()`](https://rdrr.io/r/base/library.html), so the package
+> must be **installed** for parallel mode — a `devtools::load_all()`
+> session is not enough. With `workers = 1L` (the default) a single
+> sequential loop drives the bar per batch and has no such requirement.
+
+## What you get back
+
+The `return` argument decides the shape of the result; the data is
+always written to disk regardless.
+
+| `return` | Result |
+|----|----|
+| `"invisible"` (default) | invisible `NULL` — data is on disk |
+| `"df"` | a single data.frame (errors if more than one table was selected) |
+| `"list"` | a named list of data.frames, one per table |
+| `"auto"` | a data.frame for one table, a named list for several |
+| `"paths"` | a named character vector of canonical file paths, nothing read into memory |
+
+``` r
+
+# A named list of data.frames
+tabs <- polished::get_polis_data(tables = c("case", "virus"), return = "list")
+
+# Just the paths — useful for very large tables you'll read lazily
+paths <- polished::get_polis_data(tables = "case", return = "paths")
+arrow::read_parquet(paths[["case"]])
+```
+
+### Output formats
+
+`output_format` controls how the canonical file is written: `"rds"`
+(default), `"rda"`, `"csv"`, `"parquet"`, or `"qs2"`. The `parquet` and
+`qs2` formats need the `arrow` and `qs2` packages respectively.
+
+``` r
+
+polished::get_polis_data(tables = "case", output_format = "parquet")
+```
+
+## Completeness verification
+
+POLIS occasionally truncates a query under load and returns a partial
+page even when more rows exist. With `auto_refetch = TRUE` (the
+default), after each table finishes the function:
+
+1.  uses the metadata sidecars to detect a gap cheaply (row-count and
+    Id-range mismatch against POLIS’s reported `@odata.count`);
+2.  only if a gap is found, issues a lightweight `$select=Id` probe to
+    list the canonical Id set; and
+3.  refetches any missing Ids via `Id in (...)` chunks and merges them
+    in, de-duplicating by `Id` keeping the latest update date.
+
+Set `auto_refetch = FALSE` to trust whatever is on disk and skip the
+check — for example in the smoke-test path, or when you know the pull
+completed cleanly and want to save the verification round-trip.
+
+## Other options worth knowing
+
+| Argument | What it does |
+|----|----|
+| `keep_archives` | when `> 0`, also writes a timestamped copy under `data/archive/` on each save and prunes older copies beyond this many |
+| `log_file` | path to a per-batch `.rds` log of what was fetched, when, and how many rows |
+| `quiet` | suppresses headers, progress bars, and the info alerts |
+| `polis_api_key` | the key; defaults to `Sys.getenv("POLIS_API_KEY")` |
+
+## From download to clean
+
+[`get_polis_data()`](https://truenomad.github.io/polished/reference/get_polis_data.md)
+gets you a faithful local copy of POLIS; the cleaners take it from
+there. A typical flow pulls a table, then recovers any missing
+administrative geography from the EPID:
+
+``` r
+
+cases <- polished::get_polis_data(tables = "case", return = "df")
+
+cleaned <- polished::impute_geo_from_epid(cases)
+cleaned$qa # what was filled, and what was left unresolved
+```
+
+See the *Recovering geography from EPIDs* vignette for that second step
+in detail, and
+[`?get_polis_data`](https://truenomad.github.io/polished/reference/get_polis_data.md)
+for the complete argument reference.
