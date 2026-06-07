@@ -14,7 +14,7 @@ Description: One-function interface to the WHO POLIS OData API. Works
     parallel year-fetching via a PSOCK cluster, and post-download
     completeness verification.
 License: MIT + file LICENSE
-URL: https://github.com/truenomad/polished
+URL: https://github.com/truenomad/polished, https://truenomad.github.io/polished/
 BugReports: https://github.com/truenomad/polished/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

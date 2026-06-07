@@ -1,0 +1,39 @@
+url: https://truenomad.github.io/polished/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Parse EPIDs
+  desc: >
+    Pure functions that pull codes out of an EPID identifier — usable on any
+    data frame, independent of the imputation cascade.
+  contents:
+  - epid_split
+  - epid_country_code
+  - epid_prefix
+  - epid_strip_contact
+- title: Build references
+  desc: >
+    Lookups that recover an admin value from sibling records — by exact EPID
+    or by geographic prefix.
+  contents:
+  - build_admin_ref
+  - build_prefix_ref
+- title: Resolve country
+  desc: >
+    Map a country code to a name / ISO3, never guessing on ambiguity.
+  contents:
+  - resolve_epid_country
+- title: Impute geography
+  desc: >
+    The orchestrator: a provenance-stamped cascade that fills missing admin
+    names and GUIDs without overwriting or fabricating.
+  contents:
+  - impute_geo_from_epid
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - epid-geo-cleaning
