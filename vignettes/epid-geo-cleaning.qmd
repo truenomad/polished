@@ -47,6 +47,7 @@ kind of messy input it is built for:
 
 ```{r}
 #| label: messy-input
+#| echo: false
 cases <- tibble::tibble(
   epid = c(
     "NIE-BOR-MMC-24-001", # fully geocoded — a donor
@@ -60,25 +61,25 @@ cases <- tibble::tibble(
     "NIE-YOB-DAM-24-009", # district missing — and the code is ambiguous
     "NIE-KAN-XYZ-24-001" # district missing — nothing to triangulate from
   ),
-  yronset = c(2024, 2024, 2024, 2023, 2024, 2024, 2024, 2024, 2024, 2024),
-  place.admin.0 = c(
+  year_onset = c(2024, 2024, 2024, 2023, 2024, 2024, 2024, 2024, 2024, 2024),
+  adm0 = c(
     "NIGERIA", "NIGERIA", "NIGERIA", "NIGERIA", "NIGERIA",
     NA, "NIGERIA", "NIGERIA", "NIGERIA", "NIGERIA"
   ),
-  place.admin.1 = c(
+  adm1 = c(
     "BORNO", "BORNO", "BORNO", "BORNO", "BORNO",
     "LUANDA", "YOBE", "YOBE", "YOBE", "KANO"
   ),
-  place.admin.2 = c(
+  adm2 = c(
     "MAIDUGURI", NA, NA, "JERE", NA,
     "CACUACO", "DAMATURU", "POTISKUM", NA, NA
   ),
-  Admin2GUID = c(
+  adm2_guid = c(
     "guid-mmc", NA, NA, "guid-jere", NA,
     "guid-cac", "guid-dam", "guid-pot", NA, NA
   )
 )
-cases |> dplyr::select(epid, place.admin.0, place.admin.2, Admin2GUID)
+cases |> dplyr::select(epid, adm0, adm2, adm2_guid)
 ```
 
 Five rows are missing their district (and four their GUID); one is missing its
@@ -103,11 +104,11 @@ country_ref <- tibble::tibble(
 result <- polished::impute_geo_from_epid(
   cases,
   epid_var = "epid",
-  year_var = "yronset",
-  admin0_var = "place.admin.0",
-  admin1_var = "place.admin.1",
-  admin2_var = "place.admin.2",
-  guid_vars = c(adm2 = "Admin2GUID"),
+  year_var = "year_onset",
+  admin0_var = "adm0",
+  admin1_var = "adm1",
+  admin2_var = "adm2",
+  guid_vars = c(adm2 = "adm2_guid"),
   country_ref = country_ref,
   year_window = 1
 )
@@ -137,7 +138,7 @@ companion column is the audit trail: it records *how* each cell got its value.
 ```{r}
 #| label: data-out
 result$data |>
-  dplyr::select(epid, place.admin.2, place.admin.2_source, Admin2GUID)
+  dplyr::select(epid, adm2, adm2_source, adm2_guid)
 ```
 
 Every `<col>_source` is a factor with these levels:
@@ -175,8 +176,8 @@ Admin0 tells the same story through a different strategy:
 ```{r}
 #| label: data-admin0
 result$data |>
-  dplyr::filter(place.admin.0_source != "original") |>
-  dplyr::select(epid, place.admin.0, place.admin.0_source)
+  dplyr::filter(adm0_source != "original") |>
+  dplyr::select(epid, adm0, adm0_source)
 ```
 
 The Angola row had no country name; `country_prefix` recovered it from the `AGO`
@@ -286,20 +287,21 @@ strategies and lean entirely on a reference table keyed on `epid` or `prefix`:
 #| label: reference-only
 nameless <- tibble::tibble(
   epid = c("NIE-BOR-MMC-24-031", "AGO-LUA-CAC-24-050"),
-  place.admin.2 = c(NA_character_, NA_character_)
+  adm2 = c(NA_character_, NA_character_)
 )
 district_lookup <- tibble::tibble(
   prefix = c("NIE-BOR-MMC", "AGO-LUA-CAC"),
-  place.admin.2 = c("MAIDUGURI", "CACUACO")
+  adm2 = c("MAIDUGURI", "CACUACO")
 )
 polished::impute_geo_from_epid(
   nameless,
-  admin0_var = NULL, admin1_var = NULL, guid_vars = NULL,
+  admin0_var = NULL, admin1_var = NULL, admin2_var = "adm2",
+  guid_vars = NULL,
   reference = district_lookup,
   strategies = "reference",
   verbose = FALSE
 )$data |>
-  dplyr::select(epid, place.admin.2, place.admin.2_source)
+  dplyr::select(epid, adm2, adm2_source)
 ```
 
 ## Running it twice is safe
@@ -312,12 +314,17 @@ may execute more than once.
 #| label: idempotent
 second <- polished::impute_geo_from_epid(
   result$data,
-  guid_vars = c(adm2 = "Admin2GUID"),
+  epid_var = "epid",
+  year_var = "year_onset",
+  admin0_var = "adm0",
+  admin1_var = "adm1",
+  admin2_var = "adm2",
+  guid_vars = c(adm2 = "adm2_guid"),
   country_ref = country_ref,
   year_window = 1,
   verbose = FALSE
 )
-identical(second$data$place.admin.2, result$data$place.admin.2)
+identical(second$data$adm2, result$data$adm2)
 ```
 
 ## Building blocks (advanced)
