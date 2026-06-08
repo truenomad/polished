@@ -193,7 +193,7 @@ process_spatial <- function(
 
 #' Read and standardise one admin layer from any spatial source
 #'
-#' Resolves `pattern` to a dataset + layer via [.spatial_locate()], reads it,
+#' Resolves `pattern` to a dataset + layer via `.spatial_locate()`, reads it,
 #' snake_cases its columns, parses the start/end dates and their years,
 #' normalises the Cote d'Ivoire country name, and renames the geometry column to
 #' `shape`.
