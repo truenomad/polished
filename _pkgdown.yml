@@ -19,6 +19,16 @@ reference:
     fabricating on ambiguity.
   contents:
   - impute_geo_from_epid
+- title: Clean administrative spatial data
+  desc: >
+    Read WHO ADM0/ADM1/ADM2 boundary layers from any format, standardise the
+    names and repair the geometry (make-valid, sliver and hole removal), then
+    write cleaned shapes plus a year-expanded long shape. Two helpers ride
+    along: per-year expansion and point-to-admin recovery.
+  contents:
+  - process_spatial
+  - create_long_shape
+  - get_admin_info_from_coords
 - title: Building blocks
   desc: >
     The exported pieces the cascade is assembled from — parsers, the
@@ -39,3 +49,4 @@ articles:
   contents:
   - downloading-polis-data
   - epid-geo-cleaning
+  - cleaning-spatial-data
