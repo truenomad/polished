@@ -154,10 +154,10 @@ testthat::test_that("resolve_epid_country flags codes that map to >1 name", {
 testthat::test_that("self_ref fills a missing value from the same exact EPID", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-001"),
-    yronset = c(2023, 2024),
-    place.admin.0 = c("NIGERIA", "NIGERIA"),
-    place.admin.1 = c("BORNO", "BORNO"),
-    place.admin.2 = c("BOSSO", NA)
+    year_onset = c(2023, 2024),
+    adm0 = c("NIGERIA", "NIGERIA"),
+    adm1 = c("BORNO", "BORNO"),
+    adm2 = c("BOSSO", NA)
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -165,9 +165,9 @@ testthat::test_that("self_ref fills a missing value from the same exact EPID", {
     strategies = "self_ref",
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$place.admin.2, c("BOSSO", "BOSSO"))
+  testthat::expect_identical(res$data$adm2, c("BOSSO", "BOSSO"))
   testthat::expect_identical(
-    as.character(res$data$place.admin.2_source),
+    as.character(res$data$adm2_source),
     c("original", "self_ref")
   )
 })
@@ -175,10 +175,10 @@ testthat::test_that("self_ref fills a missing value from the same exact EPID", {
 testthat::test_that("prefix_match fills via the prefix + year for a different serial", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
-    yronset = c(2024, 2024),
-    place.admin.0 = c("NIGERIA", "NIGERIA"),
-    place.admin.1 = c("BORNO", "BORNO"),
-    place.admin.2 = c("BOSSO", NA)
+    year_onset = c(2024, 2024),
+    adm0 = c("NIGERIA", "NIGERIA"),
+    adm1 = c("BORNO", "BORNO"),
+    adm2 = c("BOSSO", NA)
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -187,9 +187,9 @@ testthat::test_that("prefix_match fills via the prefix + year for a different se
     prefix_length = 11,
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$place.admin.2[2], "BOSSO")
+  testthat::expect_identical(res$data$adm2[2], "BOSSO")
   testthat::expect_identical(
-    as.character(res$data$place.admin.2_source[2]),
+    as.character(res$data$adm2_source[2]),
     "prefix_match"
   )
 })
@@ -201,10 +201,10 @@ testthat::test_that("prefix_match refuses to fill on an ambiguous prefix", {
       "NIE-BOS-AAA-24-002",
       "NIE-BOS-AAA-24-003"
     ),
-    yronset = c(2024, 2024, 2024),
-    place.admin.0 = c("NIGERIA", "NIGERIA", "NIGERIA"),
-    place.admin.1 = c("BORNO", "YOBE", NA),
-    place.admin.2 = c("BOSSO", "KUKAWA", NA)
+    year_onset = c(2024, 2024, 2024),
+    adm0 = c("NIGERIA", "NIGERIA", "NIGERIA"),
+    adm1 = c("BORNO", "YOBE", NA),
+    adm2 = c("BOSSO", "KUKAWA", NA)
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -213,11 +213,11 @@ testthat::test_that("prefix_match refuses to fill on an ambiguous prefix", {
     prefix_length = 11,
     verbose = FALSE
   )
-  testthat::expect_true(is.na(res$data$place.admin.2[3]))
-  admin2_qa <- res$qa[res$qa$column == "place.admin.2", ]
+  testthat::expect_true(is.na(res$data$adm2[3]))
+  admin2_qa <- res$qa[res$qa$column == "adm2", ]
   testthat::expect_true(admin2_qa$n_ambiguous >= 1L)
   testthat::expect_identical(
-    as.character(res$data$place.admin.2_source[3]),
+    as.character(res$data$adm2_source[3]),
     "unresolved"
   )
 })
@@ -229,9 +229,9 @@ testthat::test_that("prefix_match parent tie-break resolves an otherwise ambiguo
       "NIE-BOS-AAA-24-002",
       "NIE-BOS-AAA-24-003"
     ),
-    yronset = c(2024, 2024, 2024),
-    place.admin.1 = c("BORNO", "YOBE", "BORNO"),
-    place.admin.2 = c("BOSSO", "KUKAWA", NA)
+    year_onset = c(2024, 2024, 2024),
+    adm1 = c("BORNO", "YOBE", "BORNO"),
+    adm2 = c("BOSSO", "KUKAWA", NA)
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -241,17 +241,17 @@ testthat::test_that("prefix_match parent tie-break resolves an otherwise ambiguo
     prefix_length = 11,
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$place.admin.2[3], "BOSSO")
+  testthat::expect_identical(res$data$adm2[3], "BOSSO")
 })
 
 testthat::test_that("reference fills a dataset with no names of its own", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "AGO-LUA-BBB-24-001"),
-    place.admin.2 = c(NA_character_, NA_character_)
+    adm2 = c(NA_character_, NA_character_)
   )
   reference <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "AGO-LUA-BBB-24-001"),
-    place.admin.2 = c("BOSSO", "LUANDA")
+    adm2 = c("BOSSO", "LUANDA")
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -262,9 +262,9 @@ testthat::test_that("reference fills a dataset with no names of its own", {
     strategies = "reference",
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$place.admin.2, c("BOSSO", "LUANDA"))
+  testthat::expect_identical(res$data$adm2, c("BOSSO", "LUANDA"))
   testthat::expect_identical(
-    as.character(res$data$place.admin.2_source),
+    as.character(res$data$adm2_source),
     c("reference", "reference")
   )
 })
@@ -272,11 +272,11 @@ testthat::test_that("reference fills a dataset with no names of its own", {
 testthat::test_that("reference can be keyed on prefix", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
-    place.admin.2 = c(NA_character_, NA_character_)
+    adm2 = c(NA_character_, NA_character_)
   )
   reference <- tibble::tibble(
     prefix = "NIE-BOS-AAA",
-    place.admin.2 = "BOSSO"
+    adm2 = "BOSSO"
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -288,13 +288,13 @@ testthat::test_that("reference can be keyed on prefix", {
     prefix_length = 11,
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$place.admin.2, c("BOSSO", "BOSSO"))
+  testthat::expect_identical(res$data$adm2, c("BOSSO", "BOSSO"))
 })
 
 testthat::test_that("country_prefix resolves Admin0 from a crosswalk", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "AGO-LUA-BBB-24-001"),
-    place.admin.0 = c(NA_character_, NA_character_)
+    adm0 = c(NA_character_, NA_character_)
   )
   country_ref <- tibble::tibble(
     code = c("NIE", "AGO"),
@@ -311,9 +311,9 @@ testthat::test_that("country_prefix resolves Admin0 from a crosswalk", {
     canonicalise = FALSE,
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$place.admin.0, c("NIGERIA", "ANGOLA"))
+  testthat::expect_identical(res$data$adm0, c("NIGERIA", "ANGOLA"))
   testthat::expect_identical(
-    as.character(res$data$place.admin.0_source),
+    as.character(res$data$adm0_source),
     c("country_prefix", "country_prefix")
   )
 })
@@ -323,8 +323,8 @@ testthat::test_that("country_prefix resolves Admin0 from a crosswalk", {
 testthat::test_that("original values are never overwritten", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
-    yronset = c(2024, 2024),
-    place.admin.2 = c("REALPLACE", "OTHERPLACE")
+    year_onset = c(2024, 2024),
+    adm2 = c("REALPLACE", "OTHERPLACE")
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -334,29 +334,29 @@ testthat::test_that("original values are never overwritten", {
     verbose = FALSE
   )
   testthat::expect_identical(
-    res$data$place.admin.2,
+    res$data$adm2,
     c("REALPLACE", "OTHERPLACE")
   )
-  testthat::expect_true(all(res$data$place.admin.2_source == "original"))
+  testthat::expect_true(all(res$data$adm2_source == "original"))
 })
 
 testthat::test_that("GUID columns are filled like admin values", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
-    yronset = c(2024, 2024),
-    place.admin.2 = c("BOSSO", "BOSSO"),
-    Admin2GUID = c("g-bosso", NA)
+    year_onset = c(2024, 2024),
+    adm2 = c("BOSSO", "BOSSO"),
+    adm2_guid = c("g-bosso", NA)
   )
   res <- polished::impute_geo_from_epid(
     cases,
     admin0_var = NULL,
     admin1_var = NULL,
-    guid_vars = c(adm2 = "Admin2GUID"),
+    guid_vars = c(adm2 = "adm2_guid"),
     strategies = "prefix_match",
     prefix_length = 11,
     verbose = FALSE
   )
-  testthat::expect_identical(res$data$Admin2GUID, c("g-bosso", "g-bosso"))
+  testthat::expect_identical(res$data$adm2_guid, c("g-bosso", "g-bosso"))
 })
 
 testthat::test_that("QA counts reconcile: missing_before == filled + unresolved", {
@@ -366,10 +366,10 @@ testthat::test_that("QA counts reconcile: missing_before == filled + unresolved"
       "NIE-BOS-AAA-24-002",
       "AGO-LUA-BBB-24-001"
     ),
-    yronset = c(2024, 2024, 2024),
-    place.admin.0 = c("NIGERIA", NA, "ANGOLA"),
-    place.admin.1 = c("BORNO", NA, "LUANDA"),
-    place.admin.2 = c("BOSSO", NA, "LUANDA")
+    year_onset = c(2024, 2024, 2024),
+    adm0 = c("NIGERIA", NA, "ANGOLA"),
+    adm1 = c("BORNO", NA, "LUANDA"),
+    adm2 = c("BOSSO", NA, "LUANDA")
   )
   res <- polished::impute_geo_from_epid(
     cases,
@@ -391,8 +391,8 @@ testthat::test_that("QA counts reconcile: missing_before == filled + unresolved"
 testthat::test_that("running twice changes nothing on the second pass", {
   cases <- tibble::tibble(
     epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
-    yronset = c(2024, 2024),
-    place.admin.2 = c("BOSSO", NA)
+    year_onset = c(2024, 2024),
+    adm2 = c("BOSSO", NA)
   )
   first <- polished::impute_geo_from_epid(
     cases,
@@ -413,16 +413,16 @@ testthat::test_that("running twice changes nothing on the second pass", {
     verbose = FALSE
   )
   testthat::expect_identical(
-    second$data$place.admin.2,
-    first$data$place.admin.2
+    second$data$adm2,
+    first$data$adm2
   )
 })
 
 testthat::test_that("blank, lowercase, and whitespace EPIDs do not error", {
   cases <- tibble::tibble(
     epid = c("nie-bos-aaa-24-001", "  ", NA, "NIE-BOS-AAA-24-002"),
-    yronset = c(2024, 2024, 2024, 2024),
-    place.admin.2 = c("BOSSO", NA, NA, NA)
+    year_onset = c(2024, 2024, 2024, 2024),
+    adm2 = c("BOSSO", NA, NA, NA)
   )
   testthat::expect_no_error(
     polished::impute_geo_from_epid(
@@ -440,8 +440,8 @@ testthat::test_that("blank, lowercase, and whitespace EPIDs do not error", {
 testthat::test_that("impute_geo_from_epid validates inputs", {
   good <- tibble::tibble(
     epid = "NIE-BOS-AAA-24-001",
-    yronset = 2024,
-    place.admin.2 = "BOSSO"
+    year_onset = 2024,
+    adm2 = "BOSSO"
   )
   testthat::expect_error(
     polished::impute_geo_from_epid(good[0, ], verbose = FALSE),
