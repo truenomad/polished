@@ -8,7 +8,6 @@ clean_afp(
   data,
   cfg = polis_config(),
   shape = NULL,
-  coord_shape = NULL,
   impute_geo = TRUE,
   verbose = TRUE
 )
@@ -19,19 +18,19 @@ clean_afp(
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Supply
 \code{cfg$synonyms} to remap merged EPIDs and \code{cfg$qa} to route ambiguity flags.}
 
-\item{shape}{Optional district shape used to reconcile admin names/GUIDs via
-\code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}} (adds a \code{geo_source} column). Either form works:
-a long ADM2 attribute table (\code{spatial_adm2_long_shape}), or the polygon
-layer (\code{spatial_global_adm2}) -- a polygon is expanded to its long form
-here (as \code{\link[=process_spatial]{process_spatial()}} does) and \emph{also} serves as \code{coord_shape}, so a
-single polygon input drives both the GUID reconcile and coordinate
-recovery. Default \code{NULL} (no reconciliation).}
-
-\item{coord_shape}{Optional \code{sf} polygon layer of districts
-(\code{spatial_global_adm2}). When supplied (or when \code{shape} is itself a
-polygon), cases still missing \code{adm2}/\code{adm2_guid} but carrying coordinates
-have their admin recovered by a point-in-polygon join via
-\code{\link[=impute_geo_from_coords]{impute_geo_from_coords()}}. Default \code{NULL}.}
+\item{shape}{Optional district shape that drives admin recovery. Either form
+works and a single input does everything:
+\itemize{
+\item a polygon layer (\code{spatial_global_adm2}, an \code{sf} object) -- its long
+form is derived here (as \code{\link[=process_spatial]{process_spatial()}} does) for the GUID/name
+reconcile via \code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}}, and its geometry drives
+coordinate recovery via \code{\link[=impute_geo_from_coords]{impute_geo_from_coords()}} for cases still
+missing a district but carrying coordinates;
+\item a long ADM2 attribute table (\code{spatial_adm2_long_shape}) -- reconcile
+only, since it has no geometry for the coordinate step.
+}
+Reconciliation adds a \code{geo_source} column. Default \code{NULL} (no shape-based
+recovery).}
 
 \item{impute_geo}{If \code{TRUE} (default) cases still missing \code{adm1}/\code{adm2} (and
 their GUIDs) after reconciliation have them recovered from the EPID prefix

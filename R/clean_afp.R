@@ -41,18 +41,19 @@
 #' @param data A raw POLIS case data frame.
 #' @param cfg A [polis_config()] object (default `polis_config()`). Supply
 #'   `cfg$synonyms` to remap merged EPIDs and `cfg$qa` to route ambiguity flags.
-#' @param shape Optional district shape used to reconcile admin names/GUIDs via
-#'   [reconcile_admin_guids()] (adds a `geo_source` column). Either form works:
-#'   a long ADM2 attribute table (`spatial_adm2_long_shape`), or the polygon
-#'   layer (`spatial_global_adm2`) -- a polygon is expanded to its long form
-#'   here (as [process_spatial()] does) and *also* serves as `coord_shape`, so a
-#'   single polygon input drives both the GUID reconcile and coordinate
-#'   recovery. Default `NULL` (no reconciliation).
-#' @param coord_shape Optional `sf` polygon layer of districts
-#'   (`spatial_global_adm2`). When supplied (or when `shape` is itself a
-#'   polygon), cases still missing `adm2`/`adm2_guid` but carrying coordinates
-#'   have their admin recovered by a point-in-polygon join via
-#'   [impute_geo_from_coords()]. Default `NULL`.
+#' @param shape Optional district shape that drives admin recovery. Either form
+#'   works and a single input does everything:
+#'   \itemize{
+#'     \item a polygon layer (`spatial_global_adm2`, an `sf` object) -- its long
+#'       form is derived here (as [process_spatial()] does) for the GUID/name
+#'       reconcile via [reconcile_admin_guids()], and its geometry drives
+#'       coordinate recovery via [impute_geo_from_coords()] for cases still
+#'       missing a district but carrying coordinates;
+#'     \item a long ADM2 attribute table (`spatial_adm2_long_shape`) -- reconcile
+#'       only, since it has no geometry for the coordinate step.
+#'   }
+#'   Reconciliation adds a `geo_source` column. Default `NULL` (no shape-based
+#'   recovery).
 #' @param impute_geo If `TRUE` (default) cases still missing `adm1`/`adm2` (and
 #'   their GUIDs) after reconciliation have them recovered from the EPID prefix
 #'   via [impute_geo_from_epid()] (self-reference + prefix matching, every row
@@ -83,7 +84,6 @@ clean_afp <- function(
   data,
   cfg = polis_config(),
   shape = NULL,
-  coord_shape = NULL,
   impute_geo = TRUE,
   verbose = TRUE
 ) {
@@ -137,10 +137,10 @@ clean_afp <- function(
   step("Standardising admin names", "Standardised admin names")
   data <- fix_geo_names(data)
   long_shape <- NULL
-  poly_shape <- coord_shape
+  poly_shape <- NULL
   if (!is.null(shape)) {
     if (inherits(shape, "sf")) {
-      poly_shape <- poly_shape %||% shape
+      poly_shape <- shape
       step(
         "Building the long district lookup from the shape",
         "Built the long district lookup from the shape"
