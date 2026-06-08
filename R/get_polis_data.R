@@ -69,11 +69,6 @@
 #'   per-user cache location, persistent across sessions so incremental
 #'   updates "just work". Pass an explicit path to keep data alongside a
 #'   project.
-#' @param return One of `"invisible"` (default -- no return value; data
-#'   is on disk), `"auto"` (data.frame for a single table, named list of
-#'   data.frames for multiple), `"df"` (force a single data.frame; errors
-#'   for multi-table calls), `"list"` (always a named list), or `"paths"`
-#'   (named character vector of file paths, no data read into memory).
 #' @param output_format Output format. One of `"rds"` (default), `"rda"`,
 #'   `"csv"`, `"parquet"`, `"qs2"`. `"parquet"` requires the `arrow`
 #'   package; `"qs2"` requires the `qs2` package.
@@ -96,31 +91,27 @@
 #' @param quiet Suppress headers, progress bars, and the info alert.
 #'   Default `FALSE`.
 #'
-#' @return Depends on `return`:
-#' * `"invisible"` (default) -- invisible `NULL`. Data is on disk.
-#' * `"auto"` -- data.frame if `length(tables) == 1`, named list of
-#'   data.frames otherwise.
-#' * `"df"` -- single data.frame (errors when more than one table was
-#'   selected).
-#' * `"list"` -- named list of data.frames, one per selected table.
-#' * `"paths"` -- named character vector of canonical file paths.
-#'
-#' Side effect: writes `<polis_folder>/data/<table_name>.<ext>` plus a
-#' `.parts/<table_name>/` cache for each selected table.
+#' @return `NULL`, invisibly. `get_polis_data()` is called purely for its
+#'   side effect: each selected table is written to
+#'   `<polis_folder>/data/<table_name>.<ext>` (plus a `.parts/<table_name>/`
+#'   resume cache). The data is never loaded into memory, so a
+#'   multi-million-row pull cannot inflate your session. Read a table back
+#'   from disk yourself when you need it, e.g.
+#'   `readRDS(file.path(polis_folder, "data", "im.rds"))`.
 #'
 #' @examples
 #' \dontrun{
-#' # Pull one table; data lives on disk
+#' # Pull one table into the default per-user cache
 #' get_polis_data(tables = "im")
 #'
-#' # Same call but get the data.frame back
-#' df <- get_polis_data(tables = "im", return = "df")
+#' # Read it back from disk when you need it
+#' cache <- tools::R_user_dir("polished", which = "cache")
+#' im <- readRDS(file.path(cache, "data", "im.rds"))
 #'
 #' # All eight tables in parallel into a project folder
 #' get_polis_data(
 #'   polis_folder = "data/polis",
-#'   workers = parallel::detectCores() - 1L,
-#'   return = "paths"
+#'   workers = parallel::detectCores() - 1L
 #' )
 #' }
 #' @seealso [polis_tables_mapping] for the table catalogue.
@@ -132,7 +123,6 @@ get_polis_data <- function(
   region = "Global",
   country_code = NULL,
   polis_folder = tools::R_user_dir("polished", which = "cache"),
-  return = c("invisible", "auto", "df", "list", "paths"),
   output_format = c("rds", "rda", "csv", "parquet", "qs2"),
   workers = 1L,
   auto_refetch = TRUE,
@@ -142,7 +132,6 @@ get_polis_data <- function(
   polis_api_key = Sys.getenv("POLIS_API_KEY"),
   quiet = FALSE
 ) {
-  return_type <- match.arg(return)
   ext <- match.arg(output_format)
 
   if (!isTRUE(nzchar(polis_api_key))) {
@@ -168,22 +157,10 @@ get_polis_data <- function(
     ]
   }
 
-  if (identical(return_type, "df") && nrow(selected) > 1L) {
-    cli::cli_abort(c(
-      "x" = paste0(
-        "`return = \"df\"` requires a single table, but ",
-        nrow(selected),
-        " were selected."
-      ),
-      "i" = "Use {.code return = \"list\"} or pass a single table name."
-    ))
-  }
-
   data_dir <- file.path(polis_folder, "data")
   dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
   max_date <- as.Date(max_date)
-  results <- list()
 
   if (!isTRUE(quiet)) {
     cli::cli_h1("Downloading POLIS data")
@@ -306,11 +283,6 @@ get_polis_data <- function(
           " rows). Skipping."
         ))
       }
-      results[[nm]] <- list(
-        new_rows = 0L,
-        total_rows = current_rows,
-        path = out_file
-      )
       next
     }
 
@@ -342,7 +314,7 @@ get_polis_data <- function(
       ))
     }
 
-    results_yearly <- if (use_parallel) {
+    if (use_parallel) {
       .polis_dispatch_parallel(
         specs = specs,
         workers_actual = workers_actual,
@@ -479,12 +451,6 @@ get_polis_data <- function(
     }
     .polis_merge_parts(parts_dir, out_file, ext, date_field)
     .polis_archive(out_file, polis_folder, nm, ext, keep_archives)
-
-    cumulative_new <- sum(vapply(
-      results_yearly,
-      function(r) if (is.list(r)) as.integer(r$new_rows) else 0L,
-      integer(1)
-    ))
 
     # Completeness check across the full requested range -- not just the
     # newly-added window -- so prior silent drops in earlier sessions get
@@ -646,48 +612,12 @@ get_polis_data <- function(
         }
       }
     }
-
-    total_rows <- if (file.exists(out_file)) {
-      tryCatch(nrow(.polis_io_read(out_file, ext)), error = function(e) 0L)
-    } else {
-      0L
-    }
-    results[[nm]] <- list(
-      new_rows = cumulative_new,
-      total_rows = total_rows,
-      path = out_file
-    )
   }
 
-  # Translate the internal results list into the requested return type.
-  switch(
-    return_type,
-    "invisible" = invisible(NULL),
-    "paths" = invisible(vapply(results, function(r) r$path, character(1))),
-    "list" = lapply(results, function(r) {
-      if (file.exists(r$path)) {
-        .polis_io_read(r$path, ext)
-      } else {
-        data.frame()
-      }
-    }),
-    "df" = {
-      r <- results[[1L]]
-      if (file.exists(r$path)) .polis_io_read(r$path, ext) else data.frame()
-    },
-    "auto" = if (length(results) == 1L) {
-      r <- results[[1L]]
-      if (file.exists(r$path)) .polis_io_read(r$path, ext) else data.frame()
-    } else {
-      lapply(results, function(r) {
-        if (file.exists(r$path)) {
-          .polis_io_read(r$path, ext)
-        } else {
-          data.frame()
-        }
-      })
-    }
-  )
+  # Pure side effect: every selected table is written under
+  # <polis_folder>/data/. Nothing is returned -- read a table back from
+  # disk yourself (e.g. readRDS()) when you need it.
+  invisible(NULL)
 }
 
 #' POLIS table catalogue
