@@ -175,6 +175,65 @@ testthat::test_that("clean_es runs standalone and normalises admin names", {
   testthat::expect_false(any(is.na(out$year_collection)))
 })
 
+testthat::test_that("clean_es classification uses AFP WPV/cVDPV vocabulary", {
+  raw <- data.frame(
+    Id = 1:5,
+    EnviroSampleManualEditId = 1:5,
+    LastUpdateDate = rep("2024-03-01", 5),
+    CollectionDate = rep("2024-01-05", 5),
+    VirusTypes = c(
+      "cVDPV2",
+      "WILD1",
+      "NPEV, VACCINE3",
+      "VACCINE1, VACCINE3, WILD1",
+      NA
+    ),
+    VdpvClassifications = c("Circulating", NA, NA, NA, NA),
+    IsNPEV = c(NA, NA, TRUE, NA, NA),
+    IsNegative = c(NA, NA, NA, NA, TRUE),
+    Admin0Name = rep("NIGERIA", 5),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, verbose = FALSE)
+  out <- out[order(out$id), ]
+  # AFP-identical vocabulary: a circulating VDPV2 -> "cVDPV 2", wild -> "WPV 1"
+  testthat::expect_equal(out$classification_all[out$id == 1], "cVDPV 2")
+  testthat::expect_equal(out$classification_all[out$id == 2], "WPV 1")
+  # vaccine-only -> SABIN; NPEV present too but Sabin takes precedence
+  testthat::expect_equal(out$classification_all[out$id == 3], "SABIN")
+  testthat::expect_equal(out$sabin3[out$id == 3], 1L)
+  testthat::expect_equal(out$npev[out$id == 3], 1L)
+  # wild + vaccine co-detection -> the wild label wins for classification
+  testthat::expect_equal(out$classification_all[out$id == 4], "WPV 1")
+  testthat::expect_equal(out$sabin1[out$id == 4], 1L)
+  # tested negative, never typed -> NEGATIVE, and sabin is NA (untyped)
+  testthat::expect_equal(out$classification_all[out$id == 5], "NEGATIVE")
+  testthat::expect_true(is.na(out$sabin1[out$id == 5]))
+  # one filter works across both streams
+  testthat::expect_equal(
+    sum(grepl("WPV|cVDPV", out$classification_all)),
+    3L
+  )
+})
+
+testthat::test_that("clean_es reads logical Yes/No detection columns", {
+  raw <- data.frame(
+    Id = 1:2,
+    LastUpdateDate = rep("2024-03-01", 2),
+    CollectionDate = rep("2024-01-05", 2),
+    VirusTypes = c("NPEV", NA),
+    IsNPEV = c(TRUE, NA),
+    nVACCINE2 = c(TRUE, NA),
+    Admin0Name = rep("CHAD", 2),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, verbose = FALSE)
+  out <- out[order(out$id), ]
+  testthat::expect_equal(out$npev, c(1L, 0L))
+  testthat::expect_equal(out$nvaccine, c(1L, 0L))
+  testthat::expect_equal(out$ev_detect, c(1L, 0L))
+})
+
 testthat::test_that("clean_sia runs on activity alone", {
   activity <- data.frame(
     Id = c(1, 2),
