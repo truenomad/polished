@@ -1,0 +1,44 @@
+column_name,label
+EPID,Unique epidemiological identifier for the case (EPID number) — the primary case key in POLIS.
+AnonymousEPID,"De-identified version of the case EPID, safe to share outside the programme."
+SpecimenEPID,EPID of the specimen.
+SpecimenAnonymousEPID,De-identified specimen EPID.
+CaseAnonymousEPID,De-identified EPID of the case the specimen belongs to.
+Classification,"Final case classification (e.g. confirmed, compatible, discarded)."
+DiagnosisFinal,Final clinical diagnosis recorded for the case.
+ParalysisOnsetDate,Date the paralysis (symptoms) first began.
+NotificationDate,Date the case was first notified to the surveillance system.
+InvestigationDate,Date the case was investigated in the field.
+Stool1CollectionDate,Collection date of the 1st stool specimen.
+Stool2CollectionDate,Collection date of the 2nd stool specimen.
+AdequateSpecimen,Whether two adequate stool specimens were collected within the required window.
+AdequateSpecimenWithCondition,Adequate-specimen status taking specimen condition into account.
+FinalCellCultureResult,Final virus isolation (cell-culture) result.
+FinalITDResultName,Final intratypic differentiation (ITD) result identifying the virus type.
+VirusTypes,Poliovirus type(s) detected for this record.
+EmergenceGroup,Name of the VDPV emergence group the virus belongs to (e.g. a NIE-... lineage).
+VirusCluster,Genetic cluster the virus was assigned to.
+VdpvClassification,Classification of the vaccine-derived poliovirus (cVDPV / iVDPV / aVDPV).
+VaccineOrigin,Origin / lineage of the vaccine-related virus.
+VirusIsOrphan,Whether the virus is an 'orphan' (no closely related sequence found).
+EventName,Name of the outbreak/importation event linked to the record.
+SiteName,Name of the environmental-surveillance collection site.
+SiteCode,Code of the environmental-surveillance collection site.
+CollectionDate,Date the (environmental/stool) sample was collected.
+IsNPEV,Whether a non-polio enterovirus was detected.
+IsNegative,Whether the sample tested negative for poliovirus.
+ActivityStatus,"Status of the immunization campaign (planned, confirmed, done, cancelled...)."
+TargetPopulation,Number of people targeted by the campaign.
+AreaPopulation,Population of the campaign area.
+WHORegion,"WHO region the record belongs to (AFRO, EMRO, EURO, SEARO, WPRO, AMRO)."
+ISTName,Inter-country Support Team (sub-regional grouping) name.
+DatasetAfp,Whether this record originates from the AFP case dataset (yes/no).
+DatasetWild,Whether this record originates from the wild-poliovirus dataset (yes/no).
+DatasetLab,Whether this record originates from the laboratory dataset (yes/no).
+DatasetManual,Whether this record was entered manually (yes/no).
+nVDPV2,Novel vaccine-derived poliovirus type 2 detected (yes/no).
+nVACCINE2,Novel-OPV2 vaccine virus detected (yes/no).
+PV1,Poliovirus type 1 detected (yes/no).
+PV2,Poliovirus type 2 detected (yes/no).
+PV3,Poliovirus type 3 detected (yes/no).
+Location,Free-text / concatenated geographic location of the record.

@@ -1,13 +1,75 @@
-# Internal helpers for get_polis_data().
+# Package utilities: shared primitives (some exported) and internal helpers.
 #
-# None are exported. Grouped by role:
-#   - I/O + housekeeping
-#   - HTTP primitives
-#   - Per-year worker + on-disk caching
-#   - Parallel dispatch
+# Grouped by role:
+#   - General cross-cutting helpers (used across modules)
+#   - Column naming & ordering (exported)
+#   - Deduplication & record reconciliation (exported primitives)
+#   - get_polis_data(): I/O + housekeeping
+#   - get_polis_data(): HTTP primitives
+#   - get_polis_data(): per-year worker + on-disk caching
+#   - get_polis_data(): parallel dispatch
+#
+# Domain-specific helpers stay co-located with the code they serve (e.g.
+# .afp_*, .spatial_*, .epid_*); only genuinely shared primitives live here.
 
 # ---------------------------------------------------------------------
-# I/O + housekeeping
+# General cross-cutting helpers
+# ---------------------------------------------------------------------
+
+# Null-coalescing helper (internal; mirrors rlang::`%||%` without the dep).
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+# Resolve a path to a packaged extdata file, dev-mode aware.
+.polis_extdata_path <- function(file) {
+  path <- system.file("extdata", file, package = "polished")
+  if (nzchar(path) && file.exists(path)) {
+    return(path)
+  }
+  # development fallback (package not installed)
+  dev <- file.path("inst", "extdata", file)
+  if (file.exists(dev)) {
+    return(dev)
+  }
+  cli::cli_abort("Could not locate extdata file {.file {file}}.")
+}
+
+# Trim whitespace and convert empty strings to NA across character columns.
+# POLIS exports often arrive padded or with "" for a true missing value;
+# normalising both up front lets every downstream check treat "absent" alike.
+# Shared by all cleaners.
+.polis_clean_strings <- function(data) {
+  dplyr::mutate(
+    data,
+    dplyr::across(
+      dplyr::where(is.character),
+      \(x) dplyr::na_if(trimws(x), "")
+    )
+  )
+}
+
+# Humanise a count for messages: 1991076 -> "1.99M", 142641 -> "142.6K".
+.polis_big_num <- function(x) {
+  x <- suppressWarnings(as.numeric(x))
+  if (length(x) != 1L || is.na(x) || !is.finite(x)) {
+    return("0")
+  }
+  if (abs(x) >= 1e6) {
+    sprintf("%.2fM", x / 1e6)
+  } else if (abs(x) >= 1e3) {
+    sprintf("%.1fK", x / 1e3)
+  } else {
+    formatC(x, format = "d", big.mark = ",")
+  }
+}
+
+# Normalise a GUID to an upper-case, brace-free comparison key ({ABC} -> ABC).
+.geo_guid_key <- function(x) toupper(gsub("[{}]", "", x))
+
+# Normalise a GUID to the canonical lower-case, brace-free output form.
+.geo_guid_canon <- function(x) tolower(gsub("[{}]", "", x))
+
+# ---------------------------------------------------------------------
+# get_polis_data(): I/O + housekeeping
 # ---------------------------------------------------------------------
 
 # get_polis_data only writes rds/rda/csv/parquet/qs2.
@@ -1186,4 +1248,688 @@
     }
   }
   result_values
+}
+
+# ---------------------------------------------------------------------
+# Pipeline file I/O (read raw tables / write cleaned outputs)
+# ---------------------------------------------------------------------
+
+# Read a data file, dispatching on extension (.rds/.csv/.parquet/.qs2).
+.polis_read <- function(path) {
+  ext <- tolower(tools::file_ext(path))
+  switch(
+    ext,
+    rds = readRDS(path),
+    csv = readr::read_csv(path, show_col_types = FALSE, progress = FALSE),
+    parquet = .polis_require("arrow", "read .parquet")$read_parquet(path),
+    qs2 = .polis_require("qs2", "read .qs2")$qs_read(path),
+    cli::cli_abort("Unsupported file type {.val {ext}} for {.file {path}}.")
+  )
+}
+
+# Write a data frame, dispatching on extension; returns `path` invisibly.
+.polis_write <- function(obj, path) {
+  dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+  ext <- tolower(tools::file_ext(path))
+  switch(
+    ext,
+    rds = saveRDS(obj, path),
+    csv = readr::write_csv(obj, path),
+    parquet = .polis_require("arrow", "write .parquet")$write_parquet(
+      obj,
+      path
+    ),
+    qs2 = .polis_require("qs2", "write .qs2")$qs_save(obj, path),
+    cli::cli_abort("Unsupported file type {.val {ext}} for {.file {path}}.")
+  )
+  invisible(path)
+}
+
+# Require an optional package, returning its namespace, with a clear message.
+.polis_require <- function(pkg, what) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    cli::cli_abort("Package {.pkg {pkg}} is needed to {what}.")
+  }
+  asNamespace(pkg)
+}
+
+# Read the raw POLIS tables present in a directory (most recent match wins).
+.polis_read_inputs <- function(
+  dir,
+  patterns = c(
+    afp = "Human",
+    es = "EnvSample",
+    virus = "Virus",
+    activity = "Activity",
+    subactivity = "SubActivity"
+  )
+) {
+  if (!dir.exists(dir)) {
+    cli::cli_abort("Input directory {.file {dir}} does not exist.")
+  }
+  files <- list.files(dir, full.names = TRUE)
+  inputs <- list()
+  for (key in names(patterns)) {
+    hit <- sort(
+      files[grepl(patterns[[key]], basename(files))],
+      decreasing = TRUE
+    )
+    if (length(hit) > 0) {
+      inputs[[key]] <- .polis_read(hit[[1]])
+      cli::cli_alert_info(
+        "Read {.val {key}} from {.file {basename(hit[[1]])}}."
+      )
+    }
+  }
+  inputs
+}
+
+# Write a named list of cleaned tibbles to a directory; returns `dir` invisibly.
+.polis_write_outputs <- function(cleaned, dir, format = "rds") {
+  for (key in names(cleaned)) {
+    .polis_write(cleaned[[key]], file.path(dir, paste0(key, ".", format)))
+  }
+  cli::cli_alert_success(
+    "Wrote {length(cleaned)} cleaned table{?s} to {.file {dir}}."
+  )
+  invisible(dir)
+}
+
+# ---------------------------------------------------------------------
+# Naming + input validation
+# ---------------------------------------------------------------------
+
+# Build the API-name -> Snake_Name rename vector from the packaged crosswalk.
+.polis_crosswalk_map <- function() {
+  cw <- polis_crosswalk()
+  cw <- cw[!is.na(cw$API_Name) & !is.na(cw$Snake_Name), ]
+  cw <- cw[!duplicated(cw$API_Name), ]
+  stats::setNames(cw$API_Name, cw$Snake_Name)
+}
+
+# Minimal up-front guard shared by all cleaners: non-empty data frame.
+.polis_check_input <- function(data, dataset) {
+  if (!is.data.frame(data)) {
+    cli::cli_abort("{.arg data} for {.val {dataset}} must be a data.frame.")
+  }
+  if (nrow(data) == 0) {
+    cli::cli_abort("{.arg data} for {.val {dataset}} is empty.")
+  }
+  invisible(data)
+}
+
+# ---------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------
+
+# Read every CSV under inst/extdata/rules into a named list keyed by file stem.
+.polis_load_rules <- function() {
+  rules_dir <- system.file("extdata", "rules", package = "polished")
+  if (!nzchar(rules_dir) || !dir.exists(rules_dir)) {
+    return(list())
+  }
+  files <- list.files(rules_dir, pattern = "\\.csv$", full.names = TRUE)
+  rules <- lapply(files, readr::read_csv, show_col_types = FALSE)
+  names(rules) <- tools::file_path_sans_ext(basename(files))
+  rules
+}
+
+# =============================================================================
+# Column-name standardisation
+#
+# Canonical names come from the package crosswalk (inst/extdata/crosswalk.csv).
+# The crosswalk is a corrections layer over janitor::clean_names(): for the
+# tokens janitor mis-splits (PoNS_OnSetDate -> pons_on_set_date, not
+# po_ns_...; CountryISO2Code -> country_iso2code) it pins the agreed Snake_Name.
+# Every other column is handled by janitor. There is deliberately no per-dataset
+# dictionary -- the crosswalk is the single source of truth for naming.
+# =============================================================================
+
+#' POLIS column crosswalk
+#'
+#' Returns the packaged crosswalk that maps raw POLIS API column names to the
+#' canonical `Snake_Name` used across cleaned datasets.
+#'
+#' @return A tibble with columns `Table`, `API_Name`, `Snake_Name`, `Web_Name`,
+#'   `Label`.
+#'
+#' @examples
+#' head(polis_crosswalk())
+#'
+#' @export
+polis_crosswalk <- function() {
+  path <- .polis_extdata_path("crosswalk.csv")
+  readr::read_csv(
+    path,
+    col_types = readr::cols(.default = readr::col_character()),
+    progress = FALSE
+  )
+}
+
+#' Standardise POLIS column names
+#'
+#' Renames raw POLIS columns to their canonical `Snake_Name` via the crosswalk,
+#' then applies [janitor::clean_names()] to everything the crosswalk does not
+#' cover. The result is fully snake_case with the agreed names for special
+#' tokens.
+#'
+#' @param data A raw POLIS data frame.
+#' @param crosswalk Rename vector from `.polis_crosswalk_map()` (default).
+#'
+#' @return `data` with canonical column names.
+#'
+#' @examples
+#' raw <- data.frame(PoNS_OnSetDate = 1, Admin0Name = "X", DateOnset = 2,
+#'   check.names = FALSE)
+#' names(standardise_names(raw))
+#'
+#' @export
+standardise_names <- function(data, crosswalk = .polis_crosswalk_map()) {
+  data <- dplyr::rename(data, dplyr::any_of(crosswalk))
+  janitor::clean_names(data)
+}
+
+#' Order columns: identifiers, then location, then time, then everything else
+#'
+#' Classifies each column by the first matching `column_roles` pattern and emits
+#' the groups in role order, then all unmatched columns. Order within a group is
+#' preserved.
+#'
+#' @param data A data frame.
+#' @param roles Ordered named list of regex patterns (see [polis_config()]'s
+#'   `column_roles`).
+#'
+#' @return The data frame with reordered columns.
+#'
+#' @export
+order_columns <- function(data, roles) {
+  remaining <- names(data)
+  ordered <- character(0)
+  for (pattern in roles) {
+    hit <- remaining[grepl(pattern, remaining)]
+    ordered <- c(ordered, hit)
+    remaining <- setdiff(remaining, hit)
+  }
+  dplyr::relocate(data, dplyr::all_of(c(ordered, remaining)))
+}
+
+# =============================================================================
+# Deduplication: upsert-by-Id keep-latest, plus an ambiguity tripwire
+#
+# POLIS is an Id-keyed, keep-latest store: a record is uniquely the row with
+# the newest update timestamp for its Id. polis_upsert() is the single primitive
+# that enforces that, used by both the download layer and the cleaners. It never
+# decides correctness from business columns -- that is what flag_ambiguous() is
+# for: it asserts the business key (e.g. epid + adm0) and routes violations to
+# QA instead of silently dropping a reclassified case.
+# =============================================================================
+
+#' Upsert by Id, keeping the latest record
+#'
+#' Combines an existing store with an optional new pull, optionally collapses
+#' exact duplicate rows at a finer grain, then keeps exactly one row per `id`:
+#' the one with the maximum `date`. This is unconditional (no Id-range
+#' shortcut), so a single primitive governs recency everywhere.
+#'
+#' @param store A data frame (the accumulated store, or simply the data to
+#'   dedup).
+#' @param pull Optional new data frame to upsert into `store`.
+#' @param id Name of the canonical identifier column (default `"id"`).
+#' @param date Name of the update-timestamp column used for recency
+#'   (default `"last_update_date"`).
+#' @param grain Optional character vector of columns defining a finer row grain.
+#'   When supplied, exact duplicates at this grain are collapsed (keep-latest)
+#'   before the per-`id` step.
+#'
+#' @return A data frame with one row per `id`.
+#'
+#' @examples
+#' df <- data.frame(
+#'   id = c(1, 1, 2),
+#'   last_update_date = as.Date(c("2024-01-01", "2024-03-01", "2024-02-01")),
+#'   value = c("old", "new", "x")
+#' )
+#' polis_upsert(df)
+#'
+#' @export
+polis_upsert <- function(
+  store,
+  pull = NULL,
+  id = "id",
+  date = "last_update_date",
+  grain = NULL
+) {
+  combined <- if (is.null(pull)) store else dplyr::bind_rows(store, pull)
+  if (!is.data.frame(combined) || nrow(combined) == 0) {
+    return(combined)
+  }
+
+  if (!id %in% names(combined)) {
+    cli::cli_warn(
+      "No {.field {id}} column found; falling back to exact-row dedup."
+    )
+    return(dplyr::distinct(combined))
+  }
+
+  if (!is.null(grain)) {
+    combined <- .polis_keep_latest(combined, keys = grain, date_col = date)
+  }
+  .polis_keep_latest(combined, keys = id, date_col = date)
+}
+
+#' Keep one row per key combination, latest by date
+#'
+#' Sorts by `date` descending and keeps the first row per `keys` combination.
+#' Uses data.table when available for speed, otherwise base R. Mirrors the
+#' download layer's keep-latest semantics.
+#'
+#' @param df A data frame.
+#' @param keys Character vector of key columns.
+#' @param date_col Name of the recency column (may be absent).
+#'
+#' @return A data frame with one row per `keys` combination.
+#'
+#' @keywords internal
+#' @noRd
+.polis_keep_latest <- function(df, keys, date_col) {
+  has_date <- date_col %in% names(df)
+
+  # Fast path: data.table sorts in place (the expensive step). We deliberately
+  # subset with base `duplicated()` on the key columns rather than
+  # `duplicated(dt, by = ...)`, because the data.table method only dispatches
+  # when the package is attached -- and we merely import it.
+  if (requireNamespace("data.table", quietly = TRUE)) {
+    dt <- data.table::as.data.table(df)
+    if (has_date) {
+      data.table::setorderv(
+        dt,
+        c(keys, date_col),
+        c(rep(1L, length(keys)), -1L),
+        na.last = TRUE
+      )
+    } else {
+      data.table::setorderv(dt, keys)
+    }
+    df <- as.data.frame(dt, stringsAsFactors = FALSE)
+  } else if (has_date) {
+    df <- df[
+      order(df[[date_col]], decreasing = TRUE, na.last = TRUE),
+      ,
+      drop = FALSE
+    ]
+  }
+
+  keep <- !duplicated(df[, keys, drop = FALSE])
+  tibble::as_tibble(df[keep, , drop = FALSE])
+}
+
+#' Flag (do not drop) rows whose business key spans multiple Ids
+#'
+#' A tripwire on the assumed business uniqueness key. After [polis_upsert()] has
+#' reduced the data to one row per `id`, a well-formed dataset should also be
+#' unique on its business key. Rows that violate this are surfaced to QA -- and
+#' left in the data -- so a genuine reclassification is never silently dropped.
+#'
+#' @param data A data frame (already deduped by `id`).
+#' @param key Character vector naming the business key columns.
+#' @param id Name of the identifier column (default `"id"`).
+#' @param sink Optional destination for the flagged rows: a file path (CSV is
+#'   written) or `NULL` (flags are attached as the `polis_ambiguous` attribute).
+#'
+#' @return `data`, unchanged, possibly carrying a `polis_ambiguous` attribute.
+#'
+#' @export
+flag_ambiguous <- function(data, key, id = "id", sink = NULL) {
+  if (!all(c(key, id) %in% names(data))) {
+    return(data)
+  }
+
+  flags <- data |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(key))) |>
+    dplyr::filter(dplyr::n_distinct(.data[[id]]) > 1) |>
+    dplyr::ungroup()
+
+  if (nrow(flags) == 0) {
+    return(data)
+  }
+
+  cli::cli_alert_warning(
+    "{nrow(flags)} row{?s} share a business key ({.field {key}}) across \\
+    multiple {.field {id}}; flagged for QA, not dropped."
+  )
+  if (is.character(sink) && nzchar(sink)) {
+    readr::write_csv(flags, sink)
+  }
+  attr(data, "polis_ambiguous") <- flags
+  data
+}
+
+# =============================================================================
+# Synonym remapping (G4) and full-pull reconcile (G5)
+#
+# POLIS merges duplicate cases by rewriting an EPID to its canonical value and
+# exposes the history via HistorizedSynonyms. A consumer that stored both the
+# winner and the loser keeps the loser forever -- no Id keep-latest rule removes
+# it, because the two rows have different Ids. remap_synonyms() rewrites merged
+# EPIDs to canonical *before* dedup so the rows then collapse. reconcile() is the
+# heavier safety net: a full pull anti-joined against the store prunes Ids that
+# POLIS has since deleted or merged away.
+# =============================================================================
+
+#' Remap merged EPIDs to their canonical value
+#'
+#' Rewrites the `epid` column using a synonym table (old EPID -> canonical EPID)
+#' so that records POLIS has merged collapse together in the subsequent
+#' [polis_upsert()] step. A no-op when `synonyms` is `NULL`, so cleaners can call
+#' it unconditionally.
+#'
+#' @param data A data frame with an `epid` column.
+#' @param synonyms A data frame with columns `epid` (old) and `canonical_epid`,
+#'   or `NULL` (default no-op).
+#'
+#' @return `data` with `epid` remapped where a synonym exists.
+#'
+#' @export
+remap_synonyms <- function(data, synonyms = NULL) {
+  if (is.null(synonyms) || !"epid" %in% names(data)) {
+    return(data)
+  }
+  required <- c("epid", "canonical_epid")
+  if (!all(required %in% names(synonyms))) {
+    cli::cli_warn(
+      "Synonym table needs columns {.field {required}}; skipping remap."
+    )
+    return(data)
+  }
+
+  lookup <- stats::setNames(synonyms$canonical_epid, synonyms$epid)
+  n_hit <- sum(data$epid %in% names(lookup))
+  data <- dplyr::mutate(
+    data,
+    epid = dplyr::if_else(epid %in% names(lookup), unname(lookup[epid]), epid)
+  )
+  if (n_hit > 0) {
+    cli::cli_alert_info("Remapped {n_hit} EPID{?s} via synonyms.")
+  }
+  data
+}
+
+#' Prune records absent from a full pull (reconcile)
+#'
+#' POLIS's current-view API hides deletes and merges, so an incrementally-built
+#' store accumulates rows POLIS has since removed. Given a fresh full pull,
+#' reconcile keeps only the `id`s still present, pruning the rest.
+#'
+#' @param store The accumulated data frame.
+#' @param full_pull A complete fresh pull of the same table.
+#' @param id Name of the identifier column (default `"id"`).
+#'
+#' @return `store` filtered to `id`s present in `full_pull`.
+#'
+#' @export
+reconcile <- function(store, full_pull, id = "id") {
+  if (!id %in% names(store) || !id %in% names(full_pull)) {
+    cli::cli_warn("No {.field {id}} column on both sides; skipping reconcile.")
+    return(store)
+  }
+  live <- unique(full_pull[[id]])
+  pruned <- sum(!store[[id]] %in% live)
+  if (pruned > 0) {
+    cli::cli_alert_info(
+      "Reconcile pruned {pruned} stale {.field {id}} row{?s}."
+    )
+  }
+  dplyr::filter(store, .data[[id]] %in% live)
+}
+
+# ---------------------------------------------------------------------
+# Column type inference (auto_parse_types / detect_factors)
+# ---------------------------------------------------------------------
+
+#' Infer column types after cleaning, then optionally layer factor detection
+#'
+#' POLIS returns every field as character. This parses character columns to
+#' their natural base type (numeric, integer, date, datetime, logical) via
+#' [readr::type_convert()], protecting identifier-like names and leading-zero
+#' codes from coercion, and optionally proposes low-cardinality character
+#' columns as factors. The cleaners ([clean_afp()] etc.) call it with
+#' `apply = FALSE` (base types only) when `polis_config(parse_types = TRUE)`.
+#'
+#' @param data A data frame or tibble.
+#' @param max_levels Maximum distinct values for a factor candidate. Default 50.
+#' @param max_unique_ratio Maximum unique/non-NA ratio for a factor. Default
+#'   `0.2`.
+#' @param protect_patterns Regexes for names kept as character. Default
+#'   `c("id$", "uid$", "code$", "ref$", "key$")`.
+#' @param keep_leading_zero_chars Keep a character column when any value is a
+#'   leading-zero digit string (e.g. `"00123"`). Default `TRUE`.
+#' @param apply If `TRUE` (default) apply factor conversions on top of the
+#'   parsed base types; if `FALSE` parse base types only.
+#' @param return One of `"data"`, `"both"`, `"plan"`. Default `"data"`.
+#'
+#' @return Depending on `return`: the parsed tibble (`"data"`), the type plan
+#'   (`"plan"`), or `list(plan, data)` (`"both"`).
+#'
+#' @examples
+#' df <- tibble::tibble(id = c("001", "002"), age = c("1", "2"))
+#' auto_parse_types(df, apply = FALSE)
+#'
+#' @export
+auto_parse_types <- function(
+  data,
+  max_levels = 50,
+  max_unique_ratio = 0.2,
+  protect_patterns = c("id$", "uid$", "code$", "ref$", "key$"),
+  keep_leading_zero_chars = TRUE,
+  apply = TRUE,
+  return = c("data", "both", "plan")
+) {
+  return <- match.arg(return)
+  if (!is.data.frame(data)) {
+    cli::cli_abort("{.arg data} must be a data.frame or tibble.")
+  }
+  if (length(max_levels) != 1 || max_levels < 2) {
+    cli::cli_abort("{.arg max_levels} must be a single integer >= 2.")
+  }
+  if (
+    length(max_unique_ratio) != 1 ||
+      max_unique_ratio <= 0 ||
+      max_unique_ratio > 1
+  ) {
+    cli::cli_abort("{.arg max_unique_ratio} must be in (0, 1].")
+  }
+
+  cols <- names(data)
+  is_char <- vapply(data, is.character, logical(1))
+  protected <- vapply(cols, .is_protected, logical(1), protect_patterns)
+  lead0 <- keep_leading_zero_chars &
+    is_char &
+    vapply(
+      data,
+      function(x) is.character(x) && .has_leading_zeros(x),
+      logical(1)
+    )
+
+  # parse base types via readr, holding protected / leading-zero columns as text
+  data_parsed <- if (any(is_char)) {
+    col_map <- stats::setNames(
+      rep(list(readr::col_guess()), length(cols)),
+      cols
+    )
+    for (nm in cols[protected | lead0]) {
+      col_map[[nm]] <- readr::col_character()
+    }
+    suppressWarnings(suppressMessages(readr::type_convert(
+      tibble::as_tibble(data),
+      col_types = do.call(readr::cols, col_map),
+      guess_integer = TRUE
+    )))
+  } else {
+    tibble::as_tibble(data)
+  }
+
+  # fast path: base types only, no factor plan needed
+  if (!isTRUE(apply) && return == "data") {
+    return(data_parsed)
+  }
+
+  fplan <- detect_factors(
+    data,
+    max_levels = max_levels,
+    max_unique_ratio = max_unique_ratio,
+    protect_patterns = protect_patterns,
+    keep_leading_zero_chars = keep_leading_zero_chars
+  )
+  f_names <- if (nrow(fplan) == 0L) character(0) else fplan$name
+
+  data_final <- data_parsed
+  if (isTRUE(apply) && length(f_names) > 0L) {
+    for (nm in f_names) {
+      x <- as.character(data[[nm]])
+      # first-seen order, ignoring NA
+      data_final[[nm]] <- factor(x, levels = unique(x[!is.na(x)]))
+    }
+  }
+  if (return == "data") {
+    return(data_final)
+  }
+
+  n_non_na <- vapply(data, function(x) sum(!is.na(x)), integer(1))
+  n_unique <- vapply(
+    data,
+    function(x) dplyr::n_distinct(x, na.rm = TRUE),
+    integer(1)
+  )
+  proposed <- vapply(
+    cols,
+    function(nm) class(data_parsed[[nm]])[1],
+    character(1)
+  )
+  proposed[protected | lead0] <- "character"
+  proposed[cols %in% f_names] <- "factor"
+  plan <- tibble::tibble(
+    name = cols,
+    current_type = vapply(data, function(x) class(x)[1], character(1)),
+    proposed_type = proposed,
+    protected = unname(protected | lead0),
+    n = nrow(data),
+    n_non_na = unname(n_non_na),
+    n_unique = unname(n_unique),
+    unique_ratio = unname(n_unique / pmax(n_non_na, 1L))
+  )
+  if (return == "plan") {
+    return(plan)
+  }
+  list(plan = plan, data = data_final)
+}
+
+#' Detect factor-like character columns (low-cardinality only)
+#'
+#' Identifies character columns that look categorical, protecting id-like names
+#' and leading-zero codes.
+#'
+#' @inheritParams auto_parse_types
+#'
+#' @return A tibble of factor candidates: `name`, `n`, `n_non_na`, `n_unique`,
+#'   `unique_ratio`, `reason`.
+#'
+#' @examples
+#' detect_factors(tibble::tibble(adm = c("A", "B", "A")))
+#'
+#' @export
+detect_factors <- function(
+  data,
+  max_levels = 50,
+  max_unique_ratio = 0.2,
+  protect_patterns = c("id$", "uid$", "code$", "ref$", "key$"),
+  keep_leading_zero_chars = TRUE
+) {
+  if (!is.data.frame(data)) {
+    cli::cli_abort("{.arg data} must be a data.frame or tibble.")
+  }
+  cols <- names(data)
+  n_non_na <- vapply(data, function(x) sum(!is.na(x)), integer(1))
+  n_unique <- vapply(
+    data,
+    function(x) dplyr::n_distinct(x, na.rm = TRUE),
+    integer(1)
+  )
+  is_char <- vapply(data, is.character, logical(1))
+  protected <- vapply(cols, .is_protected, logical(1), protect_patterns)
+  lead0 <- keep_leading_zero_chars &
+    is_char &
+    vapply(
+      data,
+      function(x) is.character(x) && .has_leading_zeros(x),
+      logical(1)
+    )
+
+  tibble::tibble(
+    name = cols,
+    n = nrow(data),
+    n_non_na = unname(n_non_na),
+    n_unique = unname(n_unique),
+    unique_ratio = unname(n_unique / pmax(n_non_na, 1L)),
+    is_char = unname(is_char),
+    protected = unname(protected),
+    lead0 = unname(lead0)
+  ) |>
+    dplyr::mutate(
+      keep = dplyr::case_when(
+        !is_char ~ FALSE,
+        protected | lead0 ~ FALSE,
+        n_unique == 0L ~ FALSE,
+        n_unique > max_levels ~ FALSE,
+        n_non_na > 0L & n_unique == 1L ~ TRUE,
+        unique_ratio > max_unique_ratio ~ FALSE,
+        TRUE ~ TRUE
+      ),
+      reason = dplyr::case_when(
+        !is_char ~ "not character",
+        protected | lead0 ~ "protected",
+        n_unique == 0L ~ "all NA",
+        n_unique > max_levels ~ "too many levels",
+        n_non_na > 0L & n_unique == 1L ~ "constant (1 level)",
+        unique_ratio > max_unique_ratio ~ "too unique for factor",
+        TRUE ~ "low cardinality character"
+      )
+    ) |>
+    dplyr::filter(keep) |>
+    dplyr::select(name, n, n_non_na, n_unique, unique_ratio, reason)
+}
+
+# Is a column name protected from coercion (case-insensitive)?
+.is_protected <- function(nm, patterns) {
+  if (length(patterns) == 0L) {
+    return(FALSE)
+  }
+  any(vapply(
+    patterns,
+    function(p) grepl(p, nm, ignore.case = TRUE),
+    logical(1)
+  ))
+}
+
+# Any all-digit string with a leading zero (e.g. "00123") -> keep as character.
+.has_leading_zeros <- function(x) {
+  x <- x[!is.na(x)]
+  length(x) > 0L && any(grepl("^0+\\d+$", x))
+}
+
+# Cleaner finishing step: infer base column types when cfg$parse_types is on.
+.polis_parse_types <- function(data, cfg) {
+  if (isTRUE(cfg$parse_types)) {
+    auto_parse_types(data, apply = FALSE, return = "data")
+  } else {
+    data
+  }
+}
+
+# Cleaner finishing step: drop all-NA columns when cfg$drop_empty_cols is on.
+.polis_drop_empty <- function(data, cfg) {
+  if (!isTRUE(cfg$drop_empty_cols)) {
+    return(data)
+  }
+  keep <- vapply(data, function(x) !all(is.na(x)), logical(1))
+  data[, keep, drop = FALSE]
 }
