@@ -16,3 +16,4 @@
 ^\.githooks$
 ^dev$
 ^vignettes/[.]quarto$
+^example_script\.R$
