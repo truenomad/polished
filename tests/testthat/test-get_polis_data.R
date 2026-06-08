@@ -1,6 +1,6 @@
-# Tests for get_polis_data() — argument validation and return-type
-# handling via mocked HTTP, plus one live skip_on_cran smoke test
-# against POLIS at the end.
+# Tests for get_polis_data() — argument validation and the on-disk /
+# return-paths contract via mocked HTTP, plus one live skip_on_cran smoke
+# test against POLIS at the end.
 
 testthat::test_that("get_polis_data aborts when the API key is empty", {
   withr::local_envvar(POLIS_API_KEY = "")
@@ -18,18 +18,6 @@ testthat::test_that("get_polis_data aborts on unknown table names", {
       polis_folder = withr::local_tempdir()
     ),
     "Unknown table name"
-  )
-})
-
-testthat::test_that("get_polis_data aborts on `return = \"df\"` multi-table", {
-  testthat::expect_error(
-    polished::get_polis_data(
-      tables = c("im", "lqas"),
-      return = "df",
-      polis_api_key = "dummy",
-      polis_folder = withr::local_tempdir()
-    ),
-    "single table"
   )
 })
 
@@ -57,9 +45,9 @@ testthat::test_that("polis_tables_mapping has the documented rows + columns", {
   )
 })
 
-testthat::test_that("get_polis_data skips a fully-up-to-date table cleanly", {
-  # If the existing parts already cover @odata.count, the function
-  # should re-merge parts and skip without dispatching workers.
+testthat::test_that("get_polis_data writes to disk and returns paths only", {
+  # The data is never returned into memory: the value is the named file
+  # path(s), and the table is read back from disk.
   root <- withr::local_tempdir()
   seed_parts(
     polis_folder = root,
@@ -79,69 +67,6 @@ testthat::test_that("get_polis_data skips a fully-up-to-date table cleanly", {
     .package = "polished"
   )
 
-  res <- polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE,
-    return = "df"
-  )
-  testthat::expect_s3_class(res, "data.frame")
-  testthat::expect_equal(nrow(res), 5L)
-})
-
-testthat::test_that("get_polis_data return = \"paths\" returns canonical file", {
-  root <- withr::local_tempdir()
-  seed_parts(
-    polis_folder = root,
-    table_name = "im",
-    year = 2024,
-    df = data.frame(
-      Id = 1:3,
-      PublishDate = rep("2024-06-15", 3),
-      stringsAsFactors = FALSE
-    )
-  )
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 3,
-    .polis_fetch_id_list = function(...) 1:3,
-    .package = "polished"
-  )
-  paths <- polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE,
-    return = "paths"
-  )
-  testthat::expect_named(paths, "im")
-  testthat::expect_match(paths[["im"]], "im\\.rds$")
-  testthat::expect_true(file.exists(paths[["im"]]))
-})
-
-testthat::test_that("get_polis_data return = \"invisible\" yields NULL", {
-  root <- withr::local_tempdir()
-  seed_parts(
-    polis_folder = root,
-    table_name = "im",
-    year = 2024,
-    df = data.frame(
-      Id = 1:3,
-      PublishDate = rep("2024-06-15", 3),
-      stringsAsFactors = FALSE
-    )
-  )
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 3,
-    .polis_fetch_id_list = function(...) 1:3,
-    .package = "polished"
-  )
   result <- polished::get_polis_data(
     tables = "im",
     min_date = "2024-01-01",
@@ -149,10 +74,49 @@ testthat::test_that("get_polis_data return = \"invisible\" yields NULL", {
     polis_folder = root,
     polis_api_key = "dummy",
     workers = 1L,
-    quiet = TRUE,
-    return = "invisible"
+    quiet = TRUE
   )
+
+  # Nothing is returned -- pure side effect.
   testthat::expect_null(result)
+
+  # The data is on disk at the canonical path and reads back with every row.
+  out_file <- file.path(root, "data", "im.rds")
+  testthat::expect_true(file.exists(out_file))
+  on_disk <- readRDS(out_file)
+  testthat::expect_s3_class(on_disk, "data.frame")
+  testthat::expect_equal(nrow(on_disk), 5L)
+})
+
+testthat::test_that("get_polis_data returns NULL invisibly", {
+  root <- withr::local_tempdir()
+  seed_parts(
+    polis_folder = root,
+    table_name = "im",
+    year = 2024,
+    df = data.frame(
+      Id = 1:3,
+      PublishDate = rep("2024-06-15", 3),
+      stringsAsFactors = FALSE
+    )
+  )
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_list = function(...) 1:3,
+    .package = "polished"
+  )
+  # withVisible reports FALSE for an invisibly-returned value.
+  vis <- withVisible(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE
+  ))
+  testthat::expect_false(vis$visible)
+  testthat::expect_null(vis$value)
 })
 
 testthat::test_that("force = TRUE deletes existing parts before running", {
@@ -185,8 +149,7 @@ testthat::test_that("force = TRUE deletes existing parts before running", {
     polis_api_key = "dummy",
     workers = 1L,
     quiet = TRUE,
-    force = TRUE,
-    return = "invisible"
+    force = TRUE
   )
   # parts dir is recreated (empty) but the old part file is gone
   testthat::expect_false(file.exists(part_file))
@@ -204,15 +167,14 @@ testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
   testthat::skip_if(!nzchar(key), "POLIS_API_KEY not set")
 
   root <- withr::local_tempdir()
-  df <- tryCatch(
+  tryCatch(
     polished::get_polis_data(
       tables = "im",
       polis_folder = root,
       polis_api_key = key,
       workers = 1L,
       auto_refetch = FALSE,
-      quiet = TRUE,
-      return = "df"
+      quiet = TRUE
     ),
     error = function(e) {
       msg <- conditionMessage(e)
@@ -225,6 +187,7 @@ testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
       stop(e)
     }
   )
+  df <- readRDS(file.path(root, "data", "im.rds"))
   testthat::expect_s3_class(df, "data.frame")
   testthat::expect_gt(nrow(df), 1000L)
   testthat::expect_true("Id" %in% names(df))

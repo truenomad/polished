@@ -51,8 +51,7 @@ testthat::test_that("auto_refetch adds a missing Id to the canonical file", {
     polis_api_key = "dummy",
     workers = 1L,
     auto_refetch = TRUE,
-    quiet = TRUE,
-    return = "invisible"
+    quiet = TRUE
   )
 
   out_file <- file.path(root, "data", "im.rds")

@@ -11,7 +11,6 @@ get_polis_data(
   region = "Global",
   country_code = NULL,
   polis_folder = tools::R_user_dir("polished", which = "cache"),
-  return = c("invisible", "auto", "df", "list", "paths"),
   output_format = c("rds", "rda", "csv", "parquet", "qs2"),
   workers = 1L,
   auto_refetch = TRUE,
@@ -49,12 +48,6 @@ per-user cache location, persistent across sessions so incremental
 updates "just work". Pass an explicit path to keep data alongside a
 project.}
 
-\item{return}{One of \code{"invisible"} (default -- no return value; data
-is on disk), \code{"auto"} (data.frame for a single table, named list of
-data.frames for multiple), \code{"df"} (force a single data.frame; errors
-for multi-table calls), \code{"list"} (always a named list), or \code{"paths"}
-(named character vector of file paths, no data read into memory).}
-
 \item{output_format}{Output format. One of \code{"rds"} (default), \code{"rda"},
 \code{"csv"}, \code{"parquet"}, \code{"qs2"}. \code{"parquet"} requires the \code{arrow}
 package; \code{"qs2"} requires the \code{qs2} package.}
@@ -85,19 +78,13 @@ fresh full re-pull instead of resuming. Default \code{FALSE}.}
 Default \code{FALSE}.}
 }
 \value{
-Depends on \code{return}:
-\itemize{
-\item \code{"invisible"} (default) -- invisible \code{NULL}. Data is on disk.
-\item \code{"auto"} -- data.frame if \code{length(tables) == 1}, named list of
-data.frames otherwise.
-\item \code{"df"} -- single data.frame (errors when more than one table was
-selected).
-\item \code{"list"} -- named list of data.frames, one per selected table.
-\item \code{"paths"} -- named character vector of canonical file paths.
-}
-
-Side effect: writes \verb{<polis_folder>/data/<table_name>.<ext>} plus a
-\verb{.parts/<table_name>/} cache for each selected table.
+\code{NULL}, invisibly. \code{get_polis_data()} is called purely for its
+side effect: each selected table is written to
+\verb{<polis_folder>/data/<table_name>.<ext>} (plus a \verb{.parts/<table_name>/}
+resume cache). The data is never loaded into memory, so a
+multi-million-row pull cannot inflate your session. Read a table back
+from disk yourself when you need it, e.g.
+\code{readRDS(file.path(polis_folder, "data", "im.rds"))}.
 }
 \description{
 The canonical entry point for fetching data from the POLIS OData service.
@@ -150,17 +137,17 @@ entirely.
 }
 \examples{
 \dontrun{
-# Pull one table; data lives on disk
+# Pull one table into the default per-user cache
 get_polis_data(tables = "im")
 
-# Same call but get the data.frame back
-df <- get_polis_data(tables = "im", return = "df")
+# Read it back from disk when you need it
+cache <- tools::R_user_dir("polished", which = "cache")
+im <- readRDS(file.path(cache, "data", "im.rds"))
 
 # All eight tables in parallel into a project folder
 get_polis_data(
   polis_folder = "data/polis",
-  workers = parallel::detectCores() - 1L,
-  return = "paths"
+  workers = parallel::detectCores() - 1L
 )
 }
 }
