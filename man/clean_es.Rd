@@ -4,29 +4,63 @@
 \alias{clean_es}
 \title{Clean POLIS environmental surveillance data}
 \usage{
-clean_es(data, cfg = polis_config())
+clean_es(data, cfg = polis_config(), verbose = TRUE)
 }
 \arguments{
 \item{data}{A raw POLIS environmental-samples data frame.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Supply
+\code{cfg$qa} to route ambiguity flags.}
+
+\item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
 \value{
-A tibble of cleaned ES records, columns ordered id -> location ->
-time -> other.
+A tibble of cleaned ES records, one row per POLIS \code{id}, with columns
+ordered identically to \code{\link[=clean_afp]{clean_afp()}} (id -> location -> time ->
+classification -> dates -> other). The derived columns (\code{year_collection},
+\code{month_collection}, \code{vtype}, \code{classification_all}, \code{sabin1}/\code{sabin2}/
+\code{sabin3}, \code{npev}, \code{nvaccine}, \code{ev_detect}) are added only when their
+prerequisite source columns are present in \code{data}, so a trimmed input yields
+a correspondingly trimmed output rather than an error.
 }
 \description{
-Standardises one raw POLIS environmental-samples table: canonical snake_case
-names (via the crosswalk + janitor), parsed \verb{date_*} columns with derived
-\code{year_collection}/\code{month_collection}, normalised admin names, and one row per
-POLIS \code{id} (latest by \code{last_update_date}).
+Standardises one raw POLIS environmental-samples table and derives the
+sample-level analytic variables ES surveillance relies on:
+\itemize{
+\item canonical snake_case names (via the crosswalk + janitor);
+\item every collection/laboratory date parsed to \code{Date} and sanitised with
+the same "sensible date" rule clean_afp() uses -- a value before the dawn
+of surveillance (\code{min_year}) or in the future is a data-entry error and is
+set to \code{NA}, never dropped (audit timestamps such as \code{last_update_date}
+stay ISO strings for the keep-latest dedup);
+\item \code{year_collection} / \code{month_collection} from the sanitised
+\code{collection_date};
+\item the AFP-style virus classification (via \code{\link[=clean_es_classification]{clean_es_classification()}}):
+a normalised \code{virus_type} list, \code{vtype} and the fused \code{classification_all}
+label in the \strong{same} \code{WPV}/\code{cVDPV}/\code{aVDPV}/\code{iVDPV} vocabulary the AFP
+cleaner emits (so one \code{grepl("WPV|cVDPV", classification_all)} works across
+both streams), the per-serotype Sabin flags \code{sabin1}/\code{sabin2}/\code{sabin3},
+the \code{npev} and \code{nvaccine} (nOPV2) flags and the fused \code{ev_detect}
+"anything detected" flag;
+\item normalised admin names (and a title-cased \code{site} label) and one row
+per POLIS \code{id} (latest by \code{last_update_date}).
+}
+The raw POLIS \code{virus_types}, \code{vdpv_classifications}, the per-serotype
+\verb{vaccine*}/\verb{vdpv*}/\verb{wild*} fields and \code{sample_condition} are kept as-is
+alongside the derived columns. The business key \code{sample_id} + \code{adm0} (the ES
+analogue of the AFP \code{epid} + \code{adm0} key, \code{sample_id} being the EPID-equivalent
+sample identifier) is asserted as a tripwire: violations are flagged to QA,
+never dropped.
 }
 \examples{
 raw <- data.frame(
   Id = c(1, 1, 2),
-  EnvSampleId = c("E1", "E1", "E2"),
+  EnviroSampleId = c("E1", "E1", "E2"),
   LastUpdateDate = c("2024-01-01", "2024-03-01", "2024-02-01"),
-  DateCollection = c("2024-01-05", "2024-01-05", "2024-02-09"),
+  CollectionDate = c("2024-01-05", "2024-01-05", "2024-02-09"),
+  VirusTypes = c("cVDPV2", "cVDPV2", NA),
+  VACCINE1 = c("No", "No", "Yes"),
+  IsNPEV = c("No", "No", "Yes"),
   Admin0Name = c("NIGERIA", "NIGERIA", "CHAD"),
   check.names = FALSE
 )

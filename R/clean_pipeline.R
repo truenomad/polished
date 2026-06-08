@@ -91,18 +91,23 @@ polis_config <- function(
     adm_name = "^adm[0-9]$",
     adm_guid = "^adm[0-9]_guid$",
     coord = "^(latitude|longitude)$",
-    onset_date = "^paralysis_onset_date$",
-    onset_month = "^month_onset$",
-    onset_year = "^year_onset$",
+    # the time slots take both the AFP onset and the ES collection equivalents,
+    # so a case orders by onset and an ES sample by collection in the same place.
+    onset_date = "^(paralysis_onset_date|collection_date)$",
+    onset_month = "^(month_onset|month_collection)$",
+    onset_year = "^(year_onset|year_collection)$",
     age = "^age_months$",
     core_dates = paste0(
       "^(notification_date|investigation_date|stool1collection_date|",
       "stool2collection_date|followup_date)$"
     ),
+    # the ES virus labels (virus_type(s), npev/nvaccine/ev_detect) sit in the
+    # classification slot alongside the AFP ones; sabin[123]/classification_all/
+    # vtype are shared by both streams.
     classification = paste0(
       "^(classification|classification_all|vtype|vtype_fixed|",
       "polio_virus_types|vdpv_classifications|sabin[123]|hot_case|",
-      "paralysis_hot_case)$"
+      "paralysis_hot_case|virus_types|virus_type|npev|nvaccine|ev_detect)$"
     ),
     indicators = paste0(
       "^(onset_to_[a-z0-9]+|notify_to_invest|invest_to_stool1|",
