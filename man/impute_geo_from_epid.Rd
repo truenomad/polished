@@ -19,6 +19,7 @@ impute_geo_from_epid(
   year_window = 0,
   sep = "-",
   canonicalise = TRUE,
+  audit = TRUE,
   verbose = TRUE
 )
 }
@@ -53,6 +54,10 @@ admin names/GUIDs, for data with no names of its own. Default \code{NULL}.}
 
 \item{canonicalise}{Whether to canonicalise filled name cells when a
 canonicaliser is available. Default \code{TRUE}.}
+
+\item{audit}{Whether to build the per-level self-reference tables returned in
+\verb{$ref} (for inspection). Default \code{TRUE}; set \code{FALSE} to skip the extra
+reference passes when the audit handle is not needed.}
 
 \item{verbose}{Whether to print a cli summary. Default \code{TRUE}.}
 }
