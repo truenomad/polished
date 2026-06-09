@@ -113,7 +113,9 @@ clean_virus <- function(
     )
     out <- .virus_separate(out)
   }
-  out <- order_columns(out, cfg$column_roles)
+  out <- out |>
+    .geo_guid_display_cols() |>
+    order_columns(cfg$column_roles)
 
   if (isTRUE(verbose)) {
     cli::cli_progress_done()

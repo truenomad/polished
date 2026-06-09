@@ -199,7 +199,8 @@ clean_afp <- function(
   out <- data |>
     polis_upsert(id = "id", date = "last_update_date") |>
     .polis_parse_types(cfg) |>
-    .polis_drop_empty(cfg)
+    .polis_drop_empty(cfg) |>
+    .geo_guid_display_cols()
   if (isTRUE(enrich)) {
     step(
       "Enriching with country groupings and AFP flags",

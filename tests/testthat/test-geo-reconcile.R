@@ -189,5 +189,8 @@ testthat::test_that("clean_afp accepts a polygon shape (derives long + coords)",
   testthat::expect_equal(nrow(out), 2L)
   testthat::expect_true("geo_source" %in% names(out))
   testthat::expect_equal(out$adm2[out$epid == "NIE-BOR-AAA-24-002"], "BOSSO")
-  testthat::expect_equal(out$adm2_guid[out$epid == "NIE-BOR-AAA-24-002"], "g2")
+  testthat::expect_equal(
+    out$adm2_guid[out$epid == "NIE-BOR-AAA-24-002"],
+    "{G2}"
+  )
 })

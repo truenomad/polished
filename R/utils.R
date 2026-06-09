@@ -65,8 +65,34 @@
 # Normalise a GUID to an upper-case, brace-free comparison key ({ABC} -> ABC).
 .geo_guid_key <- function(x) toupper(gsub("[{}]", "", x))
 
-# Normalise a GUID to the canonical lower-case, brace-free output form.
+# Normalise a GUID to the canonical lower-case, brace-free form used internally
+# while matching against the shape.
 .geo_guid_canon <- function(x) tolower(gsub("[{}]", "", x))
+
+# Format a GUID for OUTPUT in the raw POLIS / shapefile form: brace-wrapped and
+# upper-case (abc -> {ABC}). Matching is unaffected -- .geo_guid_key() and
+# .geo_guid_canon() strip braces and re-case on the fly, so a column stored in
+# this form still joins correctly. Blank/NA stays NA.
+.geo_guid_display <- function(x) {
+  key <- .geo_guid_key(x)
+  dplyr::if_else(
+    is.na(key) | !nzchar(key),
+    NA_character_,
+    paste0("{", key, "}")
+  )
+}
+
+# Re-format the admin GUID columns present in `data` to the output form.
+.geo_guid_display_cols <- function(
+  data,
+  cols = c("adm0_guid", "adm1_guid", "adm2_guid")
+) {
+  present <- intersect(cols, names(data))
+  if (length(present) == 0L) {
+    return(data)
+  }
+  dplyr::mutate(data, dplyr::across(dplyr::all_of(present), .geo_guid_display))
+}
 
 # ---------------------------------------------------------------------
 # get_polis_data(): I/O + housekeeping
