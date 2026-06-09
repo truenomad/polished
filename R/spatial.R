@@ -1361,7 +1361,11 @@ epid_strip_contact <- function(epid) {
 #' @keywords internal
 #' @noRd
 .epid_blank <- function(value) {
-  is.na(value) | !nzchar(trimws(as.character(value)))
+  value <- as.character(value)
+  # equivalent to `!nzchar(trimws(value))` over the same whitespace set, but a
+  # single grepl pass instead of trimws's two sub() passes -- this helper runs
+  # over the full column many times across the fill cascade, so it is hot.
+  is.na(value) | !grepl("[^ \t\r\n]", value)
 }
 
 #' Whole-number scalar guards
@@ -1425,20 +1429,23 @@ build_admin_ref <- function(
   if (length(missing_cols) > 0L) {
     cli::cli_abort("Missing column{?s}: {.val {missing_cols}}.")
   }
-  data |>
-    dplyr::filter(!.epid_blank(.data[[admin_col]])) |>
-    dplyr::arrange(
-      dplyr::desc(.data[[year_var]]),
-      .data[[admin_col]]
-    ) |>
-    dplyr::group_by(.data[[epid_var]]) |>
-    dplyr::slice(1L) |>
-    dplyr::ungroup() |>
-    dplyr::transmute(
-      !!epid_var := .data[[epid_var]],
-      !!admin_col := as.character(.data[[admin_col]])
-    ) |>
-    dplyr::distinct()
+  # Most-recent non-blank value per EPID via a base-R order + !duplicated()
+  # first-per-group, not dplyr::group_by() |> slice(): on a full pull the EPIDs
+  # are near-unique, so a grouped slice over millions of singleton groups is the
+  # single slowest step in the cascade. Ordering by (epid, year desc, value asc)
+  # and taking the first row of each EPID is equivalent and far cheaper.
+  epid <- as.character(data[[epid_var]])
+  value <- as.character(data[[admin_col]])
+  year <- data[[year_var]]
+  keep <- !.epid_blank(value)
+  epid <- epid[keep]
+  value <- value[keep]
+  year <- year[keep]
+  ord <- order(epid, -xtfrm(year), value, method = "radix")
+  epid <- epid[ord]
+  value <- value[ord]
+  first <- !duplicated(epid)
+  tibble::tibble(!!epid_var := epid[first], !!admin_col := value[first])
 }
 
 #' Build a (prefix, year) -> unique admin-value reference
@@ -2035,6 +2042,9 @@ resolve_epid_country <- function(
 #' @param sep EPID segment delimiter. Default `"-"`.
 #' @param canonicalise Whether to canonicalise filled name cells when a
 #'   canonicaliser is available. Default `TRUE`.
+#' @param audit Whether to build the per-level self-reference tables returned in
+#'   `$ref` (for inspection). Default `TRUE`; set `FALSE` to skip the extra
+#'   reference passes when the audit handle is not needed.
 #' @param verbose Whether to print a cli summary. Default `TRUE`.
 #' @return A named list:
 #' \describe{
@@ -2071,6 +2081,7 @@ impute_geo_from_epid <- function(
   year_window = 0,
   sep = "-",
   canonicalise = TRUE,
+  audit = TRUE,
   verbose = TRUE
 ) {
   known_strategies <- c(
@@ -2161,7 +2172,11 @@ impute_geo_from_epid <- function(
   work[[".epid_norm"]] <- .epid_normalise(
     epid_strip_contact(work[[epid_var]])$epid_base
   )
-  work[[".epid_prefix"]] <- epid_prefix(work[[".epid_norm"]], prefix_length)
+  # `.epid_norm` is already normalised, so take the prefix by a plain substring
+  # rather than epid_prefix() (which would re-run .epid_normalise over every row).
+  epid_pre <- substr(work[[".epid_norm"]], 1L, as.integer(prefix_length))
+  epid_pre[.epid_blank(epid_pre)] <- NA_character_
+  work[[".epid_prefix"]] <- epid_pre
 
   # run cascade per target --------------------------------------------
   qa_rows <- list()
@@ -2214,8 +2229,10 @@ impute_geo_from_epid <- function(
   qa <- dplyr::bind_rows(qa_rows)
 
   # audit references --------------------------------------------------
+  # Built only for the returned `$ref` audit handle; skip when `audit = FALSE`
+  # (e.g. the AFP cleaner, which discards it) to avoid two full reference passes.
   ref_audit <- list()
-  if (needs_year) {
+  if (isTRUE(audit) && needs_year) {
     if (!is.null(admin1_var)) {
       ref_audit$admin1 <- build_admin_ref(
         work,

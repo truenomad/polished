@@ -58,6 +58,9 @@
 #'   their GUIDs) after reconciliation have them recovered from the EPID prefix
 #'   via [impute_geo_from_epid()] (self-reference + prefix matching, every row
 #'   kept). Adds `*_source` provenance columns.
+#' @param enrich If `TRUE` the output is passed through [enrich_afp()], adding
+#'   `country_actual`, `risk_group`, `epi_zones`, `polio_type` and the AFP flags
+#'   (`afp_class`, `afp`, `npafp`, `pending_results`). Default `FALSE`.
 #' @param verbose Emit cli progress messages for each phase. Default `TRUE`.
 #'
 #' @return A tibble of cleaned AFP records, one row per POLIS `id`, with columns
@@ -85,6 +88,7 @@ clean_afp <- function(
   cfg = polis_config(),
   shape = NULL,
   impute_geo = TRUE,
+  enrich = FALSE,
   verbose = TRUE
 ) {
   # each call to step() marks the previous step done (past-tense tick) and starts
@@ -157,6 +161,26 @@ clean_afp <- function(
     )
     data <- reconcile_admin_guids(data, long_shape, verbose = FALSE)
   }
+  miss_admin <- function(d) {
+    cols <- intersect(c("adm1", "adm2"), names(d))
+    if (length(cols) == 0L) {
+      return(0L)
+    }
+    sum(Reduce(`|`, lapply(cols, function(col) is.na(d[[col]]))))
+  }
+  # Coordinates first: the point-in-polygon fill is fast and geometry beats
+  # prefix-guessing, so it clears the bulk of the gaps before the (slow) EPID
+  # prefix match, which then only has to handle the small remainder.
+  if (!is.null(poly_shape) && "adm2_guid" %in% names(data)) {
+    nc_before <- miss_admin(data)
+    n_crec <- "0"
+    step(
+      "Recovering missing admin from coordinates",
+      "Recovered admin for {n_crec} cases from coordinates"
+    )
+    data <- impute_geo_from_coords(data, poly_shape, verbose = FALSE)
+    n_crec <- .polis_big_num(max(nc_before - miss_admin(data), 0L))
+  }
   if (isTRUE(impute_geo)) {
     na2_before <- if ("adm2" %in% names(data)) sum(is.na(data$adm2)) else 0L
     # n_rec is filled below and glued into msg_done when the step ticks.
@@ -169,30 +193,21 @@ clean_afp <- function(
     na2_after <- if ("adm2" %in% names(data)) sum(is.na(data$adm2)) else 0L
     n_rec <- .polis_big_num(max(na2_before - na2_after, 0L))
   }
-  miss_admin <- function(d) {
-    cols <- intersect(c("adm1", "adm2"), names(d))
-    if (length(cols) == 0L) {
-      return(0L)
-    }
-    sum(Reduce(`|`, lapply(cols, function(col) is.na(d[[col]]))))
-  }
-  if (!is.null(poly_shape) && "adm2_guid" %in% names(data)) {
-    nc_before <- miss_admin(data)
-    n_crec <- "0"
-    step(
-      "Recovering missing admin from coordinates",
-      "Recovered admin for {n_crec} cases from coordinates"
-    )
-    data <- impute_geo_from_coords(data, poly_shape, verbose = FALSE)
-    n_crec <- .polis_big_num(max(nc_before - miss_admin(data), 0L))
-  }
 
-  # ---- finalise: dedup by id, infer types, assert business key, order -------
+  # ---- finalise: dedup by id, infer types, (enrich), assert key, order ------
   step("Deduplicating by id and finalising", "Deduplicated by id and finalised")
   out <- data |>
     polis_upsert(id = "id", date = "last_update_date") |>
     .polis_parse_types(cfg) |>
-    .polis_drop_empty(cfg) |>
+    .polis_drop_empty(cfg)
+  if (isTRUE(enrich)) {
+    step(
+      "Enriching with country groupings and AFP flags",
+      "Enriched with country groupings and AFP flags"
+    )
+    out <- enrich_afp(out)
+  }
+  out <- out |>
     flag_ambiguous(key = c("epid", "adm0"), sink = cfg$qa) |>
     order_columns(cfg$column_roles)
   if (isTRUE(verbose)) {
@@ -221,6 +236,7 @@ clean_afp <- function(
     data,
     year_var = "year_onset",
     guid_vars = if (length(guid_vars) > 0) guid_vars else NULL,
+    audit = FALSE,
     verbose = FALSE
   )
   res$data
