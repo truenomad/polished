@@ -88,6 +88,8 @@ polis_config <- function(
   column_roles_default <- list(
     id = "^(id|epid)$",
     iso = "^country_iso3code$",
+    country = "^country_actual$",
+    geo_group = "^(risk_group|epi_zones|epi_zones_v2)$",
     adm_name = "^adm[0-9]$",
     adm_guid = "^adm[0-9]_guid$",
     coord = "^(latitude|longitude)$",
@@ -107,7 +109,8 @@ polis_config <- function(
     classification = paste0(
       "^(classification|classification_all|vtype|vtype_fixed|",
       "polio_virus_types|vdpv_classifications|sabin[123]|hot_case|",
-      "paralysis_hot_case|virus_types|virus_type|npev|nvaccine|ev_detect)$"
+      "paralysis_hot_case|virus_types|virus_type|npev|nvaccine|ev_detect|",
+      "polio_type|afp_class|afp|npafp|pending_results)$"
     ),
     indicators = paste0(
       "^(onset_to_[a-z0-9]+|notify_to_invest|invest_to_stool1|",
