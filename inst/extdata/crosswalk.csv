@@ -907,6 +907,15 @@ Case,,timeliness,,Stool collection timeliness,derived (Timely/Not Timely/Unable 
 Case,,needs_60day_followup,,Needs 60-day follow-up,derived: TRUE when stool collection not timely
 Case,,got_60day_followup,,Received 60-day follow-up,derived: a follow-up visit exists when one was needed
 Case,,followup_on_time,,60-day follow-up on time,derived: follow-up 60-90 days after onset when needed
+Case,,country_actual,,Standardised country name,"enrich_afp(): from country_lookup (countrycode UN name), falls back to title-cased adm0"
+Case,,risk_group,,Polio risk tier,enrich_afp(): from country_lookup (Endemic/Very High/High/Medium Risk)
+Case,,epi_zones,,Epidemiological zone,enrich_afp(): from country_lookup (Lake Chad Basin/Western Africa/Horn of Africa/Southern Africa/Central-Equatorial Africa/Islands/Other)
+Case,,epi_zones_v2,,Epidemiological zone (Sahel variant),enrich_afp(): epi_zones with the Lake Chad Basin & Sahel grouping
+Case,,polio_type,,Poliovirus serotype,enrich_afp(): Type 1/2/3 read from the classification serotype
+Case,,afp_class,,AFP surveillance category,enrich_afp(): AFP-Positive/Non-polio AFP/Not an AFP/VAPP/Others
+Case,,afp,,AFP-positive flag,enrich_afp(): 1 when afp_class is AFP-Positive
+Case,,npafp,,Non-polio AFP flag,enrich_afp(): 1 when Discarded/Pending and not a circulating VDPV 1/2
+Case,,pending_results,,Pending lab results flag,enrich_afp(): TRUE when classification is Pending
 EnvSample,,year_collection,,Year of collection,derived from collection_date
 EnvSample,,month_collection,,Month of collection,derived from collection_date
 SubActivity,,year_start,,Year of campaign start,derived from date_from

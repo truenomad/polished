@@ -9,6 +9,7 @@ clean_afp(
   cfg = polis_config(),
   shape = NULL,
   impute_geo = TRUE,
+  enrich = FALSE,
   verbose = TRUE
 )
 }
@@ -36,6 +37,10 @@ recovery).}
 their GUIDs) after reconciliation have them recovered from the EPID prefix
 via \code{\link[=impute_geo_from_epid]{impute_geo_from_epid()}} (self-reference + prefix matching, every row
 kept). Adds \verb{*_source} provenance columns.}
+
+\item{enrich}{If \code{TRUE} the output is passed through \code{\link[=enrich_afp]{enrich_afp()}}, adding
+\code{country_actual}, \code{risk_group}, \code{epi_zones}, \code{polio_type} and the AFP flags
+(\code{afp_class}, \code{afp}, \code{npafp}, \code{pending_results}). Default \code{FALSE}.}
 
 \item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
