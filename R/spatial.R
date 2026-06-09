@@ -1649,9 +1649,11 @@ resolve_epid_country <- function(
 
 #' Prefix-match candidates for the still-missing rows
 #'
-#' Joins missing rows to known rows sharing the geographic prefix within
-#' `year_window`, then resolves each via `.epid_resolve_candidates()`. Fully
-#' vectorised (join + grouped summarise).
+#' Joins the missing rows' distinct `(prefix, year, parent)` keys to known rows
+#' sharing the geographic prefix within `year_window`, resolves each key via
+#' `.epid_resolve_candidates()`, then maps the result back onto every row that
+#' carried the key. Resolving per distinct key (not per row) bounds the prefix
+#' join so a high-frequency prefix cannot explode it.
 #'
 #' @param data Working data frame (carries `.epid_prefix`).
 #' @param value_col Column being filled.
@@ -1694,7 +1696,12 @@ resolve_epid_country <- function(
   )
   known_tbl <- dplyr::distinct(known_tbl)
 
-  miss_tbl <- tibble::tibble(
+  # Collapse the missing side to its distinct (prefix, year, parent) keys before
+  # the prefix join. Every row sharing a key sees the same candidate set and so
+  # resolves identically; resolving per key rather than per row keeps a
+  # high-frequency prefix (one prefix shared by tens of thousands of missing
+  # rows) from exploding the join into millions of pairs.
+  miss_rows <- tibble::tibble(
     row_id = which(miss_mask),
     m_prefix = data[[".epid_prefix"]][miss_mask],
     m_year = data[[year_var]][miss_mask],
@@ -1704,16 +1711,16 @@ resolve_epid_country <- function(
       toupper(trimws(as.character(data[[parent_col]][miss_mask])))
     }
   )
+  miss_keys <- dplyr::distinct(miss_rows, m_prefix, m_year, m_parent)
 
   joined <- dplyr::inner_join(
-    miss_tbl,
+    miss_keys,
     known_tbl,
     by = dplyr::join_by(m_prefix == k_prefix),
     relationship = "many-to-many"
   )
   # NA-safe year filter: a missing or known row with an unknown year still
-  # matches on prefix (any year); a logical NA here would inject NA row_ids
-  # into the subset and crash the downstream assignment.
+  # matches on prefix (any year); a logical NA here would drop a valid pair.
   year_diff <- abs(joined$m_year - joined$k_year)
   joined <- joined[is.na(year_diff) | year_diff <= year_window, , drop = FALSE]
   if (nrow(joined) == 0L) {
@@ -1721,7 +1728,7 @@ resolve_epid_country <- function(
   }
 
   resolved <- joined |>
-    dplyr::group_by(row_id) |>
+    dplyr::group_by(m_prefix, m_year, m_parent) |>
     dplyr::summarise(
       accepted = .epid_resolve_candidates(
         k_value,
@@ -1732,11 +1739,20 @@ resolve_epid_country <- function(
       .groups = "drop"
     )
 
+  # Map each key's resolution back onto every row that carried it (NA keys match
+  # NA in a dplyr join, so unknown-year/parent rows still pick up their result).
+  per_row <- dplyr::left_join(
+    miss_rows,
+    resolved,
+    by = dplyr::join_by(m_prefix, m_year, m_parent)
+  )
+
   value <- rep(NA_character_, n_row)
   ambiguous <- rep(FALSE, n_row)
-  value[resolved$row_id] <- resolved$accepted
-  ambiguous[resolved$row_id] <- is.na(resolved$accepted) &
-    resolved$n_distinct_value > 1L
+  value[per_row$row_id] <- per_row$accepted
+  ambiguous[per_row$row_id] <- is.na(per_row$accepted) &
+    !is.na(per_row$n_distinct_value) &
+    per_row$n_distinct_value > 1L
   list(value = value, ambiguous = ambiguous)
 }
 
