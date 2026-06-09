@@ -251,26 +251,111 @@ testthat::test_that("clean_sia runs on activity alone", {
   testthat::expect_equal(sort(out$year_start), c(2024, 2024))
 })
 
-testthat::test_that("clean_virus runs standalone and integrates linkage", {
-  raw <- data.frame(
-    Id = c(1, 2),
-    Epid = c("A-1", "Z-9"),
-    LastUpdateDate = c("2024-03-01", "2024-02-01"),
-    VirusDate = c("2024-01-02", "2024-02-03"),
-    VirusTypeName = c("cVDPV2", "WILD1"),
-    Admin0Name = c("NIGERIA", "CHAD"),
-    check.names = FALSE
-  )
-  vout <- polished::clean_virus(raw)
-  testthat::expect_equal(nrow(vout), 2L)
-  # year_onset derived from the real VirusDate -> virus_date column
-  testthat::expect_true("year_onset" %in% names(vout))
-  testthat::expect_false(any(is.na(vout$year_onset)))
+testthat::test_that("clean_virus needs at least one cleaned stream", {
+  testthat::expect_error(polished::clean_virus(), "cases.*es|es.*cases")
+})
 
-  cases <- polished::clean_afp(afp_raw())
-  out <- polished::clean_virus(raw, cases = cases)
-  testthat::expect_equal(out$surveillance_type[out$epid == "A-1"], "human")
-  testthat::expect_true(is.na(out$surveillance_type[out$epid == "Z-9"]))
+testthat::test_that("clean_virus builds positives from cleaned cases and ES", {
+  cases <- polished::clean_afp(
+    data.frame(
+      Id = 1:2,
+      Epid = c("A-1", "B-2"),
+      LastUpdateDate = rep("2024-03-01", 2),
+      ParalysisOnsetDate = c("2024-01-02", "2024-02-03"),
+      NotificationDate = c("2024-01-09", "2024-02-10"),
+      PolioVirusTypes = c("WILD1", NA),
+      Classification = c("Confirmed (wild)", "Discarded"),
+      Admin0Name = c("NIGERIA", "NIGERIA"),
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  es <- polished::clean_es(
+    data.frame(
+      Id = 1:2,
+      SampleId = c("E-1", "E-2"),
+      LastUpdateDate = rep("2024-03-01", 2),
+      CollectionDate = c("2024-01-05", "2024-02-09"),
+      VirusTypes = c("cVDPV2", "NPEV"),
+      VdpvClassifications = c("Circulating", NA),
+      VdpvClassificationChangeDate = c("2024-02-01", NA),
+      Admin0Name = c("NIGERIA", "CHAD"),
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  out <- polished::clean_virus(cases = cases, es = es, verbose = FALSE)
+
+  # only the poliovirus positives survive: WPV1 case + cVDPV2 sample (the
+  # Discarded case and the NPEV-only sample are not positives)
+  testthat::expect_equal(nrow(out), 2L)
+  testthat::expect_setequal(out$measurement, c("WPV 1", "cVDPV 2"))
+  testthat::expect_setequal(
+    out$surveillance_type,
+    c("human", "environmental")
+  )
+  # report_date: WPV -> notification date, VDPV -> classification-change date
+  wpv <- out[out$measurement == "WPV 1", ]
+  vdpv <- out[out$measurement == "cVDPV 2", ]
+  testthat::expect_equal(wpv$report_date, as.Date("2024-01-09"))
+  testthat::expect_equal(vdpv$report_date, as.Date("2024-02-01"))
+  # ES epid is the sample id; human epid is the case epid
+  testthat::expect_true("E-1" %in% out$epid && "A-1" %in% out$epid)
+})
+
+testthat::test_that("clean_virus separate_rows splits co-detections per serotype", {
+  cases <- polished::clean_afp(
+    data.frame(
+      Id = 1,
+      Epid = "A-1",
+      LastUpdateDate = "2024-03-01",
+      ParalysisOnsetDate = "2024-01-02",
+      PolioVirusTypes = "WILD1, VDPV2",
+      VdpvClassifications = "Circulating",
+      Classification = "Confirmed (wild)",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  # the case is a WPV1 + cVDPV2 co-detection -> one fused row by default
+  fused <- polished::clean_virus(cases = cases, verbose = FALSE)
+  testthat::expect_equal(nrow(fused), 1L)
+  testthat::expect_equal(fused$measurement, "WPV1andcVDPV 2")
+  # split -> one row per serotype, both for the same epid
+  split <- polished::clean_virus(
+    cases = cases,
+    separate_rows = TRUE,
+    verbose = FALSE
+  )
+  testthat::expect_equal(nrow(split), 2L)
+  testthat::expect_setequal(split$measurement, c("WPV 1", "cVDPV 2"))
+  testthat::expect_true(all(split$epid == "A-1"))
+  testthat::expect_equal(split$classification_all, split$measurement)
+})
+
+testthat::test_that("clean_virus flags nOPV2 from an emergence reference", {
+  es <- polished::clean_es(
+    data.frame(
+      Id = 1:2,
+      SampleId = c("E-1", "E-2"),
+      LastUpdateDate = rep("2024-03-01", 2),
+      CollectionDate = rep("2024-01-05", 2),
+      VirusTypes = c("cVDPV2", "cVDPV2"),
+      VdpvClassifications = c("Circulating", "Circulating"),
+      VdpvEmergenceGroupNames = c("NIE-XYZ-1", "OTHER-1"),
+      Admin0Name = rep("NIGERIA", 2),
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  out <- polished::clean_virus(
+    es = es,
+    nopv_emergence = "NIE-XYZ-1",
+    verbose = FALSE
+  )
+  testthat::expect_equal(out$nopv2[out$emergence_group == "NIE-XYZ-1"], 1L)
+  testthat::expect_equal(out$nopv2[out$emergence_group == "OTHER-1"], 0L)
 })
 
 testthat::test_that("cleaners reject non-data-frame and empty input", {

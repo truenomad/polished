@@ -11,13 +11,15 @@ raw_afp <- function() {
   )
 }
 
-raw_virus <- function() {
+raw_afp_positive <- function() {
   data.frame(
     Id = c(1, 2),
-    Epid = c("A-1", "Z-9"),
+    Epid = c("A-1", "B-2"),
     LastUpdateDate = c("2024-03-01", "2024-02-01"),
     DateOnset = c("2024-01-02", "2024-02-03"),
-    VirusTypeName = c("cVDPV2", "WILD1"),
+    NotificationDate = c("2024-01-09", "2024-02-10"),
+    PolioVirusTypes = c("WILD1", NA),
+    Classification = c("Confirmed (wild)", "Discarded"),
     Admin0Name = c("NIGERIA", "CHAD"),
     check.names = FALSE
   )
@@ -29,11 +31,14 @@ testthat::test_that("run_pipeline cleans a single dataset", {
   testthat::expect_equal(nrow(out$afp), 2L)
 })
 
-testthat::test_that("run_pipeline links virus to cleaned cases", {
+testthat::test_that("run_pipeline builds virus positives from cleaned cases", {
   out <- suppressMessages(
-    polished::run_pipeline(list(afp = raw_afp(), virus = raw_virus()))
+    polished::run_pipeline(list(afp = raw_afp_positive()))
   )
   testthat::expect_setequal(names(out), c("afp", "virus"))
+  # only the WPV case becomes a positive; it is tagged human
+  testthat::expect_equal(nrow(out$virus), 1L)
+  testthat::expect_equal(out$virus$measurement, "WPV 1")
   testthat::expect_equal(
     out$virus$surveillance_type[out$virus$epid == "A-1"],
     "human"
