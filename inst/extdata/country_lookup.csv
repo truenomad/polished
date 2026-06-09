@@ -1,0 +1,250 @@
+iso3,country_actual,risk_group,epi_zones,epi_zones_v2
+ABW,,,Other,Other
+AFG,Afghanistan,Endemic,Other,Other
+AGO,Angola,High Risk,Central/Equatorial Africa,Central/Equatorial Africa
+AIA,,,Other,Other
+ALA,,,Other,Other
+ALB,Albania,,Other,Other
+AND,Andorra,,Other,Other
+ARE,United Arab Emirates,,Other,Other
+ARG,Argentina,,Other,Other
+ARM,Armenia,,Other,Other
+ASM,,,Other,Other
+ATA,,,Other,Other
+ATF,,,Other,Other
+ATG,Antigua and Barbuda,,Other,Other
+AUS,Australia,,Other,Other
+AUT,Austria,,Other,Other
+AZE,Azerbaijan,,Other,Other
+BDI,Burundi,,Central/Equatorial Africa,Central/Equatorial Africa
+BEL,Belgium,,Other,Other
+BEN,Benin,Medium Risk,Western Africa,Western Africa
+BES,,,Other,Other
+BFA,Burkina Faso,High Risk,Western Africa,Lake Chad Basin & Sahel
+BGD,Bangladesh,,Other,Other
+BGR,Bulgaria,,Other,Other
+BHR,Bahrain,,Other,Other
+BHS,Bahamas (The),,Other,Other
+BIH,Bosnia and Herzegovina,,Other,Other
+BLM,,,Other,Other
+BLR,Belarus,,Other,Other
+BLZ,Belize,,Other,Other
+BMU,,,Other,Other
+BOL,Bolivia (Plurinational State of),,Other,Other
+BRA,Brazil,,Other,Other
+BRB,Barbados,,Other,Other
+BRN,Brunei Darussalam,,Other,Other
+BTN,Bhutan,,Other,Other
+BVT,,,Other,Other
+BWA,Botswana,,Southern Africa,Southern Africa
+CAF,CAR,High Risk,Lake Chad Basin,Lake Chad Basin & Sahel
+CAN,Canada,,Other,Other
+CCK,,,Other,Other
+CHE,Switzerland,,Other,Other
+CHL,Chile,,Other,Other
+CHN,China (the People's Republic of),,Other,Other
+CIV,Cote d'Ivoire,Medium Risk,Western Africa,Western Africa
+CMR,Cameroon,High Risk,Lake Chad Basin,Lake Chad Basin & Sahel
+COD,DRC,Very High Risk,Central/Equatorial Africa,Central/Equatorial Africa
+COG,Congo,,Central/Equatorial Africa,Central/Equatorial Africa
+COK,,,Other,Other
+COL,Colombia,,Other,Other
+COM,Comoros,,Islands,Islands
+CPV,Cabo Verde,,Islands,Islands
+CRI,Costa Rica,,Other,Other
+CUB,Cuba,,Other,Other
+CUW,,,Other,Other
+CXR,,,Other,Other
+CYM,,,Other,Other
+CYP,Cyprus,,Other,Other
+CZE,Czechia,,Other,Other
+DEU,Germany,,Other,Other
+DJI,Djibouti,,Other,Other
+DMA,Dominica,,Other,Other
+DNK,Denmark,,Other,Other
+DOM,Dominican Republic,,Other,Other
+DZA,Algeria,,Western Africa,Western Africa
+ECU,Ecuador,,Other,Other
+EGY,Egypt,,Other,Other
+ERI,Eritrea,,Horn of Africa,Horn of Africa
+ESH,,,Other,Other
+ESP,Spain,,Other,Other
+EST,Estonia,,Other,Other
+ETH,Ethiopia,Very High Risk,Horn of Africa,Horn of Africa
+FIN,Finland,,Other,Other
+FJI,Fiji,,Other,Other
+FLK,,,Other,Other
+FRA,France,,Other,Other
+FRO,,,Other,Other
+FSM,Micronesia (Federated States of),,Other,Other
+GAB,Gabon,,Central/Equatorial Africa,Central/Equatorial Africa
+GBR,United Kingdom of Great Britain and Northern Ireland,,Other,Other
+GEO,Georgia,,Other,Other
+GGY,,,Other,Other
+GHA,Ghana,,Western Africa,Western Africa
+GIB,,,Other,Other
+GIN,Guinea,High Risk,Western Africa,Western Africa
+GLP,,,Other,Other
+GMB,Gambia,,Western Africa,Western Africa
+GNB,Guinea-Bissau,Medium Risk,Western Africa,Western Africa
+GNQ,Equatorial Guinea,Medium Risk,Central/Equatorial Africa,Central/Equatorial Africa
+GRC,Greece,,Other,Other
+GRD,Grenada,,Other,Other
+GRL,,,Other,Other
+GTM,Guatemala,,Other,Other
+GUF,,,Other,Other
+GUM,,,Other,Other
+GUY,Guyana,,Other,Other
+HKG,,,Other,Other
+HMD,,,Other,Other
+HND,Honduras,,Other,Other
+HRV,Croatia,,Other,Other
+HTI,Haiti,,Other,Other
+HUN,Hungary,,Other,Other
+IDN,Indonesia,,Other,Other
+IMN,,,Other,Other
+IND,India,,Other,Other
+IOT,,,Other,Other
+IRL,Ireland,,Other,Other
+IRN,Iran (Islamic Republic of),,Other,Other
+IRQ,Iraq,Medium Risk,Other,Other
+ISL,Iceland,,Other,Other
+ISR,Israel,,Other,Other
+ITA,Italy,,Other,Other
+JAM,Jamaica,,Other,Other
+JEY,,,Other,Other
+JOR,Jordan,,Other,Other
+JPN,Japan,,Other,Other
+KAZ,Kazakhstan,,Other,Other
+KEN,Kenya,High Risk,Horn of Africa,Horn of Africa
+KGZ,Kyrgyzstan,,Other,Other
+KHM,Cambodia,,Other,Other
+KIR,Kiribati,,Other,Other
+KNA,Saint Kitts and Nevis,,Other,Other
+KOR,Republic of Korea,,Other,Other
+KWT,Kuwait,,Other,Other
+LAO,Lao People’s Democratic Republic,,Other,Other
+LBN,Lebanon,,Other,Other
+LBR,Liberia,,Western Africa,Western Africa
+LBY,Libya,,Other,Other
+LCA,Saint Lucia,,Other,Other
+LIE,Liechtenstein,,Other,Other
+LKA,Sri Lanka,,Other,Other
+LSO,Lesotho,,Southern Africa,Southern Africa
+LTU,Lithuania,,Other,Other
+LUX,Luxembourg,,Other,Other
+LVA,Latvia,,Other,Other
+MAC,,,Other,Other
+MAF,,,Other,Other
+MAR,Morocco,,Other,Other
+MCO,Monaco,,Other,Other
+MDA,Republic of Moldova,,Other,Other
+MDG,Madagascar,Medium Risk,Southern Africa,Southern Africa
+MDV,Maldives,,Other,Other
+MEX,Mexico,,Other,Other
+MHL,Marshall Islands,,Other,Other
+MKD,North Macedonia,,Other,Other
+MLI,Mali,High Risk,Western Africa,Lake Chad Basin & Sahel
+MLT,Malta,,Other,Other
+MMR,Myanmar,Medium Risk,Other,Other
+MNE,Montenegro,,Other,Other
+MNG,Mongolia,,Other,Other
+MNP,,,Other,Other
+MOZ,Mozambique,Medium Risk,Southern Africa,Southern Africa
+MRT,Mauritania,,Western Africa,Western Africa
+MSR,,,Other,Other
+MTQ,,,Other,Other
+MUS,Mauritius,,Islands,Islands
+MWI,Malawi,,Southern Africa,Southern Africa
+MYS,Malaysia,,Other,Other
+MYT,,,Other,Other
+NAM,Namibia,,Southern Africa,Southern Africa
+NCL,,,Other,Other
+NER,Niger,Very High Risk,Lake Chad Basin,Lake Chad Basin & Sahel
+NFK,,,Other,Other
+NGA,Nigeria,Very High Risk,Lake Chad Basin,Lake Chad Basin & Sahel
+NIC,Nicaragua,,Other,Other
+NIU,,,Other,Other
+NLD,Netherlands (Kingdom of the),,Other,Other
+NOR,Norway,,Other,Other
+NPL,Nepal,,Other,Other
+NRU,Nauru,,Other,Other
+NZL,New Zealand,,Other,Other
+OMN,Oman,,Other,Other
+PAK,Pakistan,Endemic,Other,Other
+PAN,Panama,,Other,Other
+PCN,,,Other,Other
+PER,Peru,,Other,Other
+PHL,Philippines,Medium Risk,Other,Other
+PLW,Palau,,Other,Other
+PNG,Papua New Guinea,Medium Risk,Other,Other
+POL,Poland,,Other,Other
+PRI,,,Other,Other
+PRK,Democratic People’s Republic of Korea,,Other,Other
+PRT,Portugal,,Other,Other
+PRY,Paraguay,,Other,Other
+PSE,,,Other,Other
+PYF,,,Other,Other
+QAT,Qatar,,Other,Other
+REU,,,Other,Other
+ROU,Romania,,Other,Other
+RUS,Russian Federation,,Other,Other
+RWA,Rwanda,,Central/Equatorial Africa,Central/Equatorial Africa
+SAU,Saudi Arabia,,Other,Other
+SDN,Sudan,Medium Risk,Other,Other
+SEN,Senegal,,Western Africa,Western Africa
+SGP,Singapore,,Other,Other
+SGS,,,Other,Other
+SHN,,,Other,Other
+SJM,,,Other,Other
+SLB,Solomon Islands,,Other,Other
+SLE,Sierra Leone,,Western Africa,Western Africa
+SLV,El Salvador,,Other,Other
+SMR,San Marino,,Other,Other
+SOM,Somalia,Very High Risk,Other,Other
+SPM,,,Other,Other
+SRB,Serbia,,Other,Other
+SSD,South Sudan,High Risk,Horn of Africa,Horn of Africa
+STP,Sao Tome and Principe,,Islands,Islands
+SUR,Suriname,,Other,Other
+SVK,Slovakia,,Other,Other
+SVN,Slovenia,,Other,Other
+SWE,Sweden,,Other,Other
+SWZ,Eswatini,,Southern Africa,Southern Africa
+SXM,,,Other,Other
+SYC,Seychelles,,Islands,Islands
+SYR,Syrian Arab Republic,Medium Risk,Other,Other
+TCA,,,Other,Other
+TCD,Chad,Very High Risk,Lake Chad Basin,Lake Chad Basin & Sahel
+TGO,Togo,Medium Risk,Western Africa,Western Africa
+THA,Thailand,,Other,Other
+TJK,Tajikistan,,Other,Other
+TKL,,,Other,Other
+TKM,Turkmenistan,,Other,Other
+TLS,Timor-Leste,,Other,Other
+TON,Tonga,,Other,Other
+TTO,Trinidad and Tobago,,Other,Other
+TUN,Tunisia,,Other,Other
+TUR,Türkiye,,Other,Other
+TUV,Tuvalu,,Other,Other
+TWN,,,Other,Other
+TZA,Tanzania,,Horn of Africa,Horn of Africa
+UGA,Uganda,,Horn of Africa,Horn of Africa
+UKR,Ukraine,,Other,Other
+UMI,,,Other,Other
+URY,Uruguay,,Other,Other
+USA,United States of America,,Other,Other
+UZB,Uzbekistan,,Other,Other
+VAT,,,Other,Other
+VCT,Saint Vincent and the Grenadines,,Other,Other
+VEN,Venezuela (Bolivarian Republic of),,Other,Other
+VGB,,,Other,Other
+VIR,,,Other,Other
+VNM,Viet Nam,,Other,Other
+VUT,Vanuatu,,Other,Other
+WLF,,,Other,Other
+WSM,Samoa,,Other,Other
+YEM,Yemen,High Risk,Other,Other
+ZAF,South Africa,,Southern Africa,Southern Africa
+ZMB,Zambia,,Southern Africa,Southern Africa
+ZWE,Zimbabwe,,Southern Africa,Southern Africa
