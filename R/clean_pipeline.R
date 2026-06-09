@@ -177,10 +177,12 @@ print.polis_config <- function(x, ...) {
 #'
 #' Cleans the raw POLIS tables supplied in `inputs` and returns the canonical
 #' analytic set. Any subset of tables may be supplied; absent tables are skipped.
-#' Virus is linked to cleaned cases/ES when both are present.
+#' The virus (positives) table is *built* from the cleaned AFP and ES streams via
+#' [clean_virus()] whenever either is present -- it is not read from `inputs`.
 #'
 #' @param inputs Named list of raw POLIS data frames. Recognised names:
-#'   `afp`, `es`, `virus`, `activity`, `subactivity`.
+#'   `afp`, `es`, `activity`, `subactivity`. (A raw `virus` table is not used --
+#'   positives are derived from the cleaned `afp`/`es` outputs.)
 #' @param cfg A [polis_config()] object (default `polis_config()`).
 #' @param reconcile_with Optional named list of full-pull data frames (same keys
 #'   as `inputs`) used to prune deleted/merged `id`s via [reconcile()].
@@ -225,15 +227,14 @@ run_pipeline <- function(
     cleaned$sia <- clean_sia(inputs$activity, inputs$subactivity, cfg)
   }
 
-  # ---- Virus (positives) ----------------------------------------------------
-  if (!is.null(inputs$virus)) {
-    cli::cli_h1("Cleaning virus / positives")
-    cleaned$virus <- clean_virus(
-      inputs$virus,
-      cases = cleaned$afp,
-      es = cleaned$es,
-      cfg = cfg
-    )
+  # ---- Virus (positives): built from the cleaned human + ES streams ---------
+  if (!is.null(cleaned$afp) || !is.null(cleaned$es)) {
+    cli::cli_h1("Building virus / positives")
+    virus <- clean_virus(cases = cleaned$afp, es = cleaned$es, cfg = cfg)
+    # only attach when there are positives, so a virus-free run stays trim
+    if (nrow(virus) > 0) {
+      cleaned$virus <- virus
+    }
   }
 
   # ---- reconcile against a full pull (optional, G5) -------------------------
