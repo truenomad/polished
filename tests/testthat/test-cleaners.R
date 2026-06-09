@@ -279,7 +279,7 @@ testthat::test_that("clean_es fills missing admin from unambiguous same-site sam
   out <- polished::clean_es(raw, impute_geo = TRUE, verbose = FALSE)
   site10 <- out[out$site_id == 10, ]
   # site 10 maps unambiguously to {A2} -> its missing rows are recovered
-  testthat::expect_true(all(site10$adm2_guid == "a2"))
+  testthat::expect_true(all(site10$adm2_guid == "{A2}"))
   testthat::expect_true(all(site10$adm2 == "BOSSO"))
   testthat::expect_equal(
     out$geo_source[out$site_id == 10 & out$id %in% 2:3],
@@ -304,17 +304,17 @@ testthat::test_that("clean_es does not fill from an ambiguous site (two GUIDs)",
   testthat::expect_true(is.na(out$adm2_guid[out$id == 3]))
 })
 
-testthat::test_that("clean_es canonicalises admin GUIDs", {
+testthat::test_that("clean_es emits admin GUIDs in the braced upper-case form", {
   raw <- data.frame(
     Id = 1:2,
     LastUpdateDate = rep("2024-03-01", 2),
     CollectionDate = rep("2024-01-05", 2),
     Admin0Name = rep("CHAD", 2),
-    Admin2GUID = c("{ABC-123}", "{DEF-456}"),
+    Admin2GUID = c("{abc-123}", "DEF-456"),
     check.names = FALSE
   )
   out <- polished::clean_es(raw, verbose = FALSE)
-  testthat::expect_equal(sort(out$adm2_guid), c("abc-123", "def-456"))
+  testthat::expect_equal(sort(out$adm2_guid), c("{ABC-123}", "{DEF-456}"))
 })
 
 testthat::test_that("validate_es_sites flags unknown sites without dropping", {
