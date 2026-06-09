@@ -26,6 +26,8 @@
 utils::globalVariables(c(
   # shape-lookup count column
   ".n",
+  # enrich_afp() country lookup key
+  "iso3",
   # coordinate-recovery join helpers
   ".crow",
   ".yr",
@@ -271,8 +273,16 @@ utils::globalVariables(c(
   "date_start",
   "sub_activity_id",
 
-  # EPID geo cascade (epid_geo.R) helpers
+  # EPID geo cascade (spatial.R) prefix-match helpers
   ":=",
   "k_prefix",
-  "m_prefix"
+  "k_year",
+  "k_parent",
+  "k_value",
+  "m_prefix",
+  "m_year",
+  "m_parent",
+  "row_id",
+  "accepted",
+  "n_distinct_value"
 ))
