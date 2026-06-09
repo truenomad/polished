@@ -36,6 +36,10 @@
 #'     join-ready with the spatial layer), a title-cased `site` label, and --
 #'     when a `shape` is supplied -- admin-GUID reconciliation and
 #'     coordinate-based admin recovery (all keyed on `year_collection`);
+#'   \item country-keyed enrichment from [polis_country_lookup()] --
+#'     `country_actual`, `risk_group`, `epi_zones` / `epi_zones_v2` -- and the
+#'     `polio_type` serotype (the ES counterpart of the AFP enrichment; the
+#'     case-classification AFP flags do not apply to environmental samples);
 #'   \item one row per POLIS `id` (latest by `last_update_date`).
 #' }
 #' The raw POLIS `virus_types`, `vdpv_classifications`, the per-serotype
@@ -214,6 +218,13 @@ clean_es <- function(
     step("Validating site names", "Validated site names")
     data <- validate_es_sites(data, sites, verbose = verbose)
   }
+
+  # ---- enrich: country groupings + polio type -------------------------------
+  step(
+    "Enriching with country groupings",
+    "Enriched with country groupings"
+  )
+  data <- .es_enrich(data)
 
   # ---- finalise: dedup by id, infer types, assert business key, order -------
   step("Deduplicating by id and finalising", "Deduplicated by id and finalised")
@@ -794,4 +805,18 @@ es_missingness <- function(data, vars = NULL) {
     pct_missing = round(100 * n_missing / n, 2)
   ) |>
     dplyr::arrange(dplyr::desc(.data$pct_missing))
+}
+
+#' Enrich cleaned ES data with country groupings and the polio serotype
+#'
+#' The always-on enrichment layer, the ES counterpart of `.afp_enrich`: joins
+#' the country reference (`country_actual`, `risk_group`, `epi_zones` /
+#' `epi_zones_v2`) and reads `polio_type` off `classification_all`. ES has no
+#' case-classification flags, so the AFP `afp_class` family does not apply. Each
+#' piece is a no-op when its source columns are absent.
+#' @noRd
+.es_enrich <- function(data) {
+  data |>
+    .polis_join_country() |>
+    .polis_polio_type()
 }

@@ -1401,6 +1401,88 @@
 }
 
 # =============================================================================
+# Country enrichment reference (shared by clean_afp() and clean_es())
+#
+# A small country-keyed lookup (ISO3 -> standardised name, polio risk tier,
+# epidemiological zone) and the two generic transforms the cleaners apply from
+# it. Kept here because both the human and environmental cleaners enrich the
+# same way; each cleaner owns only its thin orchestrator (.afp_enrich /
+# .es_enrich) that composes these.
+# =============================================================================
+
+#' Country reference lookup shipped with the package
+#'
+#' Returns the packaged country reference that maps an ISO3 code to the
+#' standardised display name, polio risk tier and epidemiological zone groupings
+#' the cleaners attach. Used by [clean_afp()] and [clean_es()] via
+#' `.polis_join_country()`.
+#'
+#' @return A tibble with columns `iso3`, `country_actual`, `risk_group`,
+#'   `epi_zones`, `epi_zones_v2`.
+#'
+#' @examples
+#' head(polis_country_lookup())
+#'
+#' @export
+polis_country_lookup <- function() {
+  readr::read_csv(
+    .polis_extdata_path("country_lookup.csv"),
+    col_types = readr::cols(.default = readr::col_character()),
+    progress = FALSE
+  )
+}
+
+#' Join the country lookup by ISO3 and fill the country grouping fields
+#' @noRd
+.polis_join_country <- function(
+  data,
+  iso3_var = "country_iso3code",
+  adm0_var = "adm0",
+  lookup = polis_country_lookup()
+) {
+  if (!iso3_var %in% names(data)) {
+    return(data)
+  }
+  lookup <- dplyr::distinct(lookup, iso3, .keep_all = TRUE)
+  pos <- match(toupper(trimws(data[[iso3_var]])), lookup$iso3)
+  data$country_actual <- lookup$country_actual[pos]
+  data$risk_group <- lookup$risk_group[pos]
+  data$epi_zones <- dplyr::coalesce(lookup$epi_zones[pos], "Other")
+  data$epi_zones_v2 <- dplyr::coalesce(lookup$epi_zones_v2[pos], "Other")
+  if (adm0_var %in% names(data)) {
+    data$country_actual <- dplyr::coalesce(
+      data$country_actual,
+      stringr::str_to_title(data[[adm0_var]])
+    )
+  }
+  data
+}
+
+#' Read the poliovirus serotype (Type 1/2/3) off a classification column
+#' @noRd
+.polis_polio_type <- function(
+  data,
+  type_var = "classification_all",
+  fallback_var = "polio_virus_types"
+) {
+  src_var <- if (type_var %in% names(data)) {
+    type_var
+  } else if (fallback_var %in% names(data)) {
+    fallback_var
+  } else {
+    return(data)
+  }
+  src <- data[[src_var]]
+  data$polio_type <- dplyr::case_when(
+    stringr::str_detect(src, "1") ~ "Type 1",
+    stringr::str_detect(src, "2") ~ "Type 2",
+    stringr::str_detect(src, "3") ~ "Type 3",
+    TRUE ~ NA_character_
+  )
+  data
+}
+
+# =============================================================================
 # Column-name standardisation
 #
 # Canonical names come from the package crosswalk (inst/extdata/crosswalk.csv).

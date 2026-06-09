@@ -30,6 +30,10 @@
 #'   \item the fused analytic classification `classification_all` (with its
 #'     building blocks `vtype` / `vtype_fixed`) plus the Sabin flags
 #'     `sabin1` / `sabin2` / `sabin3` and a recomputed `hot_case`;
+#'   \item country-keyed enrichment from [polis_country_lookup()] --
+#'     `country_actual`, `risk_group`, `epi_zones` / `epi_zones_v2` -- the
+#'     `polio_type` serotype, and the surveillance AFP flags `afp_class`, `afp`,
+#'     `npafp` and `pending_results`;
 #'   \item normalised admin names and one row per POLIS `id` (latest by
 #'     `last_update_date`).
 #' }
@@ -58,9 +62,6 @@
 #'   their GUIDs) after reconciliation have them recovered from the EPID prefix
 #'   via [impute_geo_from_epid()] (self-reference + prefix matching, every row
 #'   kept). Adds `*_source` provenance columns.
-#' @param enrich If `TRUE` the output is passed through [enrich_afp()], adding
-#'   `country_actual`, `risk_group`, `epi_zones`, `polio_type` and the AFP flags
-#'   (`afp_class`, `afp`, `npafp`, `pending_results`). Default `FALSE`.
 #' @param verbose Emit cli progress messages for each phase. Default `TRUE`.
 #'
 #' @return A tibble of cleaned AFP records, one row per POLIS `id`, with columns
@@ -88,7 +89,6 @@ clean_afp <- function(
   cfg = polis_config(),
   shape = NULL,
   impute_geo = TRUE,
-  enrich = FALSE,
   verbose = TRUE
 ) {
   # each call to step() marks the previous step done (past-tense tick) and starts
@@ -194,21 +194,20 @@ clean_afp <- function(
     n_rec <- .polis_big_num(max(na2_before - na2_after, 0L))
   }
 
-  # ---- finalise: dedup by id, infer types, (enrich), assert key, order ------
+  # ---- enrich: country groupings, polio type, AFP flags ---------------------
+  step(
+    "Enriching with country groupings and AFP flags",
+    "Enriched with country groupings and AFP flags"
+  )
+  data <- .afp_enrich(data)
+
+  # ---- finalise: dedup by id, infer types, assert key, order ----------------
   step("Deduplicating by id and finalising", "Deduplicated by id and finalised")
   out <- data |>
     polis_upsert(id = "id", date = "last_update_date") |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
-    .geo_guid_display_cols()
-  if (isTRUE(enrich)) {
-    step(
-      "Enriching with country groupings and AFP flags",
-      "Enriched with country groupings and AFP flags"
-    )
-    out <- enrich_afp(out)
-  }
-  out <- out |>
+    .geo_guid_display_cols() |>
     flag_ambiguous(key = c("epid", "adm0"), sink = cfg$qa) |>
     order_columns(cfg$column_roles)
   if (isTRUE(verbose)) {
@@ -817,5 +816,67 @@ clean_afp_classification <- function(data) {
       )
     )
   }
+  data
+}
+
+#' Enrich cleaned AFP data with country groupings, polio type and AFP flags
+#'
+#' The always-on enrichment layer: joins the country reference, reads the polio
+#' serotype off the classification, and derives the surveillance AFP flags. Each
+#' piece is a no-op when its source columns are absent, so a trimmed input still
+#' passes through.
+#' @noRd
+.afp_enrich <- function(data) {
+  data |>
+    .polis_join_country() |>
+    .polis_polio_type() |>
+    .afp_enrich_flags()
+}
+
+#' Derive the surveillance AFP flags (afp_class / afp / npafp / pending_results)
+#'
+#' `afp_class` buckets AFP-surveillance cases by their raw `classification`
+#' (AFP-Positive / Non-polio AFP / Not an AFP / VAPP / Others); `afp` and
+#' `npafp` are its binary cuts and `pending_results` flags pending lab results.
+#' A no-op when `classification` is absent.
+#' @noRd
+.afp_enrich_flags <- function(
+  data,
+  class_var = "classification",
+  virus_var = "polio_virus_types",
+  surv_var = "surveillance_type_name"
+) {
+  if (!class_var %in% names(data)) {
+    return(data)
+  }
+  cls <- data[[class_var]]
+  surv <- if (surv_var %in% names(data)) {
+    data[[surv_var]]
+  } else {
+    rep(NA_character_, nrow(data))
+  }
+  virus <- if (virus_var %in% names(data)) {
+    data[[virus_var]]
+  } else {
+    rep(NA_character_, nrow(data))
+  }
+  is_afp <- !is.na(surv) & surv == "AFP"
+  data$afp_class <- dplyr::case_when(
+    is_afp & cls %in% c("Compatible", "Confirmed (wild)") ~ "AFP-Positive",
+    is_afp & cls == "Discarded" ~ "Non-polio AFP",
+    is_afp & cls == "Not an AFP" ~ "Not an AFP",
+    is_afp & cls == "VAPP" ~ "VAPP",
+    TRUE ~ "Others"
+  )
+  data$afp <- dplyr::if_else(data$afp_class == "AFP-Positive", 1L, 0L)
+  # non-polio AFP: discarded/pending and not a circulating VDPV type 1/2
+  data$npafp <- dplyr::if_else(
+    cls %in%
+      c("Discarded", "Pending") &
+      !grepl("cVDPV1|cVDPV2", dplyr::coalesce(virus, "")),
+    1L,
+    0L
+  )
+  data$pending_results <- cls %in% "Pending"
   data
 }
