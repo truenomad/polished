@@ -234,6 +234,116 @@ testthat::test_that("clean_es reads logical Yes/No detection columns", {
   testthat::expect_equal(out$ev_detect, c(1L, 0L))
 })
 
+testthat::test_that("clean_es reconciles admin GUIDs from a shape (like clean_afp)", {
+  shape <- data.frame(
+    adm0 = "NIGERIA",
+    adm1 = "BORNO",
+    adm2 = "BOSSO",
+    adm0_guid = "{A0}",
+    adm1_guid = "{A1}",
+    adm2_guid = "{A2}",
+    active_year = c(2024, 9999),
+    stringsAsFactors = FALSE
+  )
+  raw <- data.frame(
+    Id = 1:2,
+    LastUpdateDate = rep("2024-03-01", 2),
+    CollectionDate = rep("2024-01-05", 2),
+    Admin0Name = c("NIGERIA", "NIGERIA"),
+    Admin1Name = c(NA, NA),
+    Admin2Name = c(NA, NA),
+    Admin0GUID = c("{A0}", "{A0}"),
+    Admin1GUID = c(NA, NA),
+    Admin2GUID = c("{A2}", "{A2}"),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, shape = shape, verbose = FALSE)
+  # reconciliation keyed on year_collection filled the names from the GUID
+  testthat::expect_equal(unique(out$adm1), "BORNO")
+  testthat::expect_equal(unique(out$adm2), "BOSSO")
+  testthat::expect_true("geo_source" %in% names(out))
+})
+
+testthat::test_that("clean_es fills missing admin from unambiguous same-site samples", {
+  raw <- data.frame(
+    Id = 1:4,
+    SampleId = paste0("S", 1:4),
+    SiteId = c(10, 10, 10, 20),
+    LastUpdateDate = rep("2024-03-01", 4),
+    CollectionDate = rep("2024-01-05", 4),
+    Admin0Name = rep("NIGERIA", 4),
+    Admin2Name = c("BOSSO", NA, NA, NA),
+    Admin2GUID = c("{A2}", NA, NA, NA),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, impute_geo = TRUE, verbose = FALSE)
+  site10 <- out[out$site_id == 10, ]
+  # site 10 maps unambiguously to {A2} -> its missing rows are recovered
+  testthat::expect_true(all(site10$adm2_guid == "a2"))
+  testthat::expect_true(all(site10$adm2 == "BOSSO"))
+  testthat::expect_equal(
+    out$geo_source[out$site_id == 10 & out$id %in% 2:3],
+    c("site_match", "site_match")
+  )
+  # site 20 never carries a GUID anywhere -> left missing, not guessed
+  testthat::expect_true(is.na(out$adm2_guid[out$site_id == 20]))
+})
+
+testthat::test_that("clean_es does not fill from an ambiguous site (two GUIDs)", {
+  raw <- data.frame(
+    Id = 1:3,
+    SiteId = c(10, 10, 10),
+    LastUpdateDate = rep("2024-03-01", 3),
+    CollectionDate = rep("2024-01-05", 3),
+    Admin0Name = rep("NIGERIA", 3),
+    Admin2GUID = c("{A2}", "{B2}", NA), # site 10 maps to two districts
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, impute_geo = TRUE, verbose = FALSE)
+  # the ambiguous site is left untouched rather than guessed
+  testthat::expect_true(is.na(out$adm2_guid[out$id == 3]))
+})
+
+testthat::test_that("clean_es canonicalises admin GUIDs", {
+  raw <- data.frame(
+    Id = 1:2,
+    LastUpdateDate = rep("2024-03-01", 2),
+    CollectionDate = rep("2024-01-05", 2),
+    Admin0Name = rep("CHAD", 2),
+    Admin2GUID = c("{ABC-123}", "{DEF-456}"),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, verbose = FALSE)
+  testthat::expect_equal(sort(out$adm2_guid), c("abc-123", "def-456"))
+})
+
+testthat::test_that("validate_es_sites flags unknown sites without dropping", {
+  es <- data.frame(
+    site_name = c("SITE A", "SITE B", "SITE C"),
+    site_y_coordinate = c(6.5, NA, 7.1)
+  )
+  out <- polished::validate_es_sites(es, sites = "SITE A", verbose = FALSE)
+  flagged <- attr(out, "polis_new_sites")
+  testthat::expect_equal(nrow(out), 3L)
+  testthat::expect_setequal(flagged$site_name, c("SITE B", "SITE C"))
+  testthat::expect_true(flagged$no_coords[flagged$site_name == "SITE B"])
+})
+
+testthat::test_that("es_missingness summarises missingness, most-missing first", {
+  es <- data.frame(
+    collection_date = as.Date(c("2024-01-01", NA, NA)),
+    adm0 = c("CHAD", "CHAD", "CHAD"),
+    classification_all = c(NA, "NEGATIVE", "NEGATIVE")
+  )
+  mm <- polished::es_missingness(es)
+  testthat::expect_s3_class(mm, "tbl_df")
+  testthat::expect_equal(mm$variable[1], "collection_date")
+  testthat::expect_equal(
+    mm$pct_missing[mm$variable == "collection_date"],
+    round(200 / 3, 2)
+  )
+})
+
 testthat::test_that("clean_sia runs on activity alone", {
   activity <- data.frame(
     Id = c(1, 2),

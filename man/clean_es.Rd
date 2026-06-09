@@ -4,13 +4,43 @@
 \alias{clean_es}
 \title{Clean POLIS environmental surveillance data}
 \usage{
-clean_es(data, cfg = polis_config(), verbose = TRUE)
+clean_es(
+  data,
+  cfg = polis_config(),
+  shape = NULL,
+  impute_geo = TRUE,
+  sites = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{data}{A raw POLIS environmental-samples data frame.}
 
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Supply
 \code{cfg$qa} to route ambiguity flags.}
+
+\item{shape}{Optional district shape used to reconcile admin names/GUIDs via
+\code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}} (keyed on \code{year_collection}), exactly as
+\code{\link[=clean_afp]{clean_afp()}} uses it. Either a long ADM2 attribute table
+(\code{spatial_adm2_long_shape}) or the polygon layer (\code{spatial_global_adm2}). A
+polygon is expanded to its long form here to drive the GUID reconcile and
+\emph{also} drives coordinate-based admin recovery: samples still missing
+\code{adm1}/\code{adm2} (or their GUIDs) but carrying site coordinates have their
+admin recovered by a point-in-polygon join via \code{\link[=impute_geo_from_coords]{impute_geo_from_coords()}}
+(the ES counterpart of AFP EPID-prefix recovery; ES samples carry no
+geocoded EPID). Default \code{NULL} (no shape-based recovery).}
+
+\item{impute_geo}{If \code{TRUE} (default) samples still missing \code{adm2_guid} after
+any shape-based recovery have their admin chain borrowed from other samples
+at the same site via the self-reference fill (see details); only sites that
+map unambiguously to one district are used, so conflicting sites are left
+flagged rather than guessed. Needs no shape, so it runs standalone. Adds a
+\code{geo_source} of \code{"site_match"} to filled rows.}
+
+\item{sites}{Optional reference list of known environmental site names (a data
+frame with a \code{site_name} column, or a character vector). When supplied,
+sites absent from it are flagged via \code{\link[=validate_es_sites]{validate_es_sites()}}. Default \code{NULL}
+(no site validation).}
 
 \item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
@@ -42,8 +72,12 @@ cleaner emits (so one \code{grepl("WPV|cVDPV", classification_all)} works across
 both streams), the per-serotype Sabin flags \code{sabin1}/\code{sabin2}/\code{sabin3},
 the \code{npev} and \code{nvaccine} (nOPV2) flags and the fused \code{ev_detect}
 "anything detected" flag;
-\item normalised admin names (and a title-cased \code{site} label) and one row
-per POLIS \code{id} (latest by \code{last_update_date}).
+\item the same geography cleaning as \code{\link[=clean_afp]{clean_afp()}}: normalised admin names,
+canonicalised admin GUIDs (braces stripped, lower-cased, so they are
+join-ready with the spatial layer), a title-cased \code{site} label, and --
+when a \code{shape} is supplied -- admin-GUID reconciliation and
+coordinate-based admin recovery (all keyed on \code{year_collection});
+\item one row per POLIS \code{id} (latest by \code{last_update_date}).
 }
 The raw POLIS \code{virus_types}, \code{vdpv_classifications}, the per-serotype
 \verb{vaccine*}/\verb{vdpv*}/\verb{wild*} fields and \code{sample_condition} are kept as-is
