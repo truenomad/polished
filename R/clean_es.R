@@ -31,8 +31,12 @@
 #'     both streams), the per-serotype Sabin flags `sabin1`/`sabin2`/`sabin3`,
 #'     the `npev` and `nvaccine` (nOPV2) flags and the fused `ev_detect`
 #'     "anything detected" flag;
-#'   \item normalised admin names (and a title-cased `site` label) and one row
-#'     per POLIS `id` (latest by `last_update_date`).
+#'   \item the same geography cleaning as [clean_afp()]: normalised admin names,
+#'     canonicalised admin GUIDs (braces stripped, lower-cased, so they are
+#'     join-ready with the spatial layer), a title-cased `site` label, and --
+#'     when a `shape` is supplied -- admin-GUID reconciliation and
+#'     coordinate-based admin recovery (all keyed on `year_collection`);
+#'   \item one row per POLIS `id` (latest by `last_update_date`).
 #' }
 #' The raw POLIS `virus_types`, `vdpv_classifications`, the per-serotype
 #' `vaccine*`/`vdpv*`/`wild*` fields and `sample_condition` are kept as-is
@@ -44,6 +48,26 @@
 #' @param data A raw POLIS environmental-samples data frame.
 #' @param cfg A [polis_config()] object (default `polis_config()`). Supply
 #'   `cfg$qa` to route ambiguity flags.
+#' @param shape Optional district shape used to reconcile admin names/GUIDs via
+#'   [reconcile_admin_guids()] (keyed on `year_collection`), exactly as
+#'   [clean_afp()] uses it. Either a long ADM2 attribute table
+#'   (`spatial_adm2_long_shape`) or the polygon layer (`spatial_global_adm2`). A
+#'   polygon is expanded to its long form here to drive the GUID reconcile and
+#'   *also* drives coordinate-based admin recovery: samples still missing
+#'   `adm1`/`adm2` (or their GUIDs) but carrying site coordinates have their
+#'   admin recovered by a point-in-polygon join via [impute_geo_from_coords()]
+#'   (the ES counterpart of AFP EPID-prefix recovery; ES samples carry no
+#'   geocoded EPID). Default `NULL` (no shape-based recovery).
+#' @param impute_geo If `TRUE` (default) samples still missing `adm2_guid` after
+#'   any shape-based recovery have their admin chain borrowed from other samples
+#'   at the same site via the self-reference fill (see details); only sites that
+#'   map unambiguously to one district are used, so conflicting sites are left
+#'   flagged rather than guessed. Needs no shape, so it runs standalone. Adds a
+#'   `geo_source` of `"site_match"` to filled rows.
+#' @param sites Optional reference list of known environmental site names (a data
+#'   frame with a `site_name` column, or a character vector). When supplied,
+#'   sites absent from it are flagged via [validate_es_sites()]. Default `NULL`
+#'   (no site validation).
 #' @param verbose Emit cli progress messages for each phase. Default `TRUE`.
 #'
 #' @return A tibble of cleaned ES records, one row per POLIS `id`, with columns
@@ -69,7 +93,14 @@
 #' clean_es(raw)
 #'
 #' @export
-clean_es <- function(data, cfg = polis_config(), verbose = TRUE) {
+clean_es <- function(
+  data,
+  cfg = polis_config(),
+  shape = NULL,
+  impute_geo = TRUE,
+  sites = NULL,
+  verbose = TRUE
+) {
   step <- function(msg, done) {
     if (isTRUE(verbose)) {
       cli::cli_progress_step(msg, msg_done = done, .envir = parent.frame())
@@ -103,11 +134,85 @@ clean_es <- function(data, cfg = polis_config(), verbose = TRUE) {
   data <- clean_es_classification(data)
 
   # ---- standardise geography ------------------------------------------------
+  # exactly the clean_afp() recipe, keyed on year_collection: fix admin names,
+  # canonicalise the admin GUIDs (strip braces, lower-case; "" already NA from
+  # clean_strings) so they are join-ready, add a title-cased site label, then --
+  # when a shape is supplied -- reconcile the GUIDs against it and recover admin
+  # from the site coordinates. (EPID-prefix recovery is AFP-only: ES samples
+  # carry no geocoded EPID, so coordinate recovery is the ES equivalent.)
   step("Standardising admin names", "Standardised admin names")
-  data <- fix_geo_names(data)
-  # a title-cased site label for display, alongside the raw upper-case site_name
+  data <- fix_geo_names(data) |>
+    .es_normalise_guids()
   if ("site_name" %in% names(data)) {
     data$site <- stringr::str_to_title(data$site_name)
+  }
+  long_shape <- NULL
+  poly_shape <- NULL
+  if (!is.null(shape)) {
+    if (inherits(shape, "sf")) {
+      poly_shape <- shape
+      step(
+        "Building the long district lookup from the shape",
+        "Built the long district lookup from the shape"
+      )
+      long_shape <- create_long_shape(shape, "adm2")
+    } else {
+      long_shape <- shape
+    }
+  }
+  if (!is.null(long_shape)) {
+    step(
+      "Reconciling admin GUIDs against the district shape",
+      "Reconciled admin GUIDs against the district shape"
+    )
+    data <- reconcile_admin_guids(
+      data,
+      long_shape,
+      year_var = "year_collection",
+      verbose = FALSE
+    )
+  }
+  miss_admin <- function(d) {
+    cols <- intersect(c("adm1", "adm2"), names(d))
+    if (length(cols) == 0L) {
+      return(0L)
+    }
+    sum(Reduce(`|`, lapply(cols, function(col) is.na(d[[col]]))))
+  }
+  if (!is.null(poly_shape) && "adm2_guid" %in% names(data)) {
+    nc_before <- miss_admin(data)
+    # n_crec is filled below and glued into msg_done when the step ticks.
+    n_crec <- "0"
+    step(
+      "Recovering missing admin from site coordinates",
+      "Recovered admin for {n_crec} samples from coordinates"
+    )
+    data <- .es_impute_geo(data, poly_shape)
+    n_crec <- .polis_big_num(max(nc_before - miss_admin(data), 0L))
+  }
+  if (isTRUE(impute_geo)) {
+    g2_before <- if ("adm2_guid" %in% names(data)) {
+      sum(is.na(data$adm2_guid))
+    } else {
+      0L
+    }
+    n_srec <- "0"
+    step(
+      "Recovering missing admin from same-site samples",
+      "Recovered admin for {n_srec} samples from same-site records"
+    )
+    data <- .es_impute_site(data)
+    g2_after <- if ("adm2_guid" %in% names(data)) {
+      sum(is.na(data$adm2_guid))
+    } else {
+      0L
+    }
+    n_srec <- .polis_big_num(max(g2_before - g2_after, 0L))
+  }
+  # optional: flag sites absent from a reference list (no disk / global state)
+  if (!is.null(sites)) {
+    step("Validating site names", "Validated site names")
+    data <- validate_es_sites(data, sites, verbose = verbose)
   }
 
   # ---- finalise: dedup by id, infer types, assert business key, order -------
@@ -448,4 +553,244 @@ clean_es_classification <- function(data) {
       ))
   }
   as.integer(detect)
+}
+
+#' Canonicalise the ES admin GUID columns (strip braces, lower-case)
+#'
+#' Empty strings are already NA from `.polis_clean_strings`; this strips the
+#' `{...}` wrapper and lower-cases so the GUIDs match the form the spatial
+#' reconcile emits. A no-op for absent columns.
+#' @noRd
+.es_normalise_guids <- function(data) {
+  guid_cols <- intersect(c("adm0_guid", "adm1_guid", "adm2_guid"), names(data))
+  if (length(guid_cols) == 0) {
+    return(data)
+  }
+  dplyr::mutate(
+    data,
+    dplyr::across(dplyr::all_of(guid_cols), .geo_guid_canon)
+  )
+}
+
+#' Recover missing admin from the site coordinates (point-in-polygon)
+#'
+#' The ES counterpart of `.afp_impute_geo`: samples still missing an admin level
+#' but carrying site coordinates have it recovered by a point-in-polygon join via
+#' [impute_geo_from_coords()], keyed on `year_collection`. The ES coordinate
+#' columns (`site_x_coordinate` = longitude, `site_y_coordinate` = latitude) are
+#' coerced to numeric first. A no-op when the coordinate columns are absent.
+#' @noRd
+.es_impute_geo <- function(data, poly_shape) {
+  coord_cols <- c("site_x_coordinate", "site_y_coordinate")
+  if (!all(coord_cols %in% names(data))) {
+    return(data)
+  }
+  data <- dplyr::mutate(
+    data,
+    dplyr::across(
+      dplyr::all_of(coord_cols),
+      \(x) suppressWarnings(as.numeric(x))
+    )
+  )
+  impute_geo_from_coords(
+    data,
+    poly_shape,
+    year_var = "year_collection",
+    lon_var = "site_x_coordinate",
+    lat_var = "site_y_coordinate",
+    verbose = FALSE
+  )
+}
+
+#' Recover missing admin from other samples at the same site (self-reference)
+#'
+#' The ES analogue of `.afp_impute_geo`: a site's district rarely changes, so a
+#' sample missing its admin chain can borrow it from other samples at the same
+#' `site_id` (or `site_code`). Only **unambiguous** sites are used -- a site that
+#' maps to more than one `adm2_guid` across the data is left untouched rather
+#' than guessed at. For each still-missing sample the whole `adm1`/`adm2` chain
+#' (names + GUIDs) is adopted from its site's reference row so the hierarchy
+#' stays coherent, and `geo_source` is set to `"site_match"` where it was filled.
+#' A no-op when no site key or `adm2_guid` column is present.
+#' @noRd
+.es_impute_site <- function(data) {
+  site_key <- intersect(c("site_id", "site_code"), names(data))[1]
+  geo_cols <- intersect(
+    c("adm1", "adm2", "adm1_guid", "adm2_guid"),
+    names(data)
+  )
+  if (is.na(site_key) || !"adm2_guid" %in% geo_cols) {
+    return(data)
+  }
+  # build a one-row-per-site reference from samples whose adm2_guid is known,
+  # keeping only sites that map to a single adm2_guid (unambiguous).
+  ref <- data |>
+    dplyr::filter(!is.na(.data[[site_key]]) & !is.na(.data$adm2_guid)) |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(c(site_key, geo_cols)))) |>
+    dplyr::group_by(.data[[site_key]]) |>
+    dplyr::filter(dplyr::n_distinct(.data$adm2_guid) == 1L) |>
+    dplyr::arrange(dplyr::across(dplyr::all_of(geo_cols))) |>
+    dplyr::slice(1L) |>
+    dplyr::ungroup()
+  if (nrow(ref) == 0L) {
+    return(data)
+  }
+  ref <- dplyr::rename_with(
+    ref,
+    \(nm) paste0(nm, "_ref"),
+    dplyr::all_of(geo_cols)
+  )
+
+  need <- is.na(data$adm2_guid) & data[[site_key]] %in% ref[[site_key]]
+  data <- dplyr::left_join(
+    data,
+    ref,
+    by = site_key,
+    relationship = "many-to-one"
+  )
+  for (col in geo_cols) {
+    ref_col <- paste0(col, "_ref")
+    data[[col]] <- dplyr::if_else(need, data[[ref_col]], data[[col]])
+  }
+  if ("geo_source" %in% names(data)) {
+    data$geo_source <- dplyr::if_else(need, "site_match", data$geo_source)
+  } else {
+    data$geo_source <- dplyr::if_else(need, "site_match", NA_character_)
+  }
+  dplyr::select(data, -dplyr::all_of(paste0(geo_cols, "_ref")))
+}
+
+#' Flag ES site names absent from a reference site list
+#'
+#' Diagnostic check: environmental site names present in `data` but missing from
+#' the reference `sites` list are flagged -- particularly new sites that also
+#' lack coordinates, which usually signal a data-entry issue rather than a
+#' genuine new site. Names are compared upper-cased and whitespace-squished
+#' (embedded newlines collapsed) on both sides. `data` is returned unchanged,
+#' with the unmatched sites attached as the `"polis_new_sites"` attribute, so the
+#' check composes into [clean_es()] without writing to disk or touching global
+#' state.
+#'
+#' @param data A cleaned ES data frame (canonical names) carrying `site_name`.
+#' @param sites Reference site list: a data frame with a site-name column, or a
+#'   character vector of known site names.
+#' @param site_col Name of the site-name column in `data` and `sites`
+#'   (default `"site_name"`).
+#' @param verbose Emit a cli warning when unknown sites are found. Default
+#'   `TRUE`.
+#'
+#' @return `data`, unchanged, with attribute `"polis_new_sites"`: a tibble with
+#'   columns `site_name` (character, the raw site label from `data`) and
+#'   `no_coords` (logical, `TRUE` when the site lacks a coordinate value,
+#'   `NA` when no coordinate column is present in `data`), one row per distinct
+#'   unmatched site.
+#'
+#' @examples
+#' es <- data.frame(
+#'   site_name = c("SITE A", "SITE B"),
+#'   site_y_coordinate = c(6.5, NA)
+#' )
+#' out <- validate_es_sites(es, sites = "SITE A")
+#' attr(out, "polis_new_sites")
+#'
+#' @export
+validate_es_sites <- function(
+  data,
+  sites,
+  site_col = "site_name",
+  verbose = TRUE
+) {
+  if (!is.data.frame(data)) {
+    cli::cli_abort("{.arg data} must be a data frame.")
+  }
+  if (!is.character(site_col) || length(site_col) != 1L) {
+    cli::cli_abort("{.arg site_col} must be a single character string.")
+  }
+  if (!is.data.frame(sites) && !is.character(sites)) {
+    cli::cli_abort("{.arg sites} must be a data frame or character vector.")
+  }
+  if (!site_col %in% names(data)) {
+    return(data)
+  }
+  norm <- function(x) stringr::str_squish(toupper(gsub("[\r\n]+", " ", x)))
+  known <- norm(if (is.data.frame(sites)) sites[[site_col]] else sites)
+  site_norm <- norm(data[[site_col]])
+  is_new <- !is.na(site_norm) & !site_norm %in% known
+
+  coord_col <- intersect(c("site_y_coordinate", "latitude"), names(data))[1]
+  new_sites <- tibble::tibble(
+    site_name = data[[site_col]][is_new],
+    no_coords = if (!is.na(coord_col)) {
+      is.na(data[[coord_col]][is_new])
+    } else {
+      NA
+    }
+  ) |>
+    dplyr::distinct()
+
+  if (isTRUE(verbose) && nrow(new_sites) > 0) {
+    n_no_coord <- sum(new_sites$no_coords, na.rm = TRUE)
+    cli::cli_alert_warning(
+      "{nrow(new_sites)} ES site{?s} not in the reference list \\
+      ({n_no_coord} without coordinates); flagged, not dropped."
+    )
+  }
+  attr(data, "polis_new_sites") <- new_sites
+  data
+}
+
+#' Summarise missingness in key ES surveillance variables
+#'
+#' A tidy, in-memory replacement for the side-file missingness export: returns
+#' one row per variable with the count and percentage of missing values, so a
+#' caller can inspect or write it however they like.
+#'
+#' @param data A cleaned ES data frame.
+#' @param vars Character vector of columns to summarise. Default `NULL` uses the
+#'   key ES surveillance fields that are present in `data`.
+#'
+#' @return A tibble with columns `variable`, `n`, `n_missing` and `pct_missing`,
+#'   ordered most-missing first.
+#'
+#' @examples
+#' es <- data.frame(
+#'   collection_date = as.Date(c("2024-01-01", NA)),
+#'   adm0 = c("CHAD", "CHAD"),
+#'   classification_all = c(NA, "NEGATIVE")
+#' )
+#' es_missingness(es)
+#'
+#' @export
+es_missingness <- function(data, vars = NULL) {
+  if (!is.data.frame(data)) {
+    cli::cli_abort("{.arg data} must be a data frame.")
+  }
+  if (nrow(data) == 0L) {
+    cli::cli_abort("{.arg data} is empty.")
+  }
+  default_vars <- c(
+    "collection_date",
+    "year_collection",
+    "adm0",
+    "adm1",
+    "adm2",
+    "adm2_guid",
+    "site_name",
+    "virus_types",
+    "classification_all"
+  )
+  vars <- intersect(vars %||% default_vars, names(data))
+  n <- nrow(data)
+  n_missing <- vapply(
+    vars,
+    \(v) sum(is.na(data[[v]]), na.rm = TRUE),
+    integer(1)
+  )
+  tibble::tibble(
+    variable = vars,
+    n = n,
+    n_missing = unname(n_missing),
+    pct_missing = round(100 * n_missing / n, 2)
+  ) |>
+    dplyr::arrange(dplyr::desc(.data$pct_missing))
 }
