@@ -77,6 +77,10 @@ canonicalised admin GUIDs (braces stripped, lower-cased, so they are
 join-ready with the spatial layer), a title-cased \code{site} label, and --
 when a \code{shape} is supplied -- admin-GUID reconciliation and
 coordinate-based admin recovery (all keyed on \code{year_collection});
+\item country-keyed enrichment from \code{\link[=polis_country_lookup]{polis_country_lookup()}} --
+\code{country_actual}, \code{risk_group}, \code{epi_zones} / \code{epi_zones_v2} -- and the
+\code{polio_type} serotype (the ES counterpart of the AFP enrichment; the
+case-classification AFP flags do not apply to environmental samples);
 \item one row per POLIS \code{id} (latest by \code{last_update_date}).
 }
 The raw POLIS \code{virus_types}, \code{vdpv_classifications}, the per-serotype
