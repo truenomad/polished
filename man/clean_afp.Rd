@@ -9,7 +9,6 @@ clean_afp(
   cfg = polis_config(),
   shape = NULL,
   impute_geo = TRUE,
-  enrich = FALSE,
   verbose = TRUE
 )
 }
@@ -37,10 +36,6 @@ recovery).}
 their GUIDs) after reconciliation have them recovered from the EPID prefix
 via \code{\link[=impute_geo_from_epid]{impute_geo_from_epid()}} (self-reference + prefix matching, every row
 kept). Adds \verb{*_source} provenance columns.}
-
-\item{enrich}{If \code{TRUE} the output is passed through \code{\link[=enrich_afp]{enrich_afp()}}, adding
-\code{country_actual}, \code{risk_group}, \code{epi_zones}, \code{polio_type} and the AFP flags
-(\code{afp_class}, \code{afp}, \code{npafp}, \code{pending_results}). Default \code{FALSE}.}
 
 \item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
@@ -72,6 +67,10 @@ numeric \code{age_months};
 \item the fused analytic classification \code{classification_all} (with its
 building blocks \code{vtype} / \code{vtype_fixed}) plus the Sabin flags
 \code{sabin1} / \code{sabin2} / \code{sabin3} and a recomputed \code{hot_case};
+\item country-keyed enrichment from \code{\link[=polis_country_lookup]{polis_country_lookup()}} --
+\code{country_actual}, \code{risk_group}, \code{epi_zones} / \code{epi_zones_v2} -- the
+\code{polio_type} serotype, and the surveillance AFP flags \code{afp_class}, \code{afp},
+\code{npafp} and \code{pending_results};
 \item normalised admin names and one row per POLIS \code{id} (latest by
 \code{last_update_date}).
 }

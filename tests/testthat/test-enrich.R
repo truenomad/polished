@@ -1,4 +1,4 @@
-# enrich_afp(): country groupings, polio_type and AFP flags.
+# Country enrichment is an always-on step of clean_afp() and clean_es().
 
 testthat::test_that("polis_country_lookup ships the country reference", {
   lk <- polished::polis_country_lookup()
@@ -9,28 +9,7 @@ testthat::test_that("polis_country_lookup ships the country reference", {
   testthat::expect_equal(lk$risk_group[lk$iso3 == "AFG"], "Endemic")
 })
 
-testthat::test_that("enrich_afp derives country groupings, polio_type and flags", {
-  df <- data.frame(
-    country_iso3code = c("NGA", "PAK"),
-    adm0 = c("NIGERIA", "PAKISTAN"),
-    classification = c("Discarded", "Confirmed (wild)"),
-    classification_all = c("NPAFP", "WPV 1"),
-    polio_virus_types = c(NA, "WILD1"),
-    surveillance_type_name = c("AFP", "AFP"),
-    stringsAsFactors = FALSE
-  )
-  out <- polished::enrich_afp(df)
-  testthat::expect_equal(out$country_actual, c("Nigeria", "Pakistan"))
-  testthat::expect_equal(out$risk_group, c("Very High Risk", "Endemic"))
-  testthat::expect_equal(out$epi_zones, c("Lake Chad Basin", "Other"))
-  testthat::expect_equal(out$polio_type, c(NA, "Type 1"))
-  testthat::expect_equal(out$afp_class, c("Non-polio AFP", "AFP-Positive"))
-  testthat::expect_equal(out$afp, c(0L, 1L))
-  testthat::expect_equal(out$npafp, c(1L, 0L))
-  testthat::expect_equal(out$pending_results, c(FALSE, FALSE))
-})
-
-testthat::test_that("clean_afp(enrich = TRUE) appends the enrichment columns", {
+testthat::test_that("clean_afp always enriches with groupings, polio_type, flags", {
   raw <- data.frame(
     Id = 1:2,
     Epid = c("A-1", "B-2"),
@@ -39,20 +18,59 @@ testthat::test_that("clean_afp(enrich = TRUE) appends the enrichment columns", {
     Admin0Name = c("NIGERIA", "PAKISTAN"),
     CountryISO3Code = c("NGA", "PAK"),
     Classification = c("Discarded", "Confirmed (wild)"),
+    PolioVirusTypes = c(NA, "WILD1"),
     SurveillanceTypeName = c("AFP", "AFP"),
     check.names = FALSE
   )
-  out <- polished::clean_afp(raw, enrich = TRUE, verbose = FALSE)
+  out <- polished::clean_afp(raw, verbose = FALSE)
   testthat::expect_true(all(
     c(
       "country_actual",
       "risk_group",
       "epi_zones",
+      "epi_zones_v2",
       "polio_type",
+      "afp_class",
       "afp",
-      "npafp"
+      "npafp",
+      "pending_results"
     ) %in%
       names(out)
   ))
+  testthat::expect_equal(out$country_actual[out$epid == "A-1"], "Nigeria")
   testthat::expect_equal(out$risk_group[out$epid == "A-1"], "Very High Risk")
+  testthat::expect_equal(out$epi_zones[out$epid == "A-1"], "Lake Chad Basin")
+  testthat::expect_equal(out$afp_class[out$epid == "A-1"], "Non-polio AFP")
+  testthat::expect_equal(out$afp[out$epid == "A-1"], 0L)
+  testthat::expect_equal(out$npafp[out$epid == "A-1"], 1L)
+  # the WPV1 case reads Type 1 off its classification
+  testthat::expect_equal(out$polio_type[out$epid == "B-2"], "Type 1")
+  testthat::expect_equal(out$afp_class[out$epid == "B-2"], "AFP-Positive")
+})
+
+testthat::test_that("clean_es always enriches with country groupings + polio_type", {
+  raw <- data.frame(
+    Id = 1:2,
+    SampleId = c("E-1", "E-2"),
+    LastUpdateDate = rep("2024-03-01", 2),
+    CollectionDate = rep("2024-01-05", 2),
+    VirusTypes = c("cVDPV2", "NPEV"),
+    VdpvClassifications = c("Circulating", NA),
+    Admin0Name = c("NIGERIA", "CHAD"),
+    CountryISO3Code = c("NGA", "TCD"),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(raw, verbose = FALSE)
+  testthat::expect_true(all(
+    c("country_actual", "risk_group", "epi_zones", "polio_type") %in% names(out)
+  ))
+  testthat::expect_equal(out$country_actual[out$sample_id == "E-1"], "Nigeria")
+  testthat::expect_equal(
+    out$risk_group[out$sample_id == "E-1"],
+    "Very High Risk"
+  )
+  # polio_type read off classification_all (cVDPV 2 -> Type 2)
+  testthat::expect_equal(out$polio_type[out$sample_id == "E-1"], "Type 2")
+  # ES has no AFP case flags
+  testthat::expect_false("afp_class" %in% names(out))
 })

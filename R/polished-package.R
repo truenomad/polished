@@ -26,7 +26,7 @@
 utils::globalVariables(c(
   # shape-lookup count column
   ".n",
-  # enrich_afp() country lookup key
+  # country-enrichment lookup key (.polis_join_country)
   "iso3",
   # coordinate-recovery join helpers
   ".crow",
