@@ -8,7 +8,8 @@ run_pipeline(inputs, cfg = polis_config(), reconcile_with = NULL)
 }
 \arguments{
 \item{inputs}{Named list of raw POLIS data frames. Recognised names:
-\code{afp}, \code{es}, \code{virus}, \code{activity}, \code{subactivity}.}
+\code{afp}, \code{es}, \code{activity}, \code{subactivity}. (A raw \code{virus} table is not used --
+positives are derived from the cleaned \code{afp}/\code{es} outputs.)}
 
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
 
@@ -21,7 +22,8 @@ A named list of cleaned tibbles: any of \code{afp}, \code{es}, \code{sia}, \code
 \description{
 Cleans the raw POLIS tables supplied in \code{inputs} and returns the canonical
 analytic set. Any subset of tables may be supplied; absent tables are skipped.
-Virus is linked to cleaned cases/ES when both are present.
+The virus (positives) table is \emph{built} from the cleaned AFP and ES streams via
+\code{\link[=clean_virus]{clean_virus()}} whenever either is present -- it is not read from \code{inputs}.
 }
 \examples{
 afp <- data.frame(

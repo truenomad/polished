@@ -2,42 +2,72 @@
 % Please edit documentation in R/clean_virus.R
 \name{clean_virus}
 \alias{clean_virus}
-\title{Clean POLIS virus (positives) data}
+\title{Build the POLIS virus (positives) dataset from cleaned cases and ES}
 \usage{
-clean_virus(data, cases = NULL, es = NULL, cfg = polis_config())
+clean_virus(
+  cases = NULL,
+  es = NULL,
+  cfg = polis_config(),
+  nopv_emergence = NULL,
+  separate_rows = FALSE,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{data}{A raw POLIS viruses data frame.}
+\item{cases}{Optional cleaned AFP table (from \code{\link[=clean_afp]{clean_afp()}}). Its
+poliovirus-positive rows become the human positives.}
 
-\item{cases}{Optional cleaned AFP table (from \code{\link[=clean_afp]{clean_afp()}}) used to tag
-human-derived viruses by \code{epid}.}
-
-\item{es}{Optional cleaned ES table (from \code{\link[=clean_es]{clean_es()}}) used to tag
-environment-derived viruses by \code{env_sample_id}.}
+\item{es}{Optional cleaned ES table (from \code{\link[=clean_es]{clean_es()}}). Its
+poliovirus-positive rows become the environmental positives.}
 
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
+
+\item{nopv_emergence}{Optional reference of novel-OPV2 (nOPV2) emergence-group
+names: a character vector, or a data frame with an \code{emergence_group} column.
+When supplied, records whose \code{emergence_group} matches are flagged \code{nopv2}.
+Default \code{NULL} (no nOPV2 flag).}
+
+\item{separate_rows}{If \code{TRUE}, co-detection records (a fused label such as
+\verb{WPV1andcVDPV 2} or \code{VDPV12and3}) are split into one row per detected
+serotype, with \code{measurement}/\code{classification_all} set to the component
+label. Default \code{FALSE} (one row per positive record, co-detections kept as
+the fused label).}
+
+\item{verbose}{Emit cli progress messages. Default \code{TRUE}.}
 }
 \value{
-A tibble of cleaned virus records, columns ordered id -> location ->
-time -> other.
+A tibble of poliovirus positives, one row per positive case/sample,
+columns ordered id -> location -> time -> classification -> dates -> other.
+When neither input has any positives, returns a 0-row, 0-column tibble.
 }
 \description{
-Standardises a raw POLIS viruses table: canonical snake_case names (via the
-crosswalk + janitor), parsed \verb{date_*} columns with derived
-\code{year_onset}/\code{month_onset}, normalised admin names, merged-EPID remapping,
-and one row per POLIS \code{id} (latest by \code{last_update_date}). Optionally tags
-surveillance source from cleaned cases/ES.
+Constructs the combined positives/virus analytic table from the outputs of
+\code{\link[=clean_afp]{clean_afp()}} and \code{\link[=clean_es]{clean_es()}} -- it does not read a raw POLIS viruses table.
+Every poliovirus-positive record (classification matching \code{WPV}/\code{VDPV} --
+i.e. \code{WPV}, \code{cVDPV}, \code{aVDPV}, \code{iVDPV} or untyped \code{VDPV}) becomes one row,
+harmonised to a shared schema and tagged by source:
+\itemize{
+\item \code{surveillance_type} (\code{"human"} / \code{"environmental"}) and the finer
+\code{source} (the case \code{surveillance_type_name} -- AFP / Community /
+Contact -- or \code{"Environmental"});
+\item \code{measurement} and \code{classification_all}: the analytic virus label in
+the shared \code{WPV}/\code{cVDPV}/\code{aVDPV}/\code{iVDPV} vocabulary both cleaners emit;
+\item the case/sample geography (\code{adm0}/\code{adm1}/\code{adm2} + GUIDs),
+\code{latitude}/\code{longitude}, the event \code{virus_date} (paralysis onset for cases,
+collection for ES) with \code{year_onset}/\code{month_onset}, and \code{notification_date};
+\item \code{report_date}: the VDPV classification-change date for VDPV records,
+the notification date for WPV records;
+\item \code{emergence_group}, \code{nt_changes}, \code{virus_cluster}, and -- when a
+\code{nopv_emergence} reference is supplied -- the novel-OPV2 flag \code{nopv2}.
+}
 }
 \examples{
-raw <- data.frame(
-  Id = c(1, 2),
-  Epid = c("A-1", "B-2"),
-  LastUpdateDate = c("2024-03-01", "2024-02-01"),
-  DateOnset = c("2024-01-02", "2024-02-03"),
-  VirusTypeName = c("cVDPV2", "WILD1"),
-  Admin0Name = c("NIGERIA", "CHAD"),
-  check.names = FALSE
-)
-clean_virus(raw)
+cases <- clean_afp(data.frame(
+  Id = 1, Epid = "A-1", `Last Update Date` = "2024-03-01",
+  `Paralysis Onset Date` = "2024-01-02", `Notification Date` = "2024-01-09",
+  `Polio Virus Types` = "WILD1", Classification = "Confirmed (wild)",
+  `Admin0 Name` = "NIGERIA", check.names = FALSE
+), verbose = FALSE)
+clean_virus(cases = cases, verbose = FALSE)
 
 }
