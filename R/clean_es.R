@@ -221,6 +221,7 @@ clean_es <- function(
     polis_upsert(id = "id", date = "last_update_date") |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
+    .geo_guid_display_cols() |>
     flag_ambiguous(key = c("sample_id", "adm0"), sink = cfg$qa) |>
     order_columns(cfg$column_roles)
   if (isTRUE(verbose)) {
