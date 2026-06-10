@@ -4,35 +4,73 @@
 \alias{clean_sia}
 \title{Clean POLIS SIA (campaign) data}
 \usage{
-clean_sia(activity, subactivity = NULL, cfg = polis_config())
+clean_sia(
+  activity,
+  subactivity = NULL,
+  cfg = polis_config(),
+  shape = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{activity}{A raw POLIS activity data frame.}
 
-\item{subactivity}{Optional raw POLIS sub-activity data frame. When supplied,
-it is standardised and left-joined onto \code{activity} by \code{sub_activity_id}.}
+\item{subactivity}{Optional raw POLIS sub-activity data frame. When supplied it
+is the grain of the output and \code{activity} is joined onto it; when \code{NULL} the
+activity table is cleaned on its own.}
 
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
+
+\item{shape}{Optional district shape used to reconcile admin names/GUIDs via
+\code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}} (keyed on \code{year_start}), exactly as \code{\link[=clean_es]{clean_es()}}
+uses it. Either a long ADM2 attribute table or the polygon layer (expanded to
+its long form here). Default \code{NULL} (no shape-based recovery).}
+
+\item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
 \value{
-A tibble of cleaned SIA records, columns ordered id -> location ->
-time -> other.
+A tibble of cleaned SIA records, one row per POLIS \code{id}, with columns
+ordered id -> location -> time -> other. Derived columns (\code{year_start},
+\code{month_start}) are added only when their source columns are present.
 }
 \description{
-Standardises a raw POLIS activity table: canonical snake_case names (via the
-crosswalk + janitor), parsed \verb{date_*} columns with derived
-\code{year_start}/\code{month_start}, normalised admin names, and one row per POLIS
-\code{id} (latest by \code{last_update_date}).
+Combines the raw POLIS activity and sub-activity tables into one analytic SIA
+dataset and standardises it the same way \code{\link[=clean_afp]{clean_afp()}} / \code{\link[=clean_es]{clean_es()}} do:
+\itemize{
+\item canonical snake_case names (via the crosswalk + janitor);
+\item the sub-activity grain enriched with its parent campaign: the activity
+table is restricted to the sub-activity codes actually present, then joined
+onto each sub-activity by \code{sia_sub_activity_code} (parent columns that
+clash with a sub-activity column take an \verb{_activity} suffix);
+\item every campaign/planning date parsed to \code{Date} and sanitised with the
+same "sensible date" rule (a value before \code{min_year} or in the future is a
+data-entry error and set to \code{NA}); audit timestamps stay ISO strings for
+the keep-latest dedup;
+\item \code{year_start} / \code{month_start} from the sanitised \code{date_from} (the
+sub-activity start);
+\item normalised admin names and -- when a \code{shape} is supplied -- admin-GUID
+reconciliation against it (keyed on \code{year_start}), exactly as \code{\link[=clean_es]{clean_es()}}
+uses it;
+\item GUIDs emitted in the braced upper-case POLIS form and one row per
+POLIS \code{id} (latest by \code{last_update_date}).
+}
 }
 \examples{
 activity <- data.frame(
-  Id = c(1, 2),
-  SubActivityId = c("S1", "S2"),
-  LastUpdateDate = c("2024-03-01", "2024-02-01"),
-  DateStart = c("2024-03-10", "2024-02-12"),
-  Admin0Name = c("NIGERIA", "CHAD"),
+  Id = 1,
+  SIASubActivityCode = "S1",
+  LastUpdateDate = "2024-03-01",
+  VaccineType = "bOPV",
   check.names = FALSE
 )
-clean_sia(activity)
+subactivity <- data.frame(
+  Id = 10,
+  SIASubActivityCode = "S1",
+  LastModificationDate = "2024-03-01",
+  DateFrom = "2024-03-10",
+  Admin0Name = "NIGERIA",
+  check.names = FALSE
+)
+clean_sia(activity, subactivity, verbose = FALSE)
 
 }
