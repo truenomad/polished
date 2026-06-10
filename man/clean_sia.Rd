@@ -9,6 +9,9 @@ clean_sia(
   subactivity = NULL,
   cfg = polis_config(),
   shape = NULL,
+  round_gap_days = 21L,
+  cache_dir = NULL,
+  cache_key = NULL,
   verbose = TRUE
 )
 }
@@ -26,12 +29,30 @@ activity table is cleaned on its own.}
 uses it. Either a long ADM2 attribute table or the polygon layer (expanded to
 its long form here). Default \code{NULL} (no shape-based recovery).}
 
+\item{round_gap_days}{Maximum number of days between consecutive campaigns in
+the same district and \code{vaccine_type} for them to count as one round; a
+larger gap starts a new round. Default \code{21}.}
+
+\item{cache_dir}{Optional directory for an opt-in, content-addressed cache.
+When set, the cleaned table is written to (and on a later identical call
+read back from) a \code{qs2} file whose name hashes every input that affects the
+output (\code{activity}, \code{subactivity}, \code{cfg}, \code{shape}, \code{round_gap_days}); any
+change to an input recomputes and writes a new entry. Default \code{NULL} (no
+caching).}
+
+\item{cache_key}{Optional cheap stand-in for the raw tables in the cache key
+(e.g. a download snapshot id). When supplied, the key is built from it
+instead of hashing \code{activity}/\code{subactivity}, avoiding a full content hash of
+large inputs; \code{cfg}, \code{shape} and \code{round_gap_days} still contribute. Ignored
+unless \code{cache_dir} is set. Default \code{NULL} (hash the tables).}
+
 \item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
 \value{
 A tibble of cleaned SIA records, one row per POLIS \code{id}, with columns
 ordered id -> location -> time -> other. Derived columns (\code{year_start},
-\code{month_start}) are added only when their source columns are present.
+\code{month_start}, \code{round_num}, \code{max_round_date}, \code{last_campaign}) are added
+only when their source columns are present.
 }
 \description{
 Combines the raw POLIS activity and sub-activity tables into one analytic SIA
@@ -52,7 +73,12 @@ sub-activity start);
 reconciliation against it (keyed on \code{year_start}), exactly as \code{\link[=clean_es]{clean_es()}}
 uses it;
 \item GUIDs emitted in the braced upper-case POLIS form and one row per
-POLIS \code{id} (latest by \code{last_update_date}).
+POLIS \code{id} (latest by \code{last_update_date});
+\item campaign rounds: within each district (\code{adm2_guid}) x \code{vaccine_type},
+sub-activities are ordered by \code{date_from} and split into rounds wherever
+the gap to the previous campaign exceeds \code{round_gap_days}, giving a
+sequential \code{round_num}; \code{max_round_date} / \code{last_campaign} flag each
+district's most recent campaign.
 }
 }
 \examples{
