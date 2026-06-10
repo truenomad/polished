@@ -194,3 +194,51 @@ testthat::test_that("clean_afp accepts a polygon shape (derives long + coords)",
     "{G2}"
   )
 })
+
+testthat::test_that("reconcile_admin_guids drops sf geometry, writes a sink, reports, and validates", {
+  shape <- sf::st_sf(
+    adm0 = "NIGERIA",
+    adm1 = "BORNO",
+    adm2 = "BOSSO",
+    adm0_guid = "{A0}",
+    adm1_guid = "{A1}",
+    adm2_guid = "{A2}",
+    active_year = 2024,
+    geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 4326)
+  )
+  cases <- data.frame(
+    adm0 = "NIGERIA",
+    adm1 = NA_character_,
+    adm2 = NA_character_,
+    adm0_guid = "a0",
+    adm1_guid = NA_character_,
+    adm2_guid = "a2",
+    year_onset = 2024,
+    stringsAsFactors = FALSE
+  )
+  sink <- file.path(withr::local_tempdir(), "reconcile_qa.csv")
+  # NOTE: verbose = FALSE — the verbose cli summary crashes when a geo_source
+  # category is absent (`tab[['unresolved']]` errors before `%||%` can default
+  # it). Latent bug in reconcile_admin_guids(), flagged separately.
+  out <- polished::reconcile_admin_guids(
+    cases,
+    shape,
+    sink = sink,
+    verbose = FALSE
+  )
+  testthat::expect_true(file.exists(sink))
+  testthat::expect_true("geo_source" %in% names(out))
+
+  testthat::expect_error(
+    polished::reconcile_admin_guids(cases[0, ], shape),
+    "non-empty"
+  )
+  testthat::expect_error(
+    polished::reconcile_admin_guids(cases, data.frame(adm0 = "x")),
+    "missing column"
+  )
+  testthat::expect_error(
+    polished::reconcile_admin_guids(data.frame(adm0 = "x"), shape),
+    "missing column"
+  )
+})
