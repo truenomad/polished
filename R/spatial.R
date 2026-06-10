@@ -347,21 +347,25 @@ process_spatial <- function(
 #' Apply the Somalia ADM1 end-date special case
 #'
 #' One Somalia province shape carries an open-ended `enddate`; cap its
-#' `year_end` at 2021 so the year-expansion does not run it to the present.
+#' `year_end` at 2021 so the coordinate joins do not treat it as currently valid.
+#' A no-op when the GUID columns are absent.
 #'
 #' @keywords internal
 #' @noRd
 .spatial_somalia_fix <- function(data) {
-  somalia_guid <- "{B5FF48B9-7282-445C-8CD2-BEFCE4E0BDA7}"
-  province_guid <- "{EE73F3EA-DD35-480F-8FEA-5904274087C4}"
-  dplyr::mutate(
-    data,
-    year_end = dplyr::if_else(
-      adm0_guid == somalia_guid & adm1_guid == province_guid,
-      2021,
-      year_end
-    )
+  if (!all(c("adm0_guid", "adm1_guid", "year_end") %in% names(data))) {
+    return(data)
+  }
+  somalia_guid <- "B5FF48B9-7282-445C-8CD2-BEFCE4E0BDA7"
+  province_guid <- "EE73F3EA-DD35-480F-8FEA-5904274087C4"
+  hit <- .geo_guid_key(data$adm0_guid) == somalia_guid &
+    .geo_guid_key(data$adm1_guid) == province_guid
+  data$year_end <- dplyr::if_else(
+    dplyr::coalesce(hit, FALSE),
+    2021,
+    data$year_end
   )
+  data
 }
 
 #' Check, reproject and write one admin level
@@ -721,11 +725,12 @@ process_spatial <- function(
 #' Expand admin shapes to one row per active year
 #'
 #' Turns a shape table with `year_start` / `year_end` validity windows into a
-#' long table with one row per administrative unit per active year, spanning
-#' each unit's earliest start to the later of its latest end and the current
-#' year, plus a `9999` sentinel year used to match records with an unknown year.
-#' When `checks_dir` is supplied, any administrative unit with more than one
-#' shape active in the same year is written to a CSV for manual review.
+#' long table with one row per administrative unit per active year, spanning each
+#' unit's earliest start to the current year (a unit stays matchable in every
+#' year from its start; `year_end` does not close the span here), plus a `9999`
+#' sentinel year used to match records with an unknown year. When `checks_dir` is
+#' supplied, any administrative unit with more than one shape active in the same
+#' year is written to a CSV for manual review.
 #'
 #' @param data An `sf` object (or data frame) carrying the admin name/GUID
 #'   columns plus `year_start` and `year_end`.
@@ -907,6 +912,10 @@ get_admin_info_from_coords <- function(
     dplyr::filter(!is.na(.data[[lon_var]]) & !is.na(.data[[lat_var]])) |>
     sf::st_as_sf(coords = c(lon_var, lat_var), crs = crs) |>
     sf::st_make_valid()
+  # explicit point id: st_join replicates a point's row when it matches several
+  # polygons; grouping on this (not on st_join's rownames, which carry no `.`
+  # suffix for a tibble) is how ambiguous multi-matches are dropped below.
+  data_sf[[".point_id"]] <- seq_len(nrow(data_sf))
 
   admin_cols <- c(
     "adm0",
@@ -917,9 +926,9 @@ get_admin_info_from_coords <- function(
     "adm2_guid"
   )
 
-  # prepared shapes (planar, repaired) ----------------------------------------
+  # prepared shapes (planar, repaired) -- no adm0 pre-filter, so a point whose
+  # own adm0 is missing (the case most needing recovery) is not excluded.
   shp_prepared <- shp_adm2 |>
-    dplyr::filter(adm0 %in% data$adm0) |>
     sf::st_transform(3857) |>
     sf::st_buffer(0) |>
     dplyr::select(dplyr::all_of(c(admin_cols, "year_start", "year_end")))
@@ -974,14 +983,12 @@ get_admin_info_from_coords <- function(
       )
     ) |>
     dplyr::filter(!is.na(adm2_guid)) |>
-    tibble::rownames_to_column(var = "row_names") |>
-    dplyr::mutate(int_part = gsub("\\..*", "", row_names)) |>
-    dplyr::group_by(int_part) |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(".point_id"))) |>
     dplyr::filter(dplyr::n() == 1L) |>
     dplyr::ungroup() |>
     dplyr::select(
       -dplyr::ends_with("_shp"),
-      -dplyr::any_of(c("year_start", "year_end", "row_names", "int_part"))
+      -dplyr::any_of(c("year_start", "year_end", ".point_id"))
     )
 }
 
@@ -1134,14 +1141,28 @@ impute_geo_from_coords <- function(
     c("adm1", "adm2", "adm1_guid", "adm2_guid"),
     fill_cols
   )
+  coord_filled <- logical(nrow(data))
   for (col in chain_cols) {
     vals <- resolved[[col]]
-    if (grepl("_guid$", col)) {
+    if (stringr::str_detect(col, "_guid$")) {
       vals <- .geo_guid_canon(vals)
     }
     cur <- data[[col]][crow]
     take <- (adm2_was_na | is.na(cur)) & !is.na(vals)
     data[[col]][crow[take]] <- vals[take]
+    coord_filled[crow[take]] <- TRUE
+  }
+  # stamp provenance on genuinely-unresolved rows we just filled from coordinates
+  if ("geo_source" %in% names(data)) {
+    data <- dplyr::mutate(
+      data,
+      geo_source = dplyr::if_else(
+        coord_filled &
+          (is.na(.data$geo_source) | .data$geo_source == "unresolved"),
+        "coord_match",
+        .data$geo_source
+      )
+    )
   }
   if (isTRUE(verbose)) {
     n_fixed <- .polis_big_num(nrow(resolved))

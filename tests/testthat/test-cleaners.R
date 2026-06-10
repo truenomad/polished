@@ -472,3 +472,68 @@ testthat::test_that("cleaners reject non-data-frame and empty input", {
   testthat::expect_error(polished::clean_es(1), "data.frame")
   testthat::expect_error(polished::clean_es(data.frame()), "empty")
 })
+
+testthat::test_that("clean_afp_classification names the real wild serotype in a co-detection", {
+  out <- polished::clean_afp_classification(data.frame(
+    polio_virus_types = c("WILD1 VDPV2", "WILD3 VDPV2"),
+    vdpv_classifications = c("Circulating", "Circulating"),
+    classification = c("Confirmed (wild)", "Confirmed (wild)"),
+    stringsAsFactors = FALSE
+  ))
+  testthat::expect_equal(
+    out$classification_all,
+    c("WPV1andcVDPV 2", "WPV3andcVDPV 2")
+  )
+})
+
+testthat::test_that("clean_virus keeps two distinct positives with the same projected values", {
+  es <- polished::clean_es(
+    data.frame(
+      Id = 1:2,
+      SampleId = c("S1", "S1"),
+      LastUpdateDate = rep("2024-03-01", 2),
+      CollectionDate = rep("2024-01-05", 2),
+      Admin0Name = rep("NIGERIA", 2),
+      VirusTypes = rep("cVDPV2", 2),
+      VirusTypeName = rep("cVDPV2", 2),
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  testthat::expect_equal(
+    nrow(polished::clean_virus(es = es, verbose = FALSE)),
+    2L
+  )
+})
+
+testthat::test_that("clean_virus report_date is per-serotype after a co-detection split", {
+  cases <- polished::clean_afp(
+    data.frame(
+      Id = 1,
+      Epid = "A-1",
+      LastUpdateDate = "2024-03-01",
+      ParalysisOnsetDate = "2024-01-02",
+      NotificationDate = "2024-01-09",
+      PolioVirusTypes = "WILD1 VDPV2",
+      VdpvClassification = "Circulating",
+      VdpvClassificationChangeDate = "2024-02-15",
+      Classification = "Confirmed (wild)",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  out <- polished::clean_virus(
+    cases = cases,
+    separate_rows = TRUE,
+    verbose = FALSE
+  )
+  testthat::expect_equal(
+    out$report_date[out$measurement == "WPV 1"],
+    as.Date("2024-01-09")
+  )
+  testthat::expect_equal(
+    out$report_date[out$measurement == "VDPV 2"],
+    as.Date("2024-02-15")
+  )
+})

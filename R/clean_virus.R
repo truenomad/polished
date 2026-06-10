@@ -102,10 +102,9 @@ clean_virus <- function(
     "Combining streams and deriving report_date",
     "Combined streams and derived report_date"
   )
-  out <- dplyr::bind_rows(parts) |>
-    dplyr::distinct() |>
-    .virus_add_report_date() |>
-    .virus_flag_nopv(nopv_emergence)
+  # no distinct(): two positives with different POLIS id but the same projected
+  # values are genuinely distinct and must both survive.
+  out <- .virus_flag_nopv(dplyr::bind_rows(parts), nopv_emergence)
   if (isTRUE(separate_rows)) {
     step(
       "Splitting co-detections to one row per serotype",
@@ -113,7 +112,9 @@ clean_virus <- function(
     )
     out <- .virus_separate(out)
   }
+  # report_date after any split, so each serotype row gets its own date
   out <- out |>
+    .virus_add_report_date() |>
     .geo_guid_display_cols() |>
     order_columns(cfg$column_roles)
 
