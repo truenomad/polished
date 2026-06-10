@@ -41,6 +41,12 @@ string for poliovirus-positive samples, otherwise the sample outcome --
 \code{NEGATIVE} (tested negative) or \code{PENDING} (classification pending);
 samples matching none stay \code{none}/\code{NA}.
 }
+
+The decoding engine (\code{\link[=.polis_classify_virus]{.polis_classify_virus()}}) is shared with
+\code{\link[=clean_human_spec]{clean_human_spec()}}: ES samples and human lab specimens have the same
+lab-result structure (\code{virus_types} plus a VDPV classification, which may
+arrive as the plural \code{vdpv_classifications} or the singular
+\code{vdpv_classification}), so both reuse one classifier.
 }
 \section{Classification vocabulary (match on these prefixes, not free text)}{
 
