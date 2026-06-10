@@ -1337,6 +1337,24 @@ epid_strip_contact <- function(epid) {
 # Normalisation helpers
 # ---------------------------------------------------------------------
 
+#' Fast EPID base key for exact matching
+#'
+#' The upper-cased, trimmed EPID with any trailing contact marker removed -- the
+#' same base [epid_strip_contact()] returns, but in one trim + one substitution
+#' rather than the full normalise plus multi-pass extract/remove, for hot
+#' exact-match joins over millions of rows. Blank maps to `NA`.
+#'
+#' @param epid Character vector.
+#' @return Character vector of base keys (`NA` where blank).
+#' @keywords internal
+#' @noRd
+.epid_base_key <- function(epid) {
+  key <- toupper(trimws(as.character(epid)))
+  key <- sub("[-_ ]?(CC|HC|C[0-9]*)$", "", key)
+  key[!nzchar(key)] <- NA_character_
+  key
+}
+
 #' Normalise an EPID/string for matching
 #'
 #' Trims, collapses internal whitespace, upper-cases, and maps blanks to
