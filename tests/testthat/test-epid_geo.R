@@ -464,3 +464,165 @@ testthat::test_that("impute_geo_from_epid validates inputs", {
     "positive whole number"
   )
 })
+
+testthat::test_that("EPID reference helpers cover aborts, region filter, empty candidates", {
+  testthat::expect_error(
+    polished::build_prefix_ref(tibble::tibble(epid = "A-1"), "district"),
+    "Missing column"
+  )
+  testthat::expect_error(
+    polished::resolve_epid_country("NIE-1", ref = tibble::tibble(code = "NIE")),
+    "missing column"
+  )
+  ref <- tibble::tibble(
+    code = c("NIE", "NIE"),
+    name = c("NIGERIA", "NIGERIA"),
+    iso3 = c("NGA", "NGA"),
+    region = c("AFRO", "EMRO")
+  )
+  reg <- polished::resolve_epid_country(
+    "NIE-1",
+    ref = ref,
+    region = "AFRO",
+    region_var = "region"
+  )
+  testthat::expect_identical(reg$name, "NIGERIA")
+  testthat::expect_true(is.na(
+    polished:::.epid_resolve_candidates(
+      c(NA_character_, NA_character_),
+      c(NA, NA),
+      NA_character_
+    )
+  ))
+})
+
+testthat::test_that("impute_geo_from_epid prints a verbose report and validates every argument", {
+  good <- tibble::tibble(
+    epid = "NIE-BOS-AAA-24-001",
+    year_onset = 2024,
+    adm2 = "BOSSO"
+  )
+
+  # verbose run that leaves a cell unresolved and hits an ambiguous country code
+  cases <- tibble::tibble(
+    epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002", "ZZZ-XX-1"),
+    year_onset = c(2024, 2024, 2024),
+    adm0 = c("NIGERIA", NA, NA),
+    adm2 = c("BOSSO", NA, NA)
+  )
+  country_ref <- tibble::tibble(
+    code = c("NIE", "ZZZ", "ZZZ"),
+    name = c("NIGERIA", "LAND A", "LAND B"),
+    iso3 = c("NGA", "AAA", "BBB")
+  )
+  res <- polished::impute_geo_from_epid(
+    cases,
+    admin1_var = NULL,
+    guid_vars = NULL,
+    country_ref = country_ref,
+    strategies = c("self_ref", "prefix_match", "country_prefix"),
+    verbose = TRUE
+  )
+  testthat::expect_s3_class(res$qa, "tbl_df")
+
+  # verbose run where everything resolves -> the "all resolved" success branch
+  full <- tibble::tibble(
+    epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
+    year_onset = c(2024, 2024),
+    adm2 = c("BOSSO", NA)
+  )
+  testthat::expect_no_error(
+    polished::impute_geo_from_epid(
+      full,
+      admin0_var = NULL,
+      admin1_var = NULL,
+      guid_vars = NULL,
+      strategies = "prefix_match",
+      verbose = TRUE
+    )
+  )
+
+  # ---- remaining validation aborts ----
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      good,
+      strategies = character(0),
+      verbose = FALSE
+    ),
+    "at least one strategy"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(good, year_window = -1, verbose = FALSE),
+    "non-negative"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(good, sep = "", verbose = FALSE),
+    "sep"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      good,
+      guid_vars = c(bad = "g"),
+      verbose = FALSE
+    ),
+    "named with"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      good,
+      admin0_var = NULL,
+      admin1_var = NULL,
+      admin2_var = NULL,
+      guid_vars = NULL,
+      verbose = FALSE
+    ),
+    "No target columns"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      good,
+      admin0_var = NULL,
+      admin1_var = NULL,
+      guid_vars = NULL,
+      reference = 1L,
+      verbose = FALSE
+    ),
+    "data frame or"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      good,
+      admin0_var = NULL,
+      admin1_var = NULL,
+      guid_vars = NULL,
+      reference = tibble::tibble(x = 1),
+      verbose = FALSE
+    ),
+    "epid"
+  )
+  c0 <- tibble::tibble(epid = "NIE-1", adm0 = NA_character_)
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      c0,
+      admin1_var = NULL,
+      admin2_var = NULL,
+      guid_vars = NULL,
+      country_ref = 1L,
+      strategies = "country_prefix",
+      verbose = FALSE
+    ),
+    "data frame or"
+  )
+  testthat::expect_error(
+    polished::impute_geo_from_epid(
+      c0,
+      admin1_var = NULL,
+      admin2_var = NULL,
+      guid_vars = NULL,
+      country_ref = tibble::tibble(code = "X"),
+      strategies = "country_prefix",
+      verbose = FALSE
+    ),
+    "missing column"
+  )
+})
