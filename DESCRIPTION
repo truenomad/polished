@@ -39,7 +39,10 @@ Imports:
 Suggests:
     arrow,
     data.table,
+    digest,
+    dtplyr,
     fs,
+    jsonlite,
     qs2,
     quarto,
     skimr,
