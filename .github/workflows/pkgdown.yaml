@@ -40,17 +40,6 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
-      # TEMP diagnostic: render each vignette verbosely so a chunk error shows
-      # in the log (pkgdown renders quarto articles with quiet = TRUE).
-      - name: Diagnose vignette rendering
-        run: |
-          for f in vignettes/*.qmd; do
-            echo "::group::render $f"
-            quarto render "$f" --to html --execute-debug || echo "RENDER FAILED: $f"
-            echo "::endgroup::"
-          done
-        shell: bash
-
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}

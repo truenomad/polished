@@ -495,15 +495,22 @@ process_spatial <- function(
   }
 }
 
-#' Geodesic area in square metres, with sf's one-time chatter silenced
+#' Planar (GEOS) area in square metres, with sf's one-time chatter silenced
 #'
-#' Computing area with s2 switched off triggers sf's first-use GEOS/GDAL linking
-#' banner and the "built under R version" warning; both are wrapped away here so
-#' the cleaner's progress output stays clean. Returns a plain numeric vector.
+#' Area is always computed with s2 switched off: planar GEOS area is defined for
+#' any geometry (returning a number even for a degenerate sliver), whereas the
+#' s2 geodesic path can *error* on the invalid/near-zero lon/lat rings this is
+#' called on (the exact failure differs across GEOS/s2 versions). s2 is disabled
+#' locally here -- not just by the caller -- so the result never depends on the
+#' session's `sf_use_s2()` default. Switching it triggers sf's first-use linking
+#' banner and the "built under R version" warning; both are wrapped away so the
+#' cleaner's progress output stays clean. Returns a plain numeric vector.
 #'
 #' @keywords internal
 #' @noRd
 .spatial_area <- function(x) {
+  old_s2 <- suppressMessages(sf::sf_use_s2(FALSE))
+  on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
   suppressWarnings(suppressMessages(as.numeric(sf::st_area(x))))
 }
 
