@@ -98,8 +98,10 @@ reference:
   - detect_factors
 - title: Indicators
   desc: >
-    Compute the standard polio surveillance indicators from a cleaned case table,
-    and the catalogue of what is available.
+    Compute the WHO POLIS surveillance indicator catalogue (NPAFP rate, stool
+    adequacy, timeliness, dose history, environmental, virus, SIA and composite
+    families) from cleaned case / ES / virus / SIA / lab tables. Call
+    `available_indicators()` to browse the catalogue, optionally by `family`.
   contents:
   - calc_polio_indicators
   - available_indicators
