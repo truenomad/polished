@@ -176,15 +176,8 @@ clean_es <- function(
       verbose = FALSE
     )
   }
-  miss_admin <- function(d) {
-    cols <- intersect(c("adm1", "adm2"), names(d))
-    if (length(cols) == 0L) {
-      return(0L)
-    }
-    sum(Reduce(`|`, lapply(cols, function(col) is.na(d[[col]]))))
-  }
   if (!is.null(poly_shape) && "adm2_guid" %in% names(data)) {
-    nc_before <- miss_admin(data)
+    nc_before <- .geo_miss_admin(data)
     # n_crec is filled below and glued into msg_done when the step ticks.
     n_crec <- "0"
     step(
@@ -192,7 +185,7 @@ clean_es <- function(
       "Recovered admin for {n_crec} samples from coordinates"
     )
     data <- .es_impute_geo(data, poly_shape)
-    n_crec <- .polis_big_num(max(nc_before - miss_admin(data), 0L))
+    n_crec <- .polis_big_num(max(nc_before - .geo_miss_admin(data), 0L))
   }
   if (isTRUE(impute_geo)) {
     g2_before <- if ("adm2_guid" %in% names(data)) {

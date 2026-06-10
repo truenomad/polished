@@ -161,25 +161,18 @@ clean_afp <- function(
     )
     data <- reconcile_admin_guids(data, long_shape, verbose = FALSE)
   }
-  miss_admin <- function(d) {
-    cols <- intersect(c("adm1", "adm2"), names(d))
-    if (length(cols) == 0L) {
-      return(0L)
-    }
-    sum(Reduce(`|`, lapply(cols, function(col) is.na(d[[col]]))))
-  }
   # Coordinates first: the point-in-polygon fill is fast and geometry beats
   # prefix-guessing, so it clears the bulk of the gaps before the (slow) EPID
   # prefix match, which then only has to handle the small remainder.
   if (!is.null(poly_shape) && "adm2_guid" %in% names(data)) {
-    nc_before <- miss_admin(data)
+    nc_before <- .geo_miss_admin(data)
     n_crec <- "0"
     step(
       "Recovering missing admin from coordinates",
       "Recovered admin for {n_crec} cases from coordinates"
     )
     data <- impute_geo_from_coords(data, poly_shape, verbose = FALSE)
-    n_crec <- .polis_big_num(max(nc_before - miss_admin(data), 0L))
+    n_crec <- .polis_big_num(max(nc_before - .geo_miss_admin(data), 0L))
   }
   if (isTRUE(impute_geo)) {
     na2_before <- if ("adm2" %in% names(data)) sum(is.na(data$adm2)) else 0L
