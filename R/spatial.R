@@ -495,22 +495,25 @@ process_spatial <- function(
   }
 }
 
-#' Planar (GEOS) area in square metres, with sf's one-time chatter silenced
+#' Area in square metres via a planar equal-area projection
 #'
-#' Area is always computed with s2 switched off: planar GEOS area is defined for
-#' any geometry (returning a number even for a degenerate sliver), whereas the
-#' s2 geodesic path can *error* on the invalid/near-zero lon/lat rings this is
-#' called on (the exact failure differs across GEOS/s2 versions). s2 is disabled
-#' locally here -- not just by the caller -- so the result never depends on the
-#' session's `sf_use_s2()` default. Switching it triggers sf's first-use linking
-#' banner and the "built under R version" warning; both are wrapped away so the
-#' cleaner's progress output stays clean. Returns a plain numeric vector.
+#' `sliver_area` is a threshold in m^2, so area must be real m^2. Computing that
+#' on lon/lat needs either s2 (which can error on degenerate rings) or the
+#' `lwgeom` package (an undeclared, often-absent extra) -- so instead a
+#' geographic geometry is projected to the global equal-area CRS EPSG:6933 and
+#' the area taken with planar GEOS (s2 off). That depends only on PROJ + GEOS,
+#' which `sf` always carries, and is robust to degenerate input. Already-metric
+#' or CRS-less geometry is measured directly. sf's first-use linking banner and
+#' the "built under R version" warning are wrapped away. Returns a plain numeric.
 #'
 #' @keywords internal
 #' @noRd
 .spatial_area <- function(x) {
   old_s2 <- suppressMessages(sf::sf_use_s2(FALSE))
   on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+  if (!is.na(sf::st_crs(x)) && sf::st_is_longlat(x)) {
+    x <- suppressWarnings(suppressMessages(sf::st_transform(x, 6933)))
+  }
   suppressWarnings(suppressMessages(as.numeric(sf::st_area(x))))
 }
 
