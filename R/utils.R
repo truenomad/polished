@@ -2021,10 +2021,25 @@ detect_factors <- function(
   ))
 }
 
-# Any all-digit string with a leading zero (e.g. "00123") -> keep as character.
+#' Return TRUE if `x` contains any leading-zero all-digit value (e.g. "007").
+#' @noRd
 .has_leading_zeros <- function(x) {
-  x <- x[!is.na(x)]
-  length(x) > 0L && any(grepl("^0+\\d+$", x))
+  x <- x[!is.na(x) & nzchar(x)]
+  if (length(x) == 0L) return(FALSE)
+  # a leading-zero value is all digits, length > 1, starting with "0" (e.g.
+  # "007"). Short-circuit on startsWith() and test only those candidates with a
+  # non-backtracking char class -- the equivalent "^0+\\d+$" regex backtracks
+  # catastrophically on long all-zero/digit strings across millions of rows.
+  starts_zero <- startsWith(x, "0")
+  if (!any(starts_zero)) return(FALSE)
+  # cap the all-digit test at the first few thousand zero-starting values: enough
+  # to spot a leading-zero code, bounded so a column of many such values cannot
+  # dominate the scan over millions of rows.
+  zero_start_candidates <- utils::head(x[starts_zero], 5000L)
+  any(
+    nchar(zero_start_candidates) > 1L &
+      !grepl("[^0-9]", zero_start_candidates, perl = TRUE)
+  )
 }
 
 # Cleaner finishing step: infer base column types when cfg$parse_types is on.
