@@ -361,6 +361,31 @@ testthat::test_that("clean_sia runs on activity alone", {
   testthat::expect_equal(sort(out$year_start), c(2024, 2024))
 })
 
+testthat::test_that("clean_sia combines the sub-activity grain with the parent activity", {
+  activity <- data.frame(
+    Id = 1,
+    SIASubActivityCode = "S1",
+    LastUpdateDate = "2024-03-01",
+    VaccineType = "bOPV",
+    check.names = FALSE
+  )
+  subactivity <- data.frame(
+    Id = c(10, 11),
+    SIASubActivityCode = c("S1", "S1"),
+    LastModificationDate = c("2024-03-01", "2024-03-01"),
+    DateFrom = c("2024-03-10", "2024-03-11"),
+    Admin0Name = c("NIGERIA", "NIGERIA"),
+    Admin2Name = c("BOSSO", "KUKAWA"),
+    check.names = FALSE
+  )
+  out <- polished::clean_sia(activity, subactivity, verbose = FALSE)
+  # the sub-activity is the grain (2 rows), each carrying its parent's vaccine
+  testthat::expect_equal(nrow(out), 2L)
+  testthat::expect_true(all(out$vaccine_type == "bOPV"))
+  testthat::expect_setequal(out$adm2, c("BOSSO", "KUKAWA"))
+  testthat::expect_true(all(out$year_start == 2024))
+})
+
 testthat::test_that("clean_virus needs at least one cleaned stream", {
   testthat::expect_error(polished::clean_virus(), "cases.*es|es.*cases")
 })
