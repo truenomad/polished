@@ -78,3 +78,39 @@ testthat::test_that("clean_afp drops all-NA columns per drop_empty_cols", {
   # non-empty columns are always kept
   testthat::expect_true(all(c("id", "epid", "adm0") %in% names(on)))
 })
+
+testthat::test_that("auto_parse_types/detect_factors validate args, handle no-char data, and return a plan", {
+  testthat::expect_error(polished::auto_parse_types(1L), "data.frame")
+  testthat::expect_error(
+    polished::auto_parse_types(data.frame(x = 1), max_levels = 1),
+    ">= 2"
+  )
+  testthat::expect_error(
+    polished::auto_parse_types(data.frame(x = 1), max_unique_ratio = 2),
+    "0, 1"
+  )
+  testthat::expect_error(polished::detect_factors(1L), "data.frame")
+
+  # all-numeric data exercises the no-character parse branch
+  testthat::expect_s3_class(
+    polished::auto_parse_types(
+      tibble::tibble(a = 1:3, b = c(1.5, 2.5, 3.5)),
+      apply = FALSE
+    ),
+    "tbl_df"
+  )
+
+  # return = "plan" / "both"
+  df <- tibble::tibble(grp = rep(c("A", "B"), 3), id = as.character(1:6))
+  plan <- polished::auto_parse_types(df, return = "plan")
+  testthat::expect_true(all(
+    c("name", "proposed_type", "unique_ratio") %in% names(plan)
+  ))
+  testthat::expect_named(
+    polished::auto_parse_types(df, return = "both"),
+    c("plan", "data")
+  )
+
+  # .is_protected with no patterns -> FALSE
+  testthat::expect_false(polished:::.is_protected("anything", character(0)))
+})

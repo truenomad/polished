@@ -63,3 +63,61 @@ testthat::test_that("run_pipeline_dir round-trips through disk", {
   testthat::expect_named(cleaned, "afp")
   testthat::expect_true(file.exists(file.path(out_dir, "afp.rds")))
 })
+
+testthat::test_that("polis_config validates its scalar args and prints a summary", {
+  testthat::expect_error(
+    polished::polis_config(start_year = "x"),
+    "single number"
+  )
+  testthat::expect_error(
+    polished::polis_config(parse_types = "x"),
+    "single logical"
+  )
+  testthat::expect_error(
+    polished::polis_config(drop_empty_cols = 1),
+    "single logical"
+  )
+  cfg <- polished::polis_config()
+  testthat::expect_s3_class(cfg, "polis_config")
+  testthat::expect_invisible(print(cfg))
+})
+
+testthat::test_that("run_pipeline cleans es + sia and reconciles against a full pull", {
+  inputs <- list(
+    es = data.frame(
+      Id = 1:2,
+      SampleId = c("E1", "E2"),
+      LastUpdateDate = rep("2024-03-01", 2),
+      CollectionDate = rep("2024-01-05", 2),
+      Admin0Name = rep("NIGERIA", 2),
+      check.names = FALSE
+    ),
+    activity = data.frame(
+      Id = 1,
+      SubActivityId = "S1",
+      LastUpdateDate = "2024-03-01",
+      DateFrom = "2024-03-10",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    )
+  )
+  out <- suppressMessages(polished::run_pipeline(inputs))
+  testthat::expect_true(all(c("es", "sia") %in% names(out)))
+
+  recon <- suppressMessages(polished::run_pipeline(
+    list(afp = raw_afp_positive()),
+    reconcile_with = list(afp = data.frame(id = c(1, 2)))
+  ))
+  testthat::expect_true("afp" %in% names(recon))
+})
+
+testthat::test_that("run_pipeline_dir aborts on an empty dir and returns without writing", {
+  testthat::expect_error(
+    suppressMessages(polished::run_pipeline_dir(withr::local_tempdir())),
+    "No recognised POLIS tables"
+  )
+  src <- withr::local_tempdir()
+  saveRDS(raw_afp(), file.path(src, "Human_Detailed.rds"))
+  cleaned <- suppressMessages(polished::run_pipeline_dir(src))
+  testthat::expect_named(cleaned, "afp")
+})
