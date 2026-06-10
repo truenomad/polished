@@ -29,7 +29,6 @@ get_polis_data(
   region = "Global",
   country_code = NULL,
   polis_folder = tools::R_user_dir("polished", which = "cache"),
-  return = c("invisible", "auto", "df", "list", "paths"),
   output_format = c("rds", "rda", "csv", "parquet", "qs2"),
   workers = 1L,
   auto_refetch = TRUE,
@@ -80,14 +79,6 @@ get_polis_data(
   incremental updates "just work". Pass an explicit path to keep data
   alongside a project.
 
-- return:
-
-  One of `"invisible"` (default – no return value; data is on disk),
-  `"auto"` (data.frame for a single table, named list of data.frames for
-  multiple), `"df"` (force a single data.frame; errors for multi-table
-  calls), `"list"` (always a named list), or `"paths"` (named character
-  vector of file paths, no data read into memory).
-
 - output_format:
 
   Output format. One of `"rds"` (default), `"rda"`, `"csv"`,
@@ -132,22 +123,13 @@ get_polis_data(
 
 ## Value
 
-Depends on `return`:
-
-- `"invisible"` (default) – invisible `NULL`. Data is on disk.
-
-- `"auto"` – data.frame if `length(tables) == 1`, named list of
-  data.frames otherwise.
-
-- `"df"` – single data.frame (errors when more than one table was
-  selected).
-
-- `"list"` – named list of data.frames, one per selected table.
-
-- `"paths"` – named character vector of canonical file paths.
-
-Side effect: writes `<polis_folder>/data/<table_name>.<ext>` plus a
-`.parts/<table_name>/` cache for each selected table.
+`NULL`, invisibly. `get_polis_data()` is called purely for its side
+effect: each selected table is written to
+`<polis_folder>/data/<table_name>.<ext>` (plus a `.parts/<table_name>/`
+resume cache). The data is never loaded into memory, so a
+multi-million-row pull cannot inflate your session. Read a table back
+from disk yourself when you need it, e.g.
+`readRDS(file.path(polis_folder, "data", "im.rds"))`.
 
 ## Details
 
@@ -191,17 +173,17 @@ for the table catalogue.
 
 ``` r
 if (FALSE) { # \dontrun{
-# Pull one table; data lives on disk
+# Pull one table into the default per-user cache
 get_polis_data(tables = "im")
 
-# Same call but get the data.frame back
-df <- get_polis_data(tables = "im", return = "df")
+# Read it back from disk when you need it
+cache <- tools::R_user_dir("polished", which = "cache")
+im <- readRDS(file.path(cache, "data", "im.rds"))
 
 # All eight tables in parallel into a project folder
 get_polis_data(
   polis_folder = "data/polis",
-  workers = parallel::detectCores() - 1L,
-  return = "paths"
+  workers = parallel::detectCores() - 1L
 )
 } # }
 ```

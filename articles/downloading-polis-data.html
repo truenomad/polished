@@ -43,7 +43,9 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/downloading-polis-data.html">Downloading POLIS data</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-spatial-data.html">Cleaning administrative spatial data</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -99,11 +101,13 @@
 <div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>POLIS_API_KEY <span class="op">=</span> <span class="st">"your-key"</span><span class="op">)</span> <span class="co"># or set it in .Renviron</span></span>
 <span></span>
-<span><span class="co"># Pull the immunization (`im`) table into the per-user cache</span></span>
+<span><span class="co"># Pull the immunization (`im`) table; the data is written to the per-user</span></span>
+<span><span class="co"># cache and nothing is returned</span></span>
 <span><span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_polis_data.html">get_polis_data</a></span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"im"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Same call, but hand the data.frame straight back</span></span>
-<span><span class="va">im</span> <span class="op">&lt;-</span> <span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_polis_data.html">get_polis_data</a></span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"im"</span>, return <span class="op">=</span> <span class="st">"df"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Read the table back from disk when you need it</span></span>
+<span><span class="va">cache</span> <span class="op">&lt;-</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">R_user_dir</a></span><span class="op">(</span><span class="st">"polished"</span>, which <span class="op">=</span> <span class="st">"cache"</span><span class="op">)</span></span>
+<span><span class="va">im</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">cache</span>, <span class="st">"data"</span>, <span class="st">"im.rds"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="the-table-catalogue">The table catalogue<a class="anchor" aria-label="anchor" href="#the-table-catalogue"></a>
 </h2>
@@ -213,8 +217,7 @@
 <span>  min_date <span class="op">=</span> <span class="st">"2018-01-01"</span>,</span>
 <span>  max_date <span class="op">=</span> <span class="st">"2024-12-31"</span>,</span>
 <span>  region <span class="op">=</span> <span class="st">"AFRO"</span>,</span>
-<span>  country_code <span class="op">=</span> <span class="st">"NGA"</span>,</span>
-<span>  return <span class="op">=</span> <span class="st">"df"</span></span>
+<span>  country_code <span class="op">=</span> <span class="st">"NGA"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <p>Because date bounds are year-aligned, <code>min_date = "2018-06-30"</code> fetches from <code>2018-01-01</code> regardless — the function never returns fewer rows than the year covering your bound.</p>
@@ -260,49 +263,18 @@
 </div>
 </section><section class="level2"><h2 id="what-you-get-back">What you get back<a class="anchor" aria-label="anchor" href="#what-you-get-back"></a>
 </h2>
-<p>The <code>return</code> argument decides the shape of the result; the data is always written to disk regardless.</p>
-<table class="table caption-top">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead><tr class="header">
-<th><code>return</code></th>
-<th>Result</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>
-<code>"invisible"</code> (default)</td>
-<td>invisible <code>NULL</code> — data is on disk</td>
-</tr>
-<tr class="even">
-<td><code>"df"</code></td>
-<td>a single data.frame (errors if more than one table was selected)</td>
-</tr>
-<tr class="odd">
-<td><code>"list"</code></td>
-<td>a named list of data.frames, one per table</td>
-</tr>
-<tr class="even">
-<td><code>"auto"</code></td>
-<td>a data.frame for one table, a named list for several</td>
-</tr>
-<tr class="odd">
-<td><code>"paths"</code></td>
-<td>a named character vector of canonical file paths, nothing read into memory</td>
-</tr>
-</tbody>
-</table>
+<p>Nothing — and that’s the point. <code><a href="../reference/get_polis_data.html">get_polis_data()</a></code> is called purely for its <strong>side effect</strong> of writing each table to disk, and returns <code>NULL</code> invisibly. A single POLIS table can run to millions of rows, so returning that into memory on every call would be a footgun; instead the data stays on disk and you read back only the table you need, only when you need it.</p>
+<p>Each table lands at <code>&lt;polis_folder&gt;/data/&lt;table_name&gt;.&lt;ext&gt;</code>. Read one back with the matching reader for your <code>output_format</code>:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># A named list of data.frames</span></span>
-<span><span class="va">tabs</span> <span class="op">&lt;-</span> <span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_polis_data.html">get_polis_data</a></span><span class="op">(</span>tables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"case"</span>, <span class="st">"virus"</span><span class="op">)</span>, return <span class="op">=</span> <span class="st">"list"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># default per-user cache location</span></span>
+<span><span class="va">cache</span> <span class="op">&lt;-</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">R_user_dir</a></span><span class="op">(</span><span class="st">"polished"</span>, which <span class="op">=</span> <span class="st">"cache"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Just the paths — useful for very large tables you'll read lazily</span></span>
-<span><span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_polis_data.html">get_polis_data</a></span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"case"</span>, return <span class="op">=</span> <span class="st">"paths"</span><span class="op">)</span></span>
-<span><span class="fu">arrow</span><span class="fu">::</span><span class="fu"><a href="https://arrow.apache.org/docs/r/reference/read_parquet.html" class="external-link">read_parquet</a></span><span class="op">(</span><span class="va">paths</span><span class="op">[[</span><span class="st">"case"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">case</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">cache</span>, <span class="st">"data"</span>, <span class="st">"case.rds"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co"># or, for other output formats:</span></span>
+<span><span class="co"># arrow::read_parquet(file.path(cache, "data", "case.parquet"))</span></span></code></pre></div>
 </div>
+<p>Because the value is invisible, a bare <code>get_polis_data(...)</code> at the console prints nothing — assign the call if you want the paths.</p>
 <section class="level3"><h3 id="output-formats">Output formats<a class="anchor" aria-label="anchor" href="#output-formats"></a>
 </h3>
 <p><code>output_format</code> controls how the canonical file is written: <code>"rds"</code> (default), <code>"rda"</code>, <code>"csv"</code>, <code>"parquet"</code>, or <code>"qs2"</code>. The <code>parquet</code> and <code>qs2</code> formats need the <code>arrow</code> and <code>qs2</code> packages respectively.</p>
@@ -354,7 +326,10 @@
 <p><code><a href="../reference/get_polis_data.html">get_polis_data()</a></code> gets you a faithful local copy of POLIS; the cleaners take it from there. A typical flow pulls a table, then recovers any missing administrative geography from the EPID:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_polis_data.html">get_polis_data</a></span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"case"</span>, return <span class="op">=</span> <span class="st">"df"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_polis_data.html">get_polis_data</a></span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"case"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">cache</span> <span class="op">&lt;-</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">R_user_dir</a></span><span class="op">(</span><span class="st">"polished"</span>, which <span class="op">=</span> <span class="st">"cache"</span><span class="op">)</span></span>
+<span><span class="va">cases</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">cache</span>, <span class="st">"data"</span>, <span class="st">"case.rds"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cleaned</span> <span class="op">&lt;-</span> <span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/impute_geo_from_epid.html">impute_geo_from_epid</a></span><span class="op">(</span><span class="va">cases</span><span class="op">)</span></span>
 <span><span class="va">cleaned</span><span class="op">$</span><span class="va">qa</span> <span class="co"># what was filled, and what was left unresolved</span></span></code></pre></div>

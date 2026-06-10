@@ -60,7 +60,7 @@ row-aligned to `epid` with columns `code`, `name`, `iso3`, `n_matches`,
 
 ## Details
 
-Temporal validity is the caller's responsibility — pre-filter `ref` to
+Temporal validity is the caller's responsibility – pre-filter `ref` to
 the period of interest (or pass a `region` with `region_var`) before
 calling.
 

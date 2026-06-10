@@ -11,11 +11,11 @@ is fabricated on ambiguity.
 impute_geo_from_epid(
   data,
   epid_var = "epid",
-  year_var = "yronset",
-  admin0_var = "place.admin.0",
-  admin1_var = "place.admin.1",
-  admin2_var = "place.admin.2",
-  guid_vars = c(adm2 = "Admin2GUID"),
+  year_var = "year_onset",
+  admin0_var = "adm0",
+  admin1_var = "adm1",
+  admin2_var = "adm2",
+  guid_vars = c(adm2 = "adm2_guid"),
   reference = NULL,
   country_ref = NULL,
   strategies = c("self_ref", "prefix_match", "reference", "country_prefix"),
@@ -23,6 +23,7 @@ impute_geo_from_epid(
   year_window = 0,
   sep = "-",
   canonicalise = TRUE,
+  audit = TRUE,
   verbose = TRUE
 )
 ```
@@ -39,17 +40,17 @@ impute_geo_from_epid(
 
 - year_var:
 
-  Year/onset column name. Default `"yronset"`.
+  Year/onset column name. Default `"year_onset"`.
 
 - admin0_var, admin1_var, admin2_var:
 
   Admin name columns; `NULL` skips a level. Defaults
-  `"place.admin.0"`/`.1`/`.2`.
+  `"adm0"`/`"adm1"`/`"adm2"`.
 
 - guid_vars:
 
   Named character vector mapping levels (`adm0`/`adm1`/ `adm2`) to GUID
-  columns to fill. Default `c(adm2 = "Admin2GUID")`; set `NULL` to fill
+  columns to fill. Default `c(adm2 = "adm2_guid")`; set `NULL` to fill
   no GUIDs.
 
 - reference:
@@ -84,6 +85,12 @@ impute_geo_from_epid(
   Whether to canonicalise filled name cells when a canonicaliser is
   available. Default `TRUE`.
 
+- audit:
+
+  Whether to build the per-level self-reference tables returned in
+  `$ref` (for inspection). Default `TRUE`; set `FALSE` to skip the extra
+  reference passes when the audit handle is not needed.
+
 - verbose:
 
   Whether to print a cli summary. Default `TRUE`.
@@ -115,7 +122,7 @@ The cascade, per admin level (Admin0, then Admin1, then Admin2):
 
 - original:
 
-  Value already present — kept.
+  Value already present – kept.
 
 - self_ref:
 
@@ -134,7 +141,7 @@ The cascade, per admin level (Admin0, then Admin1, then Admin2):
 
 - country_prefix:
 
-  Admin0 only — the country code resolved via `country_ref`.
+  Admin0 only – the country code resolved via `country_ref`.
 
 Any cell still blank after the cascade is labelled `unresolved`.
 
@@ -143,21 +150,21 @@ Any cell still blank after the cascade is labelled `unresolved`.
 ``` r
 cases <- tibble::tibble(
   epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002", "AGO-LUA-BBB-24-001"),
-  yronset = c(2024, 2024, 2024),
-  place.admin.0 = c("NIGERIA", NA, "ANGOLA"),
-  place.admin.1 = c("BORNO", NA, "LUANDA"),
-  place.admin.2 = c("BOSSO", NA, "LUANDA"),
-  Admin2GUID = c("g-bosso", NA, "g-luanda")
+  year_onset = c(2024, 2024, 2024),
+  adm0 = c("NIGERIA", NA, "ANGOLA"),
+  adm1 = c("BORNO", NA, "LUANDA"),
+  adm2 = c("BOSSO", NA, "LUANDA"),
+  adm2_guid = c("g-bosso", NA, "g-luanda")
 )
 result <- impute_geo_from_epid(cases, verbose = FALSE)
 result$qa
 #> # A tibble: 4 × 10
-#>   level  column        n_missing_before n_filled_self_ref n_filled_prefix_match
-#>   <chr>  <chr>                    <int>             <int>                 <int>
-#> 1 admin0 place.admin.0                1                 0                     1
-#> 2 admin1 place.admin.1                1                 0                     1
-#> 3 admin2 place.admin.2                1                 0                     1
-#> 4 adm2   Admin2GUID                   1                 0                     1
+#>   level  column    n_missing_before n_filled_self_ref n_filled_prefix_match
+#>   <chr>  <chr>                <int>             <int>                 <int>
+#> 1 admin0 adm0                     1                 0                     1
+#> 2 admin1 adm1                     1                 0                     1
+#> 3 admin2 adm2                     1                 0                     1
+#> 4 adm2   adm2_guid                1                 0                     1
 #> # ℹ 5 more variables: n_filled_reference <int>, n_filled_country_prefix <int>,
 #> #   n_ambiguous <int>, n_unresolved <int>, pct_resolved <dbl>
 ```

@@ -44,11 +44,13 @@ the data lands on disk and you read it when you need it.
 
 Sys.setenv(POLIS_API_KEY = "your-key") # or set it in .Renviron
 
-# Pull the immunization (`im`) table into the per-user cache
+# Pull the immunization (`im`) table; the data is written to the per-user
+# cache and nothing is returned
 polished::get_polis_data(tables = "im")
 
-# Same call, but hand the data.frame straight back
-im <- polished::get_polis_data(tables = "im", return = "df")
+# Read the table back from disk when you need it
+cache <- tools::R_user_dir("polished", which = "cache")
+im <- readRDS(file.path(cache, "data", "im.rds"))
 ```
 
 ## The table catalogue
@@ -100,8 +102,7 @@ polished::get_polis_data(
   min_date = "2018-01-01",
   max_date = "2024-12-31",
   region = "AFRO",
-  country_code = "NGA",
-  return = "df"
+  country_code = "NGA"
 )
 ```
 
@@ -183,26 +184,29 @@ polished::get_polis_data(
 
 ## What you get back
 
-The `return` argument decides the shape of the result; the data is
-always written to disk regardless.
+Nothing — and that’s the point.
+[`get_polis_data()`](https://truenomad.github.io/polished/reference/get_polis_data.md)
+is called purely for its **side effect** of writing each table to disk,
+and returns `NULL` invisibly. A single POLIS table can run to millions
+of rows, so returning that into memory on every call would be a footgun;
+instead the data stays on disk and you read back only the table you
+need, only when you need it.
 
-| `return` | Result |
-|----|----|
-| `"invisible"` (default) | invisible `NULL` — data is on disk |
-| `"df"` | a single data.frame (errors if more than one table was selected) |
-| `"list"` | a named list of data.frames, one per table |
-| `"auto"` | a data.frame for one table, a named list for several |
-| `"paths"` | a named character vector of canonical file paths, nothing read into memory |
+Each table lands at `<polis_folder>/data/<table_name>.<ext>`. Read one
+back with the matching reader for your `output_format`:
 
 ``` r
 
-# A named list of data.frames
-tabs <- polished::get_polis_data(tables = c("case", "virus"), return = "list")
+# default per-user cache location
+cache <- tools::R_user_dir("polished", which = "cache")
 
-# Just the paths — useful for very large tables you'll read lazily
-paths <- polished::get_polis_data(tables = "case", return = "paths")
-arrow::read_parquet(paths[["case"]])
+case <- readRDS(file.path(cache, "data", "case.rds"))
+# or, for other output formats:
+# arrow::read_parquet(file.path(cache, "data", "case.parquet"))
 ```
+
+Because the value is invisible, a bare `get_polis_data(...)` at the
+console prints nothing — assign the call if you want the paths.
 
 ### Output formats
 
@@ -250,7 +254,10 @@ administrative geography from the EPID:
 
 ``` r
 
-cases <- polished::get_polis_data(tables = "case", return = "df")
+polished::get_polis_data(tables = "case")
+
+cache <- tools::R_user_dir("polished", which = "cache")
+cases <- readRDS(file.path(cache, "data", "case.rds"))
 
 cleaned <- polished::impute_geo_from_epid(cases)
 cleaned$qa # what was filled, and what was left unresolved

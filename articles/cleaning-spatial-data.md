@@ -1,0 +1,441 @@
+# Cleaning administrative spatial data
+
+> **Note**
+>
+> Every layer in this vignette is **synthetic** — a toy world of
+> rectangles with fabricated names, built on the fly and deliberately
+> broken so you can watch the cleaner repair it. No real boundary data
+> is used.
+
+## What `process_spatial()` is for
+
+WHO ships administrative boundaries (country `ADM0`, province `ADM1`,
+district `ADM2`) as spatial layers — an Esri geodatabase, a GeoPackage,
+or a folder of shapefiles. Before that geography can drive analysis it
+has to be made trustworthy, and raw boundary exports rarely are. The
+same export will typically carry:
+
+- **invalid geometries** — self-intersections and bad ring topology that
+  break spatial joins;
+- **sliver artifacts** — hairline holes and tiny detached fragments left
+  by digitising, which are not real geography;
+- **open-ended validity windows** — an `enddate` set to a sentinel year
+  (e.g. `9999`) meaning “still current”;
+- **duplicate** units, and admin **names that vary** across releases.
+
+[`polished::process_spatial()`](https://truenomad.github.io/polished/reference/process_spatial.md)
+is a single call that reads each level, standardises its columns to the
+package’s canonical `adm0` / `adm1` / `adm2` names, audits it, repairs
+the geometry, and writes both a cleaned per-level shape and a
+year-expanded “long” shape for temporal joins.
+
+## A folder of layers, deliberately broken
+
+We build three layers — country, province, district — and write them to
+a temporary folder as GeoPackages, exactly the shape
+[`process_spatial()`](https://truenomad.github.io/polished/reference/process_spatial.md)
+expects to find on disk. The district layer carries the interesting
+problems.
+
+Code
+
+``` r
+
+# small geometry constructors -------------------------------------------------
+rect <- function(xmin, ymin, xmax, ymax) {
+  sf::st_polygon(list(rbind(
+    c(xmin, ymin), c(xmin, ymax), c(xmax, ymax), c(xmax, ymin), c(xmin, ymin)
+  )))
+}
+ring <- function(xmin, ymin, xmax, ymax) {
+  rbind(c(xmin, ymin), c(xmin, ymax), c(xmax, ymax), c(xmax, ymin), c(xmin, ymin))
+}
+
+# ADM2 districts, each with a deliberate flaw -------------------------------
+# D1: a real interior hole (large) PLUS a hairline sliver hole (tiny)
+d1 <- sf::st_polygon(list(
+  ring(0, 0, 1, 1), # outer
+  ring(0.3, 0.3, 0.7, 0.7), # real hole  -> kept
+  ring(0.9, 0.9, 0.9005, 0.9005) # sliver hole -> removed
+))
+# D2: a self-intersecting "bowtie" -> invalid, repaired by st_make_valid()
+d2 <- sf::st_polygon(list(rbind(
+  c(2, 0), c(3, 1), c(3, 0), c(2, 1), c(2, 0)
+)))
+# D3: a multipolygon = one real part + one tiny detached sliver part
+d3 <- sf::st_multipolygon(list(
+  list(ring(4, 0, 5, 1)), # real part   -> kept
+  list(ring(6, 0, 6.0005, 6.0005)) # sliver part -> removed
+))
+# D4 and its exact duplicate (same name + geometry) -> flagged
+d4 <- rect(0, 2, 1, 3)
+
+shp_adm2 <- sf::st_sf(
+  adm0_name = "ALPHA",
+  adm0_guid = "g-alpha",
+  adm1_name = c("NORTH", "NORTH", "SOUTH", "SOUTH", "SOUTH"),
+  adm1_guid = c("g-an", "g-an", "g-as", "g-as", "g-as"),
+  adm2_name = c("D1", "D2", "D3", "D4", "D4"),
+  guid = c("g-d1", "g-d2", "g-d3", "g-d4", "g-d4"),
+  startdate = "2015-01-01",
+  enddate = c("9999-12-31", "9999-12-31", "2020-12-31", "9999-12-31", "9999-12-31"),
+  geometry = sf::st_sfc(d1, d2, d3, d4, d4, crs = 4326)
+)
+
+# ADM1 provinces and ADM0 country (dissolved extents, no flaws) ---------------
+shp_adm1 <- sf::st_sf(
+  adm0_name = "ALPHA", adm0_guid = "g-alpha",
+  adm1_name = c("NORTH", "SOUTH"), guid = c("g-an", "g-as"),
+  startdate = "2015-01-01", enddate = "9999-12-31",
+  geometry = sf::st_sfc(rect(0, 0, 1, 1), rect(2, 0, 6, 3), crs = 4326)
+)
+shp_adm0 <- sf::st_sf(
+  adm0_name = "ALPHA", guid = "g-alpha",
+  startdate = "2015-01-01", enddate = "9999-12-31",
+  geometry = sf::st_sfc(rect(0, 0, 6, 3), crs = 4326)
+)
+
+# write the three layers into one folder --------------------------------------
+src_dir <- file.path(tempdir(), "boundaries")
+dir.create(src_dir, showWarnings = FALSE)
+sf::st_write(shp_adm0, file.path(src_dir, "world_adm0.gpkg"), quiet = TRUE, delete_dsn = TRUE)
+sf::st_write(shp_adm1, file.path(src_dir, "world_adm1.gpkg"), quiet = TRUE, delete_dsn = TRUE)
+sf::st_write(shp_adm2, file.path(src_dir, "world_adm2.gpkg"), quiet = TRUE, delete_dsn = TRUE)
+```
+
+Here is the district layer the cleaner will be handed — five rows, four
+distinct districts, and a catalogue of problems:
+
+``` r
+
+shp_adm2 |>
+  sf::st_drop_geometry() |>
+  dplyr::select(adm1_name, adm2_name, guid, enddate)
+```
+
+| adm1_name | adm2_name | guid | enddate    |
+|:----------|:----------|:-----|:-----------|
+| NORTH     | D1        | g-d1 | 9999-12-31 |
+| NORTH     | D2        | g-d2 | 9999-12-31 |
+| SOUTH     | D3        | g-d3 | 2020-12-31 |
+| SOUTH     | D4        | g-d4 | 9999-12-31 |
+| SOUTH     | D4        | g-d4 | 9999-12-31 |
+
+``` r
+
+is_multipart <- function(geom) {
+  vapply(geom, \(g) inherits(g, "MULTIPOLYGON") && length(g) > 1L, logical(1))
+}
+
+tibble::tibble(
+  district = shp_adm2$adm2_name,
+  valid = sf::st_is_valid(shp_adm2),
+  multipart = is_multipart(sf::st_geometry(shp_adm2)),
+  open_ended = lubridate::year(as.Date(shp_adm2$enddate)) == 9999
+)
+```
+
+| district | valid | multipart | open_ended |
+|:---------|:------|:----------|:-----------|
+| D1       | TRUE  | FALSE     | TRUE       |
+| D2       | FALSE | FALSE     | TRUE       |
+| D3       | TRUE  | TRUE      | FALSE      |
+| D4       | TRUE  | FALSE     | TRUE       |
+| D4       | TRUE  | FALSE     | TRUE       |
+
+`D2` is invalid (the bowtie); `D1` carries a hairline sliver hole and
+`D3` a tiny detached sliver part; `D4` is duplicated; and four of the
+five rows are open-ended (`enddate` year `9999`).
+
+## One call
+
+Point
+[`process_spatial()`](https://truenomad.github.io/polished/reference/process_spatial.md)
+at the folder, map each admin level to the filename stem of its layer,
+and pick an output format. Repair is on by default.
+
+``` r
+
+out_dir <- file.path(tempdir(), "boundaries_clean")
+
+polished::process_spatial(
+  input_path = src_dir,
+  output_dir = out_dir,
+  layers = c(
+    adm0 = "world_adm0",
+    adm1 = "world_adm1",
+    adm2 = "world_adm2"
+  ),
+  output_format = "rds",
+  verbose = FALSE
+)
+```
+
+In an interactive session the default `verbose = TRUE` prints a
+per-level summary of what was repaired (invalid geometries fixed, sliver
+holes and parts removed); we silence it here. The lasting output is the
+set of files it writes:
+
+``` r
+
+list.files(out_dir, recursive = TRUE)
+#> [1] "checks/spatial_duplicate_adm2_guid.csv"
+#> [2] "checks/spatial_duplicate_adm2_name.csv"
+#> [3] "checks/spatial_invalid_adm2_shapes.csv"
+#> [4] "spatial_adm1_long_shape.rds"           
+#> [5] "spatial_adm2_long_shape.rds"           
+#> [6] "spatial_global_adm0.rds"               
+#> [7] "spatial_global_adm1.rds"               
+#> [8] "spatial_global_adm2.rds"
+```
+
+## What it writes
+
+| File | What it is |
+|----|----|
+| `spatial_global_{level}.rds` | the cleaned, repaired, reprojected layer |
+| `spatial_{level}_long_shape.rds` | one row per unit **per active year** (ADM1/ADM2) |
+| `checks/spatial_*.csv` | any validity / duplicate issues found, for review |
+
+`spatial_global_adm2.rds` — the cleaned layer
+
+The cleaned district layer carries the canonical `adm0` / `adm1` /
+`adm2` names (renamed from the source `*_name` columns), the level GUID
+as `adm2_guid`, and a `shape` geometry column. Every geometry is now
+valid:
+
+``` r
+
+clean_adm2 <- readRDS(file.path(out_dir, "spatial_global_adm2.rds"))
+
+clean_adm2 |>
+  sf::st_drop_geometry() |>
+  dplyr::select(adm0, adm1, adm2, adm2_guid)
+```
+
+| adm0  | adm1  | adm2 | adm2_guid |
+|:------|:------|:-----|:----------|
+| ALPHA | NORTH | D1   | g-d1      |
+| ALPHA | NORTH | D2   | g-d2      |
+| ALPHA | SOUTH | D3   | g-d3      |
+| ALPHA | SOUTH | D4   | g-d4      |
+| ALPHA | SOUTH | D4   | g-d4      |
+
+``` r
+
+
+# every geometry is valid after repair
+all(sf::st_is_valid(clean_adm2))
+#> [1] TRUE
+```
+
+`spatial_adm2_long_shape.rds` — expanded by year
+
+The long shape turns each unit’s `year_start`..`year_end` validity
+window into one row per active year — the table you join point data
+against when you need the boundary that was current *in a given year*.
+Two rules keep it compact:
+
+- enumeration stops at the **current year** (open-ended `9999` units do
+  not spawn thousands of phantom rows); and
+- a sentinel **`9999`** year is appended to every unit, so records whose
+  year is unknown still match.
+
+``` r
+
+long_adm2 <- readRDS(file.path(out_dir, "spatial_adm2_long_shape.rds"))
+
+# D3 closed in 2020; the open-ended districts run to the present + the 9999 key
+long_adm2 |>
+  dplyr::filter(adm2 %in% c("D3", "D1")) |>
+  dplyr::group_by(adm2) |>
+  dplyr::summarise(
+    first_year = min(active_year),
+    last_real_year = max(active_year[active_year != 9999]),
+    has_sentinel = 9999 %in% active_year,
+    .groups = "drop"
+  )
+```
+
+| adm2 | first_year | last_real_year | has_sentinel |
+|:-----|-----------:|---------------:|:-------------|
+| D1   |       2015 |           2026 | TRUE         |
+| D3   |       2015 |           2026 | TRUE         |
+
+`checks/` — what was flagged for review
+
+Problems are written to CSVs rather than silently dropped. The
+duplicated `D4` district, for instance, lands in a duplicate-name check:
+
+``` r
+
+list.files(file.path(out_dir, "checks"))
+#> [1] "spatial_duplicate_adm2_guid.csv" "spatial_duplicate_adm2_name.csv"
+#> [3] "spatial_invalid_adm2_shapes.csv"
+
+readr::read_csv(
+  file.path(out_dir, "checks", "spatial_duplicate_adm2_name.csv"),
+  show_col_types = FALSE
+) |>
+  dplyr::select(adm0, adm1, adm2)
+```
+
+| adm0  | adm1  | adm2 |
+|:------|:------|:-----|
+| ALPHA | SOUTH | D4   |
+| ALPHA | SOUTH | D4   |
+
+## Geometry repair
+
+With `fix_issues = TRUE` (the default),
+[`process_spatial()`](https://truenomad.github.io/polished/reference/process_spatial.md)
+does more than flag — it repairs the output geometry through four steps:
+
+| Step | What it does | Safe because… |
+|----|----|----|
+| drop Z/M | strips elevation/measure to clean 2D | admin work is planar |
+| `st_make_valid()` | fixes self-intersections and ring topology | preserves the shape |
+| remove sliver **holes** | drops interior rings below `sliver_area` | real enclaves/lakes are larger and kept |
+| remove sliver **parts** | drops detached fragments below `sliver_area` | a feature never loses its **largest** part |
+
+The two sliver steps are **threshold-based**: only artifacts smaller
+than `sliver_area` (default `1e4` m² = 1 hectare) are removed. A genuine
+enclave, lake or island above the threshold is left untouched, and no
+feature is ever emptied — each keeps at least its largest polygon. You
+can see all three repairs land on the district layer:
+
+``` r
+
+# D1 is the first feature; count its interior rings (holes)
+d1_holes <- \(layer) length(sf::st_geometry(layer)[[1]]) - 1L
+
+sum(!sf::st_is_valid(shp_adm2)) # one invalid geometry going in (the D2 bowtie)
+#> [1] 1
+sum(!sf::st_is_valid(clean_adm2)) # zero coming out
+#> [1] 0
+d1_holes(shp_adm2) # D1 had two holes (one real, one sliver)
+#> [1] 2
+d1_holes(clean_adm2) # ...and keeps the real one; only the sliver went
+#> [1] 1
+```
+
+Set `fix_issues = FALSE` for the fastest, flag-only run (issues are
+still written to `checks/`, but the geometry is left exactly as read),
+or tune `sliver_area` up or down if one hectare is too aggressive or too
+lenient for your data.
+
+## Reading from different sources
+
+`input_path` is format-agnostic — whatever
+\[[`sf::st_read()`](https://r-spatial.github.io/sf/reference/st_read.html)\]\[sf::st_read\]
+can open. `layers` maps each admin level to a **layer name** (inside a
+`.gdb` / `.gpkg`) or a **filename stem** (in a folder of standalone
+files), matched case-insensitively.
+
+| `input_path` is… | `layers` values match… |
+|----|----|
+| an Esri geodatabase (`.gdb`) | layer names inside the geodatabase |
+| a GeoPackage (`.gpkg`) holding all levels | layer names inside the GeoPackage |
+| a folder of shapefiles (`.shp`) | the `.shp` filename stems |
+| a folder of GeoJSON (`.geojson`) | the `.geojson` filename stems |
+
+`layers` may also be a **subset** of `adm0` / `adm1` / `adm2` — only the
+levels you name are processed, so a single entry cleans one level:
+
+``` r
+
+# clean only the district layer
+polished::process_spatial(
+  input_path = src_dir,
+  output_dir = out_dir,
+  layers = c(adm2 = "world_adm2")
+)
+```
+
+## Expanding a shape by year on its own
+
+The year-expansion is also exported as
+[`create_long_shape()`](https://truenomad.github.io/polished/reference/create_long_shape.md),
+useful when you already have a cleaned layer and just want the per-year
+table. It collapses each unit to a single validity window, then expands
+it:
+
+``` r
+
+provinces <- tibble::tibble(
+  adm0_guid = "g-alpha", adm0 = "ALPHA",
+  adm1_guid = c("g-an", "g-as"), adm1 = c("NORTH", "SOUTH"),
+  year_start = c(2015, 2018), year_end = c(9999, 2021)
+)
+
+polished::create_long_shape(provinces, level = "adm1") |>
+  dplyr::group_by(adm1) |>
+  dplyr::summarise(
+    years = paste0(min(active_year), "–", max(active_year[active_year != 9999])),
+    sentinel = 9999 %in% active_year,
+    .groups = "drop"
+  )
+```
+
+| adm1  | years     | sentinel |
+|:------|:----------|:---------|
+| NORTH | 2015–2026 | TRUE     |
+| SOUTH | 2018–2026 | TRUE     |
+
+`NORTH` is open-ended (`9999`), so it runs from 2015 to the current
+year; `SOUTH` closed in 2021. Both gain the `9999` catch-all key.
+
+## Recovering admin geography for point data
+
+The third exported helper,
+[`get_admin_info_from_coords()`](https://truenomad.github.io/polished/reference/get_admin_info_from_coords.md),
+goes the other way: given points with longitude/latitude, it spatially
+joins them to a district layer and fills in any missing admin names and
+GUIDs. Points that fall on a boundary and match more than one district
+are dropped rather than guessed.
+
+``` r
+
+points <- tibble::tibble(
+  site = c("clinic-1", "clinic-2", "clinic-3"),
+  adm0 = "ALPHA",
+  adm1 = NA_character_,
+  adm2 = NA_character_,
+  adm1_guid = NA_character_,
+  adm2_guid = NA_character_,
+  longitude = c(0.1, 4.2, 0.8), # all three fall inside a clean district
+  latitude = c(0.9, 0.5, 0.1) # D1, D3, D1
+)
+
+polished::get_admin_info_from_coords(points, clean_adm2) |>
+  dplyr::select(site, adm0, adm1, adm2)
+```
+
+| site     | adm0  | adm1  | adm2 |
+|:---------|:------|:------|:-----|
+| clinic-1 | ALPHA | NORTH | D1   |
+| clinic-2 | ALPHA | SOUTH | D3   |
+| clinic-3 | ALPHA | NORTH | D1   |
+
+Each clinic inherits the province and district of the polygon it falls
+inside — `adm1` and `adm2` were blank on the way in and are recovered
+from the cleaned boundary layer.
+
+## Parameters at a glance
+
+| Argument | Default | Controls |
+|----|----|----|
+| `input_path` | — | the `.gdb` / `.gpkg` / folder to read |
+| `output_dir` | — | where cleaned shapes and the `checks/` folder are written |
+| `layers` | `GLOBAL_ADM*` | level → layer-name / filename-stem map (subset allowed) |
+| `transform` | `TRUE` | reproject to `crs` (skipped when already equivalent) |
+| `crs` | `4326` | target CRS (EPSG code) |
+| `fix_issues` | `TRUE` | repair geometries (make-valid + slivers) vs flag-only |
+| `sliver_area` | `1e4` | m² threshold below which holes / parts are artifacts |
+| `output_format` | `"rds"` | serialise cleaned shapes as `"rds"` or `"qs2"` |
+| `verbose` | `TRUE` | print the per-level cli summary |
+
+For large global layers, `"qs2"` writes and reads the geometry far
+faster than `"rds"` (it needs the `qs2` package), and
+`fix_issues = FALSE` is the quickest flag-only pass when you already
+trust the geometry.

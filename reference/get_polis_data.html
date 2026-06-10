@@ -49,7 +49,9 @@ PublishDate) which probes have confirmed is 100%-populated.
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/downloading-polis-data.html">Downloading POLIS data</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-spatial-data.html">Cleaning administrative spatial data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -92,7 +94,6 @@ table's "update" column (<code>LastUpdateDate</code> / <code>UpdatedDate</code> 
 <span>  region <span class="op">=</span> <span class="st">"Global"</span>,</span>
 <span>  country_code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  polis_folder <span class="op">=</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">R_user_dir</a></span><span class="op">(</span><span class="st">"polished"</span>, which <span class="op">=</span> <span class="st">"cache"</span><span class="op">)</span>,</span>
-<span>  return <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"invisible"</span>, <span class="st">"auto"</span>, <span class="st">"df"</span>, <span class="st">"list"</span>, <span class="st">"paths"</span><span class="op">)</span>,</span>
 <span>  output_format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rds"</span>, <span class="st">"rda"</span>, <span class="st">"csv"</span>, <span class="st">"parquet"</span>, <span class="st">"qs2"</span><span class="op">)</span>,</span>
 <span>  workers <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  auto_refetch <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -146,14 +147,6 @@ updates "just work". Pass an explicit path to keep data alongside a
 project.</p></dd>
 
 
-<dt id="arg-return">return<a class="anchor" aria-label="anchor" href="#arg-return"></a></dt>
-<dd><p>One of <code>"invisible"</code> (default – no return value; data
-is on disk), <code>"auto"</code> (data.frame for a single table, named list of
-data.frames for multiple), <code>"df"</code> (force a single data.frame; errors
-for multi-table calls), <code>"list"</code> (always a named list), or <code>"paths"</code>
-(named character vector of file paths, no data read into memory).</p></dd>
-
-
 <dt id="arg-output-format">output_format<a class="anchor" aria-label="anchor" href="#arg-output-format"></a></dt>
 <dd><p>Output format. One of <code>"rds"</code> (default), <code>"rda"</code>,
 <code>"csv"</code>, <code>"parquet"</code>, <code>"qs2"</code>. <code>"parquet"</code> requires the <code>arrow</code>
@@ -201,15 +194,13 @@ Default <code>FALSE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Depends on <code>return</code>:</p><ul><li><p><code>"invisible"</code> (default) – invisible <code>NULL</code>. Data is on disk.</p></li>
-<li><p><code>"auto"</code> – data.frame if <code>length(tables) == 1</code>, named list of
-data.frames otherwise.</p></li>
-<li><p><code>"df"</code> – single data.frame (errors when more than one table was
-selected).</p></li>
-<li><p><code>"list"</code> – named list of data.frames, one per selected table.</p></li>
-<li><p><code>"paths"</code> – named character vector of canonical file paths.</p></li>
-</ul><p>Side effect: writes <code>&lt;polis_folder&gt;/data/&lt;table_name&gt;.&lt;ext&gt;</code> plus a
-<code>.parts/&lt;table_name&gt;/</code> cache for each selected table.</p>
+    <p><code>NULL</code>, invisibly. <code>get_polis_data()</code> is called purely for its
+side effect: each selected table is written to
+<code>&lt;polis_folder&gt;/data/&lt;table_name&gt;.&lt;ext&gt;</code> (plus a <code>.parts/&lt;table_name&gt;/</code>
+resume cache). The data is never loaded into memory, so a
+multi-million-row pull cannot inflate your session. Read a table back
+from disk yourself when you need it, e.g.
+<code>readRDS(file.path(polis_folder, "data", "im.rds"))</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -248,17 +239,17 @@ entirely.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Pull one table; data lives on disk</span></span></span>
+<span class="r-in"><span><span class="co"># Pull one table into the default per-user cache</span></span></span>
 <span class="r-in"><span><span class="fu">get_polis_data</span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"im"</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Same call but get the data.frame back</span></span></span>
-<span class="r-in"><span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu">get_polis_data</span><span class="op">(</span>tables <span class="op">=</span> <span class="st">"im"</span>, return <span class="op">=</span> <span class="st">"df"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Read it back from disk when you need it</span></span></span>
+<span class="r-in"><span><span class="va">cache</span> <span class="op">&lt;-</span> <span class="fu">tools</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/tools/userdir.html" class="external-link">R_user_dir</a></span><span class="op">(</span><span class="st">"polished"</span>, which <span class="op">=</span> <span class="st">"cache"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">im</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">cache</span>, <span class="st">"data"</span>, <span class="st">"im.rds"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># All eight tables in parallel into a project folder</span></span></span>
 <span class="r-in"><span><span class="fu">get_polis_data</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  polis_folder <span class="op">=</span> <span class="st">"data/polis"</span>,</span></span>
-<span class="r-in"><span>  workers <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1L</span>,</span></span>
-<span class="r-in"><span>  return <span class="op">=</span> <span class="st">"paths"</span></span></span>
+<span class="r-in"><span>  workers <span class="op">=</span> <span class="fu">parallel</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-link">detectCores</a></span><span class="op">(</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1L</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

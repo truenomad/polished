@@ -25,7 +25,9 @@ maps to more than one distinct name is flagged ambiguous and left NA."><meta pro
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/downloading-polis-data.html">Downloading POLIS data</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-spatial-data.html">Cleaning administrative spatial data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -39,7 +41,7 @@ maps to more than one distinct name is flagged ambiguous and left NA."><meta pro
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Resolve an EPID country code to a country name</h1>
-      <small class="dont-index">Source: <a href="https://github.com/truenomad/polished/blob/main/R/epid_geo.R" class="external-link"><code>R/epid_geo.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/truenomad/polished/blob/main/R/spatial.R" class="external-link"><code>R/spatial.R</code></a></small>
       <div class="d-none name"><code>resolve_epid_country.Rd</code></div>
     </div>
 
@@ -107,7 +109,7 @@ returned with <code>resolved = FALSE</code> (no fabrication).</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Temporal validity is the caller's responsibility — pre-filter <code>ref</code> to the
+    <p>Temporal validity is the caller's responsibility – pre-filter <code>ref</code> to the
 period of interest (or pass a <code>region</code> with <code>region_var</code>) before calling.</p>
     </div>
 

@@ -19,7 +19,9 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/downloading-polis-data.html">Downloading POLIS data</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
+    <li><a class="dropdown-item" href="../articles/cleaning-spatial-data.html">Cleaning administrative spatial data</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -59,9 +61,129 @@
         </dt>
         <dd>POLIS table catalogue</dd>
       </dl></div><div class="section level2">
-      <h2 id="impute-geography-from-epids">Impute geography from EPIDs<a class="anchor" aria-label="anchor" href="#impute-geography-from-epids"></a></h2>
+      <h2 id="configuration-pipeline">Configuration &amp; pipeline<a class="anchor" aria-label="anchor" href="#configuration-pipeline"></a></h2>
 
-      <div class="section-desc"><p>The main entry point: a provenance-stamped cascade that fills missing admin names and GUIDs from EPIDs, without overwriting present values or fabricating on ambiguity.</p></div>
+      <div class="section-desc"><p>The shared settings object every cleaner takes, and the orchestrators that run the whole cleaning set in one call (in memory, or from a directory of raw files).</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="polis_config.html">polis_config()</a></code>
+
+        </dt>
+        <dd>Build a POLIS pipeline configuration</dd>
+
+        <dt>
+
+          <code><a href="run_pipeline.html">run_pipeline()</a></code>
+
+        </dt>
+        <dd>Run the POLIS cleaning pipeline in memory</dd>
+
+        <dt>
+
+          <code><a href="run_pipeline_dir.html">run_pipeline_dir()</a></code>
+
+        </dt>
+        <dd>Run the cleaning pipeline from a directory of raw files</dd>
+      </dl></div><div class="section level2">
+      <h2 id="clean-the-surveillance-streams">Clean the surveillance streams<a class="anchor" aria-label="anchor" href="#clean-the-surveillance-streams"></a></h2>
+
+      <div class="section-desc"><p>One cleaner per POLIS stream. Each standardises names, sanitises dates, derives the analytic variables, cleans geography and dedups to one row per POLIS id. <code><a href="../reference/clean_virus.html">clean_virus()</a></code> is the exception: it builds the positives dataset from the already-cleaned AFP and ES outputs.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="clean_afp.html">clean_afp()</a></code>
+
+        </dt>
+        <dd>Clean POLIS AFP case data</dd>
+
+        <dt>
+
+          <code><a href="clean_human_spec.html">clean_human_spec()</a></code>
+
+        </dt>
+        <dd>Clean POLIS human specimen (laboratory) data</dd>
+
+        <dt>
+
+          <code><a href="clean_es.html">clean_es()</a></code>
+
+        </dt>
+        <dd>Clean POLIS environmental surveillance data</dd>
+
+        <dt>
+
+          <code><a href="clean_sia.html">clean_sia()</a></code>
+
+        </dt>
+        <dd>Clean POLIS SIA (campaign) data</dd>
+
+        <dt>
+
+          <code><a href="clean_virus.html">clean_virus()</a></code>
+
+        </dt>
+        <dd>Build the POLIS virus (positives) dataset from cleaned cases and ES</dd>
+      </dl></div><div class="section level2">
+      <h2 id="virus-classification">Virus classification<a class="anchor" aria-label="anchor" href="#virus-classification"></a></h2>
+
+      <div class="section-desc"><p>The shared decoder that turns the raw POLIS virus fields into the standard WPV / cVDPV / aVDPV / iVDPV vocabulary used across every stream.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="clean_afp_classification.html">clean_afp_classification()</a></code>
+
+        </dt>
+        <dd>Derive the fused AFP virus type and analytic classification</dd>
+
+        <dt>
+
+          <code><a href="clean_es_classification.html">clean_es_classification()</a></code>
+
+        </dt>
+        <dd>Derive the AFP-style virus classification and detection flags for ES</dd>
+      </dl></div><div class="section level2">
+      <h2 id="reference-tables">Reference tables<a class="anchor" aria-label="anchor" href="#reference-tables"></a></h2>
+
+      <div class="section-desc"><p>The packaged lookups the cleaners are driven by: the raw-to-canonical column crosswalk and the country grouping/risk reference.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="polis_crosswalk.html">polis_crosswalk()</a></code>
+
+        </dt>
+        <dd>POLIS column crosswalk</dd>
+
+        <dt>
+
+          <code><a href="polis_country_lookup.html">polis_country_lookup()</a></code>
+
+        </dt>
+        <dd>Country reference lookup shipped with the package</dd>
+      </dl></div><div class="section level2">
+      <h2 id="recover-reconcile-geography">Recover &amp; reconcile geography<a class="anchor" aria-label="anchor" href="#recover-reconcile-geography"></a></h2>
+
+      <div class="section-desc"><p>Fill missing admin names and GUIDs without overwriting present values or fabricating on ambiguity — from EPIDs, from a district shape, or from coordinates — plus the admin-name fixers.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -74,10 +196,82 @@
 
         </dt>
         <dd>Recover administrative geography from the EPID</dd>
-      </dl></div><div class="section level2">
-      <h2 id="building-blocks">Building blocks<a class="anchor" aria-label="anchor" href="#building-blocks"></a></h2>
 
-      <div class="section-desc"><p>The exported pieces the cascade is assembled from — parsers, the sibling-record lookups, and the country resolver. You rarely call these directly.</p></div>
+        <dt>
+
+          <code><a href="reconcile_admin_guids.html">reconcile_admin_guids()</a></code>
+
+        </dt>
+        <dd>Reconcile case admin names and GUIDs against the long district shape</dd>
+
+        <dt>
+
+          <code><a href="impute_geo_from_coords.html">impute_geo_from_coords()</a></code>
+
+        </dt>
+        <dd>Recover missing admin from coordinates, in place</dd>
+
+        <dt>
+
+          <code><a href="impute_missing_coords.html">impute_missing_coords()</a></code>
+
+        </dt>
+        <dd>Place a random point inside the district polygon for cases missing coordinates</dd>
+
+        <dt>
+
+          <code><a href="fix_geo_names.html">fix_geo_names()</a></code>
+
+        </dt>
+        <dd>Normalise admin names on a cleaned data frame</dd>
+
+        <dt>
+
+          <code><a href="polis_fix_geo_names.html">polis_fix_geo_names()</a></code>
+
+        </dt>
+        <dd>Apply geographic name fixes to a character vector</dd>
+
+        <dt>
+
+          <code><a href="polis_geo_name_fixes.html">polis_geo_name_fixes()</a></code>
+
+        </dt>
+        <dd>Geographic name-fix lookup table</dd>
+      </dl></div><div class="section level2">
+      <h2 id="clean-administrative-spatial-data">Clean administrative spatial data<a class="anchor" aria-label="anchor" href="#clean-administrative-spatial-data"></a></h2>
+
+      <div class="section-desc"><p>Read WHO ADM0/ADM1/ADM2 boundary layers from any format, standardise the names and repair the geometry, then write cleaned shapes plus a year-expanded long shape, with point-to-admin recovery.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="process_spatial.html">process_spatial()</a></code>
+
+        </dt>
+        <dd>Clean WHO administrative spatial data</dd>
+
+        <dt>
+
+          <code><a href="create_long_shape.html">create_long_shape()</a></code>
+
+        </dt>
+        <dd>Expand admin shapes to one row per active year</dd>
+
+        <dt>
+
+          <code><a href="get_admin_info_from_coords.html">get_admin_info_from_coords()</a></code>
+
+        </dt>
+        <dd>Recover administrative info for point data via a spatial join</dd>
+      </dl></div><div class="section level2">
+      <h2 id="epid-building-blocks">EPID building blocks<a class="anchor" aria-label="anchor" href="#epid-building-blocks"></a></h2>
+
+      <div class="section-desc"><p>The exported pieces the EPID-geography cascade is assembled from — parsers, the sibling-record lookups, and the country resolver. You rarely call these directly.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -132,6 +326,154 @@
 
         </dt>
         <dd>Resolve an EPID country code to a country name</dd>
+      </dl></div><div class="section level2">
+      <h2 id="records-dedup-types">Records, dedup &amp; types<a class="anchor" aria-label="anchor" href="#records-dedup-types"></a></h2>
+
+      <div class="section-desc"><p>The shared primitives the cleaners compose from: column standardisation and ordering, keep-latest dedup, the business-key tripwire, synonym remapping, full-pull reconcile, and column type inference.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="standardise_names.html">standardise_names()</a></code>
+
+        </dt>
+        <dd>Standardise POLIS column names</dd>
+
+        <dt>
+
+          <code><a href="order_columns.html">order_columns()</a></code>
+
+        </dt>
+        <dd>Order columns: identifiers, then location, then time, then everything else</dd>
+
+        <dt>
+
+          <code><a href="polis_upsert.html">polis_upsert()</a></code>
+
+        </dt>
+        <dd>Upsert by Id, keeping the latest record</dd>
+
+        <dt>
+
+          <code><a href="flag_ambiguous.html">flag_ambiguous()</a></code>
+
+        </dt>
+        <dd>Flag (do not drop) rows whose business key spans multiple Ids</dd>
+
+        <dt>
+
+          <code><a href="remap_synonyms.html">remap_synonyms()</a></code>
+
+        </dt>
+        <dd>Remap merged EPIDs to their canonical value</dd>
+
+        <dt>
+
+          <code><a href="reconcile.html">reconcile()</a></code>
+
+        </dt>
+        <dd>Prune records absent from a full pull (reconcile)</dd>
+
+        <dt>
+
+          <code><a href="auto_parse_types.html">auto_parse_types()</a></code>
+
+        </dt>
+        <dd>Infer column types after cleaning, then optionally layer factor detection</dd>
+
+        <dt>
+
+          <code><a href="detect_factors.html">detect_factors()</a></code>
+
+        </dt>
+        <dd>Detect factor-like character columns (low-cardinality only)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="indicators">Indicators<a class="anchor" aria-label="anchor" href="#indicators"></a></h2>
+
+      <div class="section-desc"><p>Compute the standard polio surveillance indicators from a cleaned case table, and the catalogue of what is available.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="calc_polio_indicators.html">calc_polio_indicators()</a></code>
+
+        </dt>
+        <dd>Calculate polio surveillance indicators (NPAFP rate, stool adequacy, ...)</dd>
+
+        <dt>
+
+          <code><a href="available_indicators.html">available_indicators()</a></code>
+
+        </dt>
+        <dd>Dictionary of available polio surveillance indicators</dd>
+      </dl></div><div class="section level2">
+      <h2 id="quality-assurance">Quality assurance<a class="anchor" aria-label="anchor" href="#quality-assurance"></a></h2>
+
+      <div class="section-desc"><p>Post-cleaning checks: the QA report over a processed folder, the check registry, per-column missingness, and ES site validation.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="polis_qa_report.html">polis_qa_report()</a></code>
+
+        </dt>
+        <dd>Build a unified QA report from a preprocessing output folder</dd>
+
+        <dt>
+
+          <code><a href="polis_qa_checks.html">polis_qa_checks()</a></code>
+
+        </dt>
+        <dd>Registry of known preprocessing QA artifacts</dd>
+
+        <dt>
+
+          <code><a href="es_missingness.html">es_missingness()</a></code>
+
+        </dt>
+        <dd>Summarise missingness in key ES surveillance variables</dd>
+
+        <dt>
+
+          <code><a href="validate_es_sites.html">validate_es_sites()</a></code>
+
+        </dt>
+        <dd>Flag ES site names absent from a reference site list</dd>
+      </dl></div><div class="section level2">
+      <h2 id="other-surveillance-processing">Other surveillance processing<a class="anchor" aria-label="anchor" href="#other-surveillance-processing"></a></h2>
+
+      <div class="section-desc"><p>Independent-monitoring (IM) and LQAS campaign-monitoring processors.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="process_im.html">process_im()</a></code>
+
+        </dt>
+        <dd>Process raw Independent Monitoring (IM) data into missed-children rates</dd>
+
+        <dt>
+
+          <code><a href="process_lqas.html">process_lqas()</a></code>
+
+        </dt>
+        <dd>Process raw LQAS lots into classifications and district pass rates</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

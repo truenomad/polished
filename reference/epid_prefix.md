@@ -1,7 +1,7 @@
 # Geographic prefix used for prefix-matching
 
 Returns the leading `length` characters of the normalised EPID (trimmed,
-whitespace-collapsed, upper-cased) — the country+province+ district stem
+whitespace-collapsed, upper-cased) – the country+province+ district stem
 used to recover geography from sibling records.
 
 ## Usage

@@ -2,9 +2,11 @@ pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  cleaning-polis-data: cleaning-polis-data.html
+  cleaning-spatial-data: cleaning-spatial-data.html
   downloading-polis-data: downloading-polis-data.html
   epid-geo-cleaning: epid-geo-cleaning.html
-last_built: 2026-06-07T14:44Z
+last_built: 2026-06-10T05:20Z
 urls:
   reference: https://truenomad.github.io/polished/reference
   article: https://truenomad.github.io/polished/articles
