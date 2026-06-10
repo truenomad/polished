@@ -12,27 +12,67 @@ reference:
   contents:
   - get_polis_data
   - polis_tables_mapping
-- title: Impute geography from EPIDs
+- title: Configuration & pipeline
   desc: >
-    The main entry point: a provenance-stamped cascade that fills missing admin
-    names and GUIDs from EPIDs, without overwriting present values or
-    fabricating on ambiguity.
+    The shared settings object every cleaner takes, and the orchestrators that
+    run the whole cleaning set in one call (in memory, or from a directory of
+    raw files).
+  contents:
+  - polis_config
+  - run_pipeline
+  - run_pipeline_dir
+- title: Clean the surveillance streams
+  desc: >
+    One cleaner per POLIS stream. Each standardises names, sanitises dates,
+    derives the analytic variables, cleans geography and dedups to one row per
+    POLIS id. `clean_virus()` is the exception: it builds the positives dataset
+    from the already-cleaned AFP and ES outputs.
+  contents:
+  - clean_afp
+  - clean_human_spec
+  - clean_es
+  - clean_sia
+  - clean_virus
+- title: Virus classification
+  desc: >
+    The shared decoder that turns the raw POLIS virus fields into the standard
+    WPV / cVDPV / aVDPV / iVDPV vocabulary used across every stream.
+  contents:
+  - clean_afp_classification
+  - clean_es_classification
+- title: Reference tables
+  desc: >
+    The packaged lookups the cleaners are driven by: the raw-to-canonical column
+    crosswalk and the country grouping/risk reference.
+  contents:
+  - polis_crosswalk
+  - polis_country_lookup
+- title: Recover & reconcile geography
+  desc: >
+    Fill missing admin names and GUIDs without overwriting present values or
+    fabricating on ambiguity — from EPIDs, from a district shape, or from
+    coordinates — plus the admin-name fixers.
   contents:
   - impute_geo_from_epid
+  - reconcile_admin_guids
+  - impute_geo_from_coords
+  - impute_missing_coords
+  - fix_geo_names
+  - polis_fix_geo_names
+  - polis_geo_name_fixes
 - title: Clean administrative spatial data
   desc: >
     Read WHO ADM0/ADM1/ADM2 boundary layers from any format, standardise the
-    names and repair the geometry (make-valid, sliver and hole removal), then
-    write cleaned shapes plus a year-expanded long shape. Two helpers ride
-    along: per-year expansion and point-to-admin recovery.
+    names and repair the geometry, then write cleaned shapes plus a year-expanded
+    long shape, with point-to-admin recovery.
   contents:
   - process_spatial
   - create_long_shape
   - get_admin_info_from_coords
-- title: Building blocks
+- title: EPID building blocks
   desc: >
-    The exported pieces the cascade is assembled from — parsers, the
-    sibling-record lookups, and the country resolver. You rarely call these
+    The exported pieces the EPID-geography cascade is assembled from — parsers,
+    the sibling-record lookups, and the country resolver. You rarely call these
     directly.
   contents:
   - epid_split
@@ -42,11 +82,48 @@ reference:
   - build_admin_ref
   - build_prefix_ref
   - resolve_epid_country
+- title: Records, dedup & types
+  desc: >
+    The shared primitives the cleaners compose from: column standardisation and
+    ordering, keep-latest dedup, the business-key tripwire, synonym remapping,
+    full-pull reconcile, and column type inference.
+  contents:
+  - standardise_names
+  - order_columns
+  - polis_upsert
+  - flag_ambiguous
+  - remap_synonyms
+  - reconcile
+  - auto_parse_types
+  - detect_factors
+- title: Indicators
+  desc: >
+    Compute the standard polio surveillance indicators from a cleaned case table,
+    and the catalogue of what is available.
+  contents:
+  - calc_polio_indicators
+  - available_indicators
+- title: Quality assurance
+  desc: >
+    Post-cleaning checks: the QA report over a processed folder, the check
+    registry, per-column missingness, and ES site validation.
+  contents:
+  - polis_qa_report
+  - polis_qa_checks
+  - es_missingness
+  - validate_es_sites
+- title: Other surveillance processing
+  desc: >
+    Independent-monitoring (IM) and LQAS campaign-monitoring processors.
+  contents:
+  - process_im
+  - process_lqas
 
 articles:
 - title: Get started
   navbar: ~
   contents:
   - downloading-polis-data
+  - cleaning-polis-data
   - epid-geo-cleaning
   - cleaning-spatial-data
