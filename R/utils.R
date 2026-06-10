@@ -19,6 +19,14 @@
 # Null-coalescing helper (internal; mirrors rlang::`%||%` without the dep).
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+# Content hash for cache keys via xxhash64; digest is an optional dep.
+.polis_hash <- function(x) {
+  .polis_require("digest", "hash objects for caching")$digest(
+    x,
+    algo = "xxhash64"
+  )
+}
+
 # Resolve a path to a packaged extdata file, dev-mode aware.
 .polis_extdata_path <- function(file) {
   path <- system.file("extdata", file, package = "polished")
@@ -1337,8 +1345,8 @@
     afp = "Human",
     es = "EnvSample",
     virus = "Virus",
-    activity = "Activity",
-    subactivity = "SubActivity"
+    subactivity = "SubActivity",
+    activity = "Activity"
   )
 ) {
   if (!dir.exists(dir)) {
@@ -1346,6 +1354,8 @@
   }
   files <- list.files(dir, full.names = TRUE)
   inputs <- list()
+  # match subactivity before activity, claiming each file once, so "Activity"
+  # can't grab the SubActivity file.
   for (key in names(patterns)) {
     hit <- sort(
       files[grepl(patterns[[key]], basename(files))],
@@ -1353,6 +1363,7 @@
     )
     if (length(hit) > 0) {
       inputs[[key]] <- .polis_read(hit[[1]])
+      files <- setdiff(files, hit[[1]])
       cli::cli_alert_info(
         "Read {.val {key}} from {.file {basename(hit[[1]])}}."
       )

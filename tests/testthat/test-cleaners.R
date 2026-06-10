@@ -386,6 +386,163 @@ testthat::test_that("clean_sia combines the sub-activity grain with the parent a
   testthat::expect_true(all(out$year_start == 2024))
 })
 
+testthat::test_that("clean_sia bins campaigns into rounds and flags the latest", {
+  activity <- data.frame(
+    Id = 1,
+    SIASubActivityCode = "S1",
+    LastUpdateDate = "2024-04-01",
+    VaccineType = "bOPV",
+    check.names = FALSE
+  )
+  # one district (same Admin2Guid), three campaigns: two within a few days (one
+  # round) then one a month later (a second round)
+  subactivity <- data.frame(
+    Id = 10:12,
+    SIASubActivityCode = "S1",
+    LastModificationDate = "2024-04-01",
+    DateFrom = c("2024-01-10", "2024-01-12", "2024-02-20"),
+    Admin0Name = "NIGERIA",
+    Admin2Name = "BOSSO",
+    Admin2Guid = "abc",
+    check.names = FALSE
+  )
+  out <- polished::clean_sia(activity, subactivity, verbose = FALSE) |>
+    dplyr::arrange(date_from)
+  testthat::expect_equal(out$round_num, c(1L, 1L, 2L))
+  # last_campaign flags only the most recent campaign in the district
+  testthat::expect_equal(out$last_campaign, c(0L, 0L, 1L))
+  testthat::expect_true(all(out$max_round_date == as.Date("2024-02-20")))
+
+  # a wide gap threshold collapses the same dates into a single round
+  one_round <- polished::clean_sia(
+    activity,
+    subactivity,
+    round_gap_days = 90L,
+    verbose = FALSE
+  )
+  testthat::expect_true(all(one_round$round_num == 1L))
+})
+
+testthat::test_that("clean_sia caches by content and reuses on identical calls", {
+  activity <- data.frame(
+    Id = 1,
+    SIASubActivityCode = "S1",
+    LastUpdateDate = "2024-04-01",
+    VaccineType = "bOPV",
+    check.names = FALSE
+  )
+  subactivity <- data.frame(
+    Id = 10:11,
+    SIASubActivityCode = "S1",
+    LastModificationDate = "2024-04-01",
+    DateFrom = c("2024-01-10", "2024-02-20"),
+    Admin0Name = "NIGERIA",
+    Admin2Name = "BOSSO",
+    Admin2Guid = "abc",
+    check.names = FALSE
+  )
+  # a not-yet-existing nested dir exercises the cache-dir creation path
+  cache <- file.path(withr::local_tempdir(), "nested")
+
+  fresh <- polished::clean_sia(activity, subactivity, verbose = FALSE)
+  # cold miss: computes, creates the dir, writes, and announces the write
+  testthat::expect_message(
+    cold <- polished::clean_sia(
+      activity,
+      subactivity,
+      cache_dir = cache,
+      verbose = TRUE
+    ),
+    "Cached SIA result"
+  )
+  testthat::expect_equal(length(list.files(cache)), 1L)
+  # a hit returns the same table the fresh run produced and announces the load
+  testthat::expect_message(
+    warm <- polished::clean_sia(
+      activity,
+      subactivity,
+      cache_dir = cache,
+      verbose = TRUE
+    ),
+    "Loaded cached SIA result"
+  )
+  testthat::expect_equal(warm, fresh)
+  testthat::expect_equal(warm, cold)
+
+  # a different round threshold is a different key -> a second entry, not a stale hit
+  polished::clean_sia(
+    activity,
+    subactivity,
+    cache_dir = cache,
+    round_gap_days = 90L,
+    verbose = FALSE
+  )
+  testthat::expect_equal(length(list.files(cache)), 2L)
+})
+
+testthat::test_that("sia cache write surfaces a failed rename and cleans up", {
+  cleaned <- tibble::tibble(id = 1L)
+  cache_path <- file.path(withr::local_tempdir(), "x.qs2")
+  # a cross-device rename returns FALSE; we should warn and leave no stray files
+  testthat::local_mocked_bindings(
+    file.rename = function(...) FALSE,
+    .package = "base"
+  )
+  testthat::expect_warning(
+    polished:::.sia_cache_write(cleaned, cache_path),
+    "Could not write SIA cache"
+  )
+  testthat::expect_false(file.exists(cache_path))
+  testthat::expect_false(file.exists(paste0(cache_path, ".tmp")))
+})
+
+testthat::test_that("sia round assignment handles missing dates and absent keys", {
+  # a district whose campaigns are all undated: round/flag are NA/0 and the
+  # district max is a typed NA date rather than -Inf
+  undated <- tibble::tibble(
+    adm2_guid = "{Z}",
+    vaccine_type = "bOPV",
+    date_from = as.Date(c(NA, NA))
+  )
+  rounds <- polished:::.sia_assign_rounds(undated, gap_days = 21L)
+  testthat::expect_true(all(is.na(rounds$round_num)))
+  testthat::expect_true(all(is.na(rounds$max_round_date)))
+  testthat::expect_true(all(rounds$last_campaign == 0L))
+
+  # a mix of dated and undated rows in one district: the dated row is round 1 and
+  # the latest campaign; the undated row gets NA round and is not the latest
+  mixed <- tibble::tibble(
+    adm2_guid = "{Z}",
+    vaccine_type = "bOPV",
+    date_from = as.Date(c("2024-01-01", NA))
+  )
+  mr <- polished:::.sia_assign_rounds(mixed, gap_days = 21L)
+  testthat::expect_equal(mr$round_num, c(1L, NA_integer_))
+  testthat::expect_equal(mr$last_campaign, c(1L, 0L))
+  testthat::expect_equal(
+    mr$max_round_date,
+    as.Date(c("2024-01-01", "2024-01-01"))
+  )
+
+  # absent key columns (and empty data) make round assignment a no-op
+  testthat::expect_identical(
+    polished:::.sia_assign_rounds(tibble::tibble(x = 1L)),
+    tibble::tibble(x = 1L)
+  )
+  testthat::expect_identical(
+    polished:::.sia_assign_rounds(tibble::tibble(
+      adm2_guid = character(0),
+      vaccine_type = character(0),
+      date_from = as.Date(character(0))
+    )),
+    tibble::tibble(
+      adm2_guid = character(0),
+      vaccine_type = character(0),
+      date_from = as.Date(character(0))
+    )
+  )
+})
+
 testthat::test_that("clean_virus needs at least one cleaned stream", {
   testthat::expect_error(polished::clean_virus(), "cases.*es|es.*cases")
 })
