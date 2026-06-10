@@ -151,6 +151,7 @@ polis_config <- function(
 #'
 #' @return Invisibly returns `x`.
 #'
+#' @keywords internal
 #' @export
 print.polis_config <- function(x, ...) {
   cli::cli_h1("POLIS pipeline configuration")

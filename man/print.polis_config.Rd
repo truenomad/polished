@@ -17,3 +17,4 @@ Invisibly returns \code{x}.
 \description{
 Print method for POLIS configuration
 }
+\keyword{internal}
