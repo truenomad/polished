@@ -1701,9 +1701,12 @@ flag_ambiguous <- function(data, key, id = "id", sink = NULL) {
     return(data)
   }
 
+  n_flagged <- nrow(flags)
+  n_fmt <- .polis_big_num(n_flagged)
   cli::cli_alert_warning(
-    "{nrow(flags)} row{?s} share a business key ({.field {key}}) across \\
-    multiple {.field {id}}; flagged for QA, not dropped."
+    "{n_fmt} {cli::qty(n_flagged)}row{?s} share a business key \\
+    ({.field {key}}) across multiple {.field {id}}; flagged for QA, \\
+    not dropped."
   )
   if (is.character(sink) && nzchar(sink)) {
     readr::write_csv(flags, sink)
