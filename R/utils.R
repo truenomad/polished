@@ -94,6 +94,17 @@
   dplyr::mutate(data, dplyr::across(dplyr::all_of(present), .geo_guid_display))
 }
 
+# Count rows missing any admin level (adm1/adm2). Shared by clean_afp() and
+# clean_es() to size the "recovered N from coordinates" progress message; 0 when
+# neither admin column is present.
+.geo_miss_admin <- function(data) {
+  cols <- intersect(c("adm1", "adm2"), names(data))
+  if (length(cols) == 0L) {
+    return(0L)
+  }
+  sum(Reduce(`|`, lapply(cols, function(col) is.na(data[[col]]))), na.rm = TRUE)
+}
+
 # ---------------------------------------------------------------------
 # get_polis_data(): I/O + housekeeping
 # ---------------------------------------------------------------------

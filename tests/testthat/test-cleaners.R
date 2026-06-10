@@ -562,3 +562,401 @@ testthat::test_that("clean_virus report_date is per-serotype after a co-detectio
     as.Date("2024-02-15")
   )
 })
+
+testthat::test_that("clean_virus covers no-positive streams, df nOPV ref, and label/guard helpers", {
+  # one stream has no positives -> its side collapses to NULL, the other survives
+  cases_neg <- polished::clean_afp(
+    data.frame(
+      Id = 1,
+      Epid = "A-1",
+      LastUpdateDate = "2024-03-01",
+      ParalysisOnsetDate = "2024-01-02",
+      Classification = "Discarded",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  es_pos <- polished::clean_es(
+    data.frame(
+      Id = 1,
+      SampleId = "E-1",
+      LastUpdateDate = "2024-03-01",
+      CollectionDate = "2024-01-05",
+      VirusTypes = "cVDPV2",
+      VdpvClassifications = "Circulating",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  testthat::expect_setequal(
+    polished::clean_virus(
+      cases = cases_neg,
+      es = es_pos,
+      verbose = FALSE
+    )$surveillance_type,
+    "environmental"
+  )
+
+  es_neg <- polished::clean_es(
+    data.frame(
+      Id = 1,
+      SampleId = "E-1",
+      LastUpdateDate = "2024-03-01",
+      CollectionDate = "2024-01-05",
+      VirusTypes = "NPEV",
+      IsNPEV = TRUE,
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  cases_pos <- polished::clean_afp(
+    data.frame(
+      Id = 1,
+      Epid = "A-1",
+      LastUpdateDate = "2024-03-01",
+      ParalysisOnsetDate = "2024-01-02",
+      PolioVirusTypes = "WILD1",
+      Classification = "Confirmed (wild)",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  testthat::expect_setequal(
+    polished::clean_virus(
+      cases = cases_pos,
+      es = es_neg,
+      verbose = FALSE
+    )$surveillance_type,
+    "human"
+  )
+
+  # nOPV2 reference supplied as a data frame (not a bare vector)
+  flagged <- polished::clean_virus(
+    es = polished::clean_es(
+      data.frame(
+        Id = 1,
+        SampleId = "E-1",
+        LastUpdateDate = "2024-03-01",
+        CollectionDate = "2024-01-05",
+        VirusTypes = "cVDPV2",
+        VdpvClassifications = "Circulating",
+        VdpvEmergenceGroupNames = "NIE-XYZ-1",
+        Admin0Name = "NIGERIA",
+        check.names = FALSE
+      ),
+      verbose = FALSE
+    ),
+    nopv_emergence = data.frame(emergence_group = "NIE-XYZ-1"),
+    verbose = FALSE
+  )
+  testthat::expect_equal(
+    flagged$nopv2[flagged$emergence_group == "NIE-XYZ-1"],
+    1L
+  )
+
+  # pure label/guard helpers (the public path can't supply these states)
+  testthat::expect_identical(
+    polished:::.virus_split_label(NA_character_),
+    NA_character_
+  )
+  testthat::expect_identical(
+    polished:::.virus_split_label("VDPV12and3"),
+    c("VDPV 1", "VDPV 2", "VDPV 3")
+  )
+  testthat::expect_identical(
+    nrow(polished:::.virus_keep_positive(data.frame(x = 1))),
+    0L
+  )
+  testthat::expect_identical(
+    polished:::.virus_add_report_date(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+  testthat::expect_identical(
+    nrow(polished:::.virus_separate(data.frame(measurement = character(0)))),
+    0L
+  )
+})
+
+testthat::test_that("clean_sia reconciles against an sf shape and guards its date helpers", {
+  act <- data.frame(
+    Id = 1,
+    SIASubActivityCode = "S1",
+    LastUpdateDate = "2024-03-01",
+    VaccineType = "bOPV",
+    check.names = FALSE
+  )
+  sub <- data.frame(
+    Id = 1:2,
+    SIASubActivityCode = c("S1", "S1"),
+    LastModificationDate = rep("2024-03-01", 2),
+    DateFrom = c("2024-03-10", "2024-03-11"),
+    Admin0Name = "NIGERIA",
+    Admin1Name = "BORNO",
+    Admin2Name = c("WEST", "EAST"),
+    Admin0GUID = "{A0}",
+    Admin1GUID = c("{A1W}", "{A1E}"),
+    Admin2GUID = c("{A2W}", "{A2E}"),
+    check.names = FALSE
+  )
+  out <- polished::clean_sia(
+    act,
+    sub,
+    shape = make_district_shape(),
+    verbose = FALSE
+  )
+  testthat::expect_true("geo_source" %in% names(out))
+  testthat::expect_equal(nrow(out), 2L)
+
+  # guard branches in the helpers
+  testthat::expect_identical(
+    polished:::.sia_combine(data.frame(x = 1), data.frame(y = 2)),
+    data.frame(y = 2)
+  )
+  testthat::expect_identical(
+    polished:::.sia_parse_dates(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+  testthat::expect_identical(
+    polished:::.sia_add_start_vars(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+})
+
+testthat::test_that("clean_afp recovers admin from an sf shape (coords + EPID) and a plain long shape", {
+  shape <- make_district_shape()
+  raw <- data.frame(
+    Id = 1:2,
+    Epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
+    LastUpdateDate = rep("2024-03-01", 2),
+    ParalysisOnsetDate = rep("2024-01-02", 2),
+    Admin0Name = "NIGERIA",
+    Admin1Name = c("BORNO", NA),
+    Admin2Name = c("WEST", NA),
+    Admin0GUID = "{A0}",
+    Admin1GUID = c("{A1W}", NA),
+    Admin2GUID = c("{A2W}", NA),
+    Longitude = c(0.5, 1.5),
+    Latitude = c(0.5, 0.5),
+    check.names = FALSE
+  )
+  testthat::expect_true(
+    "geo_source" %in%
+      names(polished::clean_afp(raw, shape = shape, verbose = FALSE))
+  )
+
+  long <- data.frame(
+    adm0 = "NIGERIA",
+    adm1 = "BORNO",
+    adm2 = "WEST",
+    adm0_guid = "{A0}",
+    adm1_guid = "{A1W}",
+    adm2_guid = "{A2W}",
+    active_year = c(2024, 9999),
+    stringsAsFactors = FALSE
+  )
+  testthat::expect_true(
+    "geo_source" %in%
+      names(polished::clean_afp(raw, shape = long, verbose = FALSE))
+  )
+})
+
+testthat::test_that("clean_afp derives lab-pending, hot case, dual-age and 60-day followup; guards", {
+  raw <- data.frame(
+    Id = 1,
+    Epid = "A-1",
+    LastUpdateDate = "2024-03-01",
+    ParalysisOnsetDate = "2024-01-02",
+    NotificationDate = "2024-01-20",
+    Stool1CollectionDate = "2024-01-25",
+    Stool2CollectionDate = "2024-01-27",
+    FollowupDate = "2024-03-08",
+    CalculatedAgeInMonth = NA,
+    PersonAgeInMonths = "24",
+    Classification = "Pending",
+    FinalCultureResult = "Not received in lab",
+    ParalysisAsymmetric = "Yes",
+    ParalysisOnsetFever = "Yes",
+    ParalysisRapidProgress = "Yes",
+    Admin0Name = "NIGERIA",
+    check.names = FALSE
+  )
+  out <- polished::clean_afp(raw, verbose = FALSE)
+  testthat::expect_equal(out$classification_all, "LAB PENDING")
+  testthat::expect_equal(out$hot_case, 1L)
+  testthat::expect_equal(out$age_months, 24)
+  testthat::expect_true(out$needs_60day_followup)
+  testthat::expect_true(out$got_60day_followup)
+
+  # defensive guards reached directly
+  testthat::expect_identical(
+    polished:::.afp_parse_dates(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+  timed <- polished:::.afp_add_timeliness(
+    data.frame(onset_to_stool1 = 5, onset_to_stool2 = 3, stool1_to_stool2 = 2)
+  )
+  testthat::expect_true("timeliness" %in% names(timed))
+  flags <- polished:::.afp_enrich_flags(
+    data.frame(
+      classification = "Discarded",
+      surveillance_type_name = "AFP",
+      polio_virus_types = "cVDPV2",
+      stringsAsFactors = FALSE
+    )
+  )
+  testthat::expect_true("npafp" %in% names(flags))
+})
+
+testthat::test_that("clean_es runs the full geo recovery pipeline (sf shape, coords, site label, site validation)", {
+  raw <- data.frame(
+    Id = 1:3,
+    SampleId = c("E1", "E2", "E3"),
+    SiteId = c(10, 10, 20),
+    SiteName = c("Site A", "Site A", "Site B"),
+    LastUpdateDate = rep("2024-03-01", 3),
+    CollectionDate = rep("2024-01-05", 3),
+    Admin0Name = "NIGERIA",
+    Admin1Name = c("BORNO", NA, NA),
+    Admin2Name = c("WEST", NA, NA),
+    Admin0GUID = "{A0}",
+    Admin1GUID = c("{A1W}", NA, NA),
+    Admin2GUID = c("{A2W}", NA, NA),
+    SiteXCoordinate = c(0.5, 0.5, 1.5),
+    SiteYCoordinate = c(0.5, 0.5, 0.5),
+    check.names = FALSE
+  )
+  out <- polished::clean_es(
+    raw,
+    shape = make_district_shape(),
+    sites = "Site A",
+    verbose = TRUE
+  )
+  testthat::expect_true(all(c("geo_source", "site") %in% names(out)))
+})
+
+testthat::test_that("clean_es reads character truthy flags, nOPV nvaccine, and culture/RT-PCR detection", {
+  raw <- data.frame(
+    id = 1:2,
+    last_update_date = rep("2024-03-01", 2),
+    collection_date = rep("2024-01-05", 2),
+    adm0 = "NIGERIA",
+    virus_types = c(NA, NA),
+    is_npev = c("Yes", "No"),
+    final_combinedr_rtpc_rresults = c("nOPV2", "PV1"),
+    final_cell_culture_result = c("Poliovirus", "L20B"),
+    stringsAsFactors = FALSE
+  )
+  out <- polished::clean_es(raw, verbose = FALSE)
+  out <- out[order(out$id), ]
+  testthat::expect_equal(out$npev, c(1L, 0L))
+  testthat::expect_equal(out$nvaccine, c(1L, 0L))
+  testthat::expect_equal(out$ev_detect, c(1L, 1L))
+
+  # date helper guards
+  testthat::expect_identical(
+    polished:::.es_parse_dates(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+  testthat::expect_identical(
+    polished:::.es_add_collection_vars(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+})
+
+testthat::test_that("validate_es_sites and es_missingness validate inputs, report, and guard", {
+  es <- data.frame(
+    site_name = c("SITE A", "SITE B"),
+    site_y_coordinate = c(6.5, NA)
+  )
+  out <- polished::validate_es_sites(es, sites = "SITE A", verbose = TRUE)
+  testthat::expect_equal(nrow(attr(out, "polis_new_sites")), 1L)
+  testthat::expect_s3_class(
+    attr(
+      polished::validate_es_sites(
+        es,
+        sites = data.frame(site_name = "SITE A"),
+        verbose = FALSE
+      ),
+      "polis_new_sites"
+    ),
+    "tbl_df"
+  )
+  testthat::expect_identical(
+    polished::validate_es_sites(
+      data.frame(x = 1),
+      sites = "A",
+      verbose = FALSE
+    ),
+    data.frame(x = 1)
+  )
+  testthat::expect_error(polished::validate_es_sites(1, "A"), "data frame")
+  testthat::expect_error(
+    polished::validate_es_sites(es, "A", site_col = 1),
+    "single character"
+  )
+  testthat::expect_error(
+    polished::validate_es_sites(es, sites = 1),
+    "data frame or character"
+  )
+
+  testthat::expect_error(polished::es_missingness(1), "data frame")
+  testthat::expect_error(polished::es_missingness(data.frame()), "empty")
+})
+
+testthat::test_that("shared geo helpers: .geo_miss_admin counts, plain long shape, .es_impute_geo guard", {
+  testthat::expect_identical(polished:::.geo_miss_admin(data.frame(x = 1)), 0L)
+  testthat::expect_identical(
+    polished:::.geo_miss_admin(data.frame(
+      adm1 = c(NA, "x"),
+      adm2 = c("y", NA)
+    )),
+    2L
+  )
+
+  # clean_sia with a plain (non-sf) long-shape data frame exercises the else branch
+  act <- data.frame(
+    Id = 1,
+    SIASubActivityCode = "S1",
+    LastUpdateDate = "2024-03-01",
+    VaccineType = "bOPV",
+    check.names = FALSE
+  )
+  sub <- data.frame(
+    Id = 1,
+    SIASubActivityCode = "S1",
+    LastModificationDate = "2024-03-01",
+    DateFrom = "2024-03-10",
+    Admin0Name = "NIGERIA",
+    Admin1Name = "BORNO",
+    Admin2Name = "WEST",
+    Admin0GUID = "{A0}",
+    Admin1GUID = "{A1W}",
+    Admin2GUID = "{A2W}",
+    check.names = FALSE
+  )
+  long <- data.frame(
+    adm0 = "NIGERIA",
+    adm1 = "BORNO",
+    adm2 = "WEST",
+    adm0_guid = "{A0}",
+    adm1_guid = "{A1W}",
+    adm2_guid = "{A2W}",
+    active_year = c(2024, 9999),
+    stringsAsFactors = FALSE
+  )
+  testthat::expect_true(
+    "geo_source" %in%
+      names(polished::clean_sia(act, sub, shape = long, verbose = FALSE))
+  )
+
+  # .es_impute_geo is a no-op without the site coordinate columns
+  d <- data.frame(year_collection = 2024, adm2_guid = "g")
+  testthat::expect_identical(
+    polished:::.es_impute_geo(d, make_district_shape()),
+    d
+  )
+})
