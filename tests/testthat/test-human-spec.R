@@ -132,3 +132,64 @@ testthat::test_that("clean_human_spec recovers district from the parent case by 
   out_nocase <- polished::clean_human_spec(raw, verbose = FALSE)
   testthat::expect_true(is.null(out_nocase$adm2) || is.na(out_nocase$adm2))
 })
+
+testthat::test_that("clean_human_spec verbose run reconciles via sf shape + fills from cases; guards", {
+  spec <- data.frame(
+    Id = 1:2,
+    SpecimenId = c("S1", "S2"),
+    Epid = c("NIE-BOS-AAA-24-001", "NIE-BOS-AAA-24-002"),
+    LastUpdateDate = rep("2024-03-01", 2),
+    DateStoolCollected = rep("2024-01-05", 2),
+    Admin0Name = rep("NIGERIA", 2),
+    Admin1Name = c("BORNO", NA),
+    Admin2Name = c("WEST", NA),
+    Admin0GUID = "{A0}",
+    Admin1GUID = c("{A1W}", NA),
+    Admin2GUID = c("{A2W}", NA),
+    AdequateSpecimen = c("Yes", "No"),
+    check.names = FALSE
+  )
+  cases <- data.frame(
+    epid = "NIE-BOS-AAA-24-002",
+    adm1 = "BORNO",
+    adm2 = "WEST",
+    stringsAsFactors = FALSE
+  )
+  out <- polished::clean_human_spec(
+    spec,
+    shape = make_district_shape(),
+    cases = cases,
+    verbose = TRUE
+  )
+  testthat::expect_true(all(c("geo_source", "adequate") %in% names(out)))
+
+  # guard helpers: no date cols, no collection date, no overlap, all ambiguous
+  testthat::expect_identical(
+    polished:::.spec_parse_dates(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+  testthat::expect_identical(
+    polished:::.spec_add_collection_vars(data.frame(x = 1)),
+    data.frame(x = 1)
+  )
+  d <- data.frame(epid = "A-1", x = 1, stringsAsFactors = FALSE)
+  testthat::expect_identical(
+    polished:::.spec_fill_from_cases(d, data.frame(epid = "A-1")),
+    d
+  )
+  ambiguous <- data.frame(
+    epid = c("d1", "d1"),
+    adm1 = c("X", "Y"),
+    adm2 = c("X", "Y"),
+    stringsAsFactors = FALSE
+  )
+  spec2 <- data.frame(
+    epid = "d1",
+    adm1 = NA_character_,
+    adm2 = NA_character_,
+    stringsAsFactors = FALSE
+  )
+  testthat::expect_true(
+    is.na(polished:::.spec_fill_from_cases(spec2, ambiguous)$adm2)
+  )
+})
