@@ -193,3 +193,235 @@ testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
   testthat::expect_true("Id" %in% names(df))
   testthat::expect_false(any(duplicated(df$Id)))
 })
+
+testthat::test_that("get_polis_data fresh pull fetches, merges, verifies and refetches a missing id", {
+  root <- withr::local_tempdir()
+  page_calls <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = function(...) {
+      page_calls <<- page_calls + 1L
+      if (page_calls == 1L) {
+        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+      } else {
+        data.frame()
+      }
+    },
+    .polis_fetch_id_list = function(...) 1:4, # POLIS reports one more than on disk
+    .polis_refetch_missing = function(...) {
+      data.frame(Id = 4, PublishDate = "2024-06-15")
+    },
+    .package = "polished"
+  )
+  res <- polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  )
+  testthat::expect_null(res)
+  df <- readRDS(file.path(root, "data", "im.rds"))
+  testthat::expect_true(all(1:4 %in% df$Id)) # the missing id was refetched in
+})
+
+testthat::test_that("get_polis_data reports an up-to-date table (verbose) without re-fetching", {
+  root <- withr::local_tempdir()
+  seed_parts(
+    root,
+    "im",
+    2024,
+    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
+  )
+  dir.create(file.path(root, "data"), recursive = TRUE, showWarnings = FALSE)
+  saveRDS(
+    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5)),
+    file.path(root, "data", "im.rds")
+  )
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 5,
+    .polis_fetch_id_list = function(...) 1:5,
+    .package = "polished"
+  )
+  testthat::expect_null(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  ))
+})
+
+testthat::test_that("get_polis_data tolerates a failed count query (unbounded progress)", {
+  root <- withr::local_tempdir()
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) stop("count boom"),
+    .polis_fetch_id_page = function(...) data.frame(),
+    .polis_fetch_id_list = function(...) integer(0),
+    .package = "polished"
+  )
+  testthat::expect_null(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  ))
+})
+
+testthat::test_that("get_polis_data force=TRUE clears both the canonical file and parts", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "data"), recursive = TRUE, showWarnings = FALSE)
+  out_file <- file.path(root, "data", "im.rds")
+  saveRDS(data.frame(Id = 1, PublishDate = "2024-06-15"), out_file)
+  pf <- seed_parts(
+    root,
+    "im",
+    2024,
+    data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+  )
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 0,
+    .polis_fetch_id_page = function(...) data.frame(),
+    .polis_fetch_id_list = function(...) integer(0),
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE,
+    force = TRUE
+  )
+  testthat::expect_false(file.exists(pf))
+  testthat::expect_false(file.exists(out_file))
+})
+
+testthat::test_that("get_polis_data verification passes cleanly when nothing is missing", {
+  root <- withr::local_tempdir()
+  n <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = function(...) {
+      n <<- n + 1L
+      if (n == 1L) data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3)) else
+        data.frame()
+    },
+    .polis_fetch_id_list = function(...) 1:3,
+    .package = "polished"
+  )
+  testthat::expect_null(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  ))
+})
+
+testthat::test_that("get_polis_data warns and skips when the verification id-list fetch fails", {
+  root <- withr::local_tempdir()
+  n <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = function(...) {
+      n <<- n + 1L
+      if (n == 1L) data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3)) else
+        data.frame()
+    },
+    .polis_fetch_id_list = function(...) stop("list boom"),
+    .package = "polished"
+  )
+  testthat::expect_null(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  ))
+})
+
+testthat::test_that("get_polis_data warns when refetch fails, and when ids are still missing after it", {
+  fetch_three <- local({
+    function() {
+      n <- 0L
+      function(...) {
+        n <<- n + 1L
+        if (n == 1L)
+          data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3)) else
+          data.frame()
+      }
+    }
+  })
+
+  # refetch itself errors -> warned, nothing added
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = fetch_three(),
+    .polis_fetch_id_list = function(...) 1:5,
+    .polis_refetch_missing = function(...) stop("refetch boom"),
+    .package = "polished"
+  )
+  testthat::expect_null(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = withr::local_tempdir(),
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  ))
+
+  # refetch returns only some of the missing ids -> "still missing" warning
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = fetch_three(),
+    .polis_fetch_id_list = function(...) 1:5,
+    .polis_refetch_missing = function(...)
+      data.frame(Id = 4, PublishDate = "2024-06-15"),
+    .package = "polished"
+  )
+  testthat::expect_null(polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = withr::local_tempdir(),
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = FALSE
+  ))
+})
+
+testthat::test_that("get_polis_data aborts with a checkpoint when a year worker fails", {
+  root <- withr::local_tempdir()
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 10,
+    .polis_fetch_id_page = function(...) stop("page boom"),
+    .package = "polished"
+  )
+  testthat::expect_error(
+    polished::get_polis_data(
+      tables = "im",
+      min_date = "2024-01-01",
+      max_date = "2024-12-31",
+      polis_folder = root,
+      polis_api_key = "dummy",
+      workers = 1L,
+      quiet = TRUE
+    ),
+    "fetch failed"
+  )
+})
