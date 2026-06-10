@@ -22,11 +22,12 @@ A \link[tibble:tibble]{tibble} with the grouping columns plus
 }
 \description{
 Turns a shape table with \code{year_start} / \code{year_end} validity windows into a
-long table with one row per administrative unit per active year, spanning
-each unit's earliest start to the later of its latest end and the current
-year, plus a \code{9999} sentinel year used to match records with an unknown year.
-When \code{checks_dir} is supplied, any administrative unit with more than one
-shape active in the same year is written to a CSV for manual review.
+long table with one row per administrative unit per active year, spanning each
+unit's earliest start to the current year (a unit stays matchable in every
+year from its start; \code{year_end} does not close the span here), plus a \code{9999}
+sentinel year used to match records with an unknown year. When \code{checks_dir} is
+supplied, any administrative unit with more than one shape active in the same
+year is written to a CSV for manual review.
 }
 \examples{
 shapes <- tibble::tibble(

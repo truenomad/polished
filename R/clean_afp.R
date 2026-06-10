@@ -593,6 +593,14 @@ clean_afp_classification <- function(data) {
   # ---- layer 1: specific virus type (WPV nomenclature) ---------------------
   # detection runs on the raw POLIS strings ("WILD1", ...), but the emitted
   # label uses WPV so it matches standard surveillance vocabulary.
+  # compact wild label, kept so a wild+VDPV co-detection names the real serotype
+  wild <- dplyr::case_when(
+    has("WILD1") & has("WILD3") ~ "WPV1andWPV3",
+    has("WILD3") ~ "WPV3",
+    has("WILD2") ~ "WPV2",
+    has("WILD1") ~ "WPV1",
+    TRUE ~ NA_character_
+  )
   vtype <- dplyr::if_else(has("WILD1"), "WPV 1", "none")
   vtype <- dplyr::if_else(has("WILD2"), "WPV 2", vtype)
   vtype <- dplyr::if_else(has("WILD3"), "WPV 3", vtype)
@@ -608,10 +616,10 @@ clean_afp_classification <- function(data) {
     "VDPV12and3",
     vtype
   )
-  # a combined wild + VDPV detection -> "WPV1and<vdpv>"
+  # a combined wild + VDPV detection -> "<wild>and<vdpv>"
   vtype <- dplyr::if_else(
     has("WILD") & has("VDPV"),
-    paste0("WPV1and", vtype),
+    paste0(wild, "and", vtype),
     vtype
   )
   # circulating / ambiguous / immune-deficient prefix
@@ -635,10 +643,9 @@ clean_afp_classification <- function(data) {
     "none",
     vtype
   )
-  # move the kind prefix onto the VDPV component of a co-detection
-  vtype <- dplyr::if_else(vtype == "cWPV1andVDPV 2", "WPV1andcVDPV 2", vtype)
-  vtype <- dplyr::if_else(vtype == "cWPV1andVDPV 3", "WPV1andcVDPV 3", vtype)
-  vtype <- dplyr::if_else(vtype == "cWPV1andVDPV 1", "WPV1andcVDPV 1", vtype)
+  # move the kind prefix off the wild stem onto the VDPV component of a
+  # co-detection (cWPV1andVDPV 2 -> WPV1andcVDPV 2), for any wild serotype
+  vtype <- stringr::str_replace(vtype, "^([cai])(WPV.*?and)(VDPV)", "\\2\\1\\3")
   vtype <- dplyr::if_else(vtype == "cVDPV2andVDPV3", "cVDPV2andcVDPV3", vtype)
 
   # ---- vtype_fixed: historical country corrections -------------------------
@@ -869,11 +876,17 @@ clean_afp_classification <- function(data) {
     TRUE ~ "Others"
   )
   data$afp <- dplyr::if_else(data$afp_class == "AFP-Positive", 1L, 0L)
-  # non-polio AFP: discarded/pending and not a circulating VDPV type 1/2
+  # non-polio AFP: discarded/pending and not a circulating VDPV (cVDPV1/2/3). The
+  # "c" prefix is only on the derived `classification_all`, not raw virus types.
+  circulating <- if ("classification_all" %in% names(data)) {
+    data[["classification_all"]]
+  } else {
+    virus
+  }
   data$npafp <- dplyr::if_else(
     cls %in%
       c("Discarded", "Pending") &
-      !grepl("cVDPV1|cVDPV2", dplyr::coalesce(virus, "")),
+      !stringr::str_detect(dplyr::coalesce(circulating, ""), "cVDPV ?[123]"),
     1L,
     0L
   )

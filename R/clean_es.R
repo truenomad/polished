@@ -228,12 +228,18 @@ clean_es <- function(
 
   # ---- finalise: dedup by id, infer types, assert business key, order -------
   step("Deduplicating by id and finalising", "Deduplicated by id and finalised")
+  # the sample identifier is sample_id (from SampleId) or, when that is absent,
+  # enviro_sample_id (from EnviroSampleId) -- whichever the pull carries.
+  sample_key <- c(
+    intersect(c("sample_id", "enviro_sample_id"), names(data)),
+    "sample_id"
+  )[1]
   out <- data |>
     polis_upsert(id = "id", date = "last_update_date") |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
     .geo_guid_display_cols() |>
-    flag_ambiguous(key = c("sample_id", "adm0"), sink = cfg$qa) |>
+    flag_ambiguous(key = c(sample_key, "adm0"), sink = cfg$qa) |>
     order_columns(cfg$column_roles)
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
@@ -369,6 +375,12 @@ clean_es <- function(
 #'   `nvaccine` and `ev_detect` added where derivable; the raw POLIS columns are
 #'   left untouched.
 #'
+#' @details The decoding engine ([.polis_classify_virus()]) is shared with
+#'   [clean_human_spec()]: ES samples and human lab specimens have the same
+#'   lab-result structure (`virus_types` plus a VDPV classification, which may
+#'   arrive as the plural `vdpv_classifications` or the singular
+#'   `vdpv_classification`), so both reuse one classifier.
+#'
 #' @examples
 #' clean_es_classification(data.frame(
 #'   virus_types = c("cVDPV2", "WILD1", "NPEV, VACCINE3", NA),
@@ -378,13 +390,31 @@ clean_es <- function(
 #'
 #' @export
 clean_es_classification <- function(data) {
+  .polis_classify_virus(data)
+}
+
+#' Decode the shared POLIS lab-virus classification (ES + human specimens)
+#'
+#' The generic engine behind [clean_es_classification()] and the classification
+#' step of [clean_human_spec()]. Operates on any lab record carrying a
+#' `virus_types` string and (optionally) a VDPV classification column under
+#' either the plural `vdpv_classifications` or singular `vdpv_classification`
+#' name; emits the WPV-vocabulary labels and detection flags.
+#' @noRd
+.polis_classify_virus <- function(data) {
   if (!"virus_types" %in% names(data)) {
     return(data)
   }
   n <- nrow(data)
   pvt <- data$virus_types
-  vdpv <- if ("vdpv_classifications" %in% names(data)) {
-    data$vdpv_classifications
+  # ES samples carry `vdpv_classifications` (plural); human lab specimens the
+  # singular `vdpv_classification` -- accept either so both reuse this classifier.
+  vdpv_col <- intersect(
+    c("vdpv_classifications", "vdpv_classification"),
+    names(data)
+  )
+  vdpv <- if (length(vdpv_col) > 0L) {
+    data[[vdpv_col[1]]]
   } else {
     rep(NA_character_, n)
   }
@@ -557,11 +587,16 @@ clean_es_classification <- function(data) {
         "PV|NPE"
       ))
   }
-  if ("final_cell_culture_result" %in% names(data)) {
+  # ES: final_cell_culture_result; human lab specimens: ..._result_name
+  culture_col <- intersect(
+    c("final_cell_culture_result", "final_cell_culture_result_name"),
+    names(data)
+  )
+  if (length(culture_col) > 0L) {
     detect <- detect |
       .es_safe(stringr::str_detect(
-        data$final_cell_culture_result,
-        "Poliovirus|NPENT"
+        data[[culture_col[1]]],
+        "Poliovirus|NPENT|L20B"
       ))
   }
   as.integer(detect)
