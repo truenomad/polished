@@ -31,7 +31,7 @@ make_stub_body_response <- function(records, count = length(records)) {
 # Make a temporary polis_folder with a few preexisting part files
 # (helper for resume-from-disk tests).
 seed_parts <- function(polis_folder, table_name, year, df, ext = "rds") {
-  parts_dir <- file.path(polis_folder, "data", ".parts", table_name)
+  parts_dir <- file.path(polis_folder, ".parts", table_name)
   dir.create(parts_dir, recursive = TRUE, showWarnings = FALSE)
   part_file <- file.path(parts_dir, sprintf("year_%d.%s", year, ext))
   saveRDS(df, part_file)
