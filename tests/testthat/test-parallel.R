@@ -71,7 +71,7 @@ testthat::test_that("get_polis_data parallel pull works end-to-end (live, worker
       stop(e)
     }
   )
-  df <- readRDS(file.path(root, "data", "im.rds"))
+  df <- readRDS(file.path(root, "im.rds"))
   testthat::expect_true("Id" %in% names(df))
   testthat::expect_false(any(duplicated(df$Id)))
 })

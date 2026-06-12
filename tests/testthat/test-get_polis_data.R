@@ -83,10 +83,10 @@ testthat::test_that("population (NA date_field) is pulled whole, Id-only, with n
   )
 
   # whole table landed in the canonical file
-  pop <- readRDS(file.path(root, "data", "population.rds"))
+  pop <- readRDS(file.path(root, "population.rds"))
   testthat::expect_identical(nrow(pop), 3L)
   # a single un-partitioned part (year_0), not one per calendar year
-  parts <- list.files(file.path(root, "data", ".parts", "population"))
+  parts <- list.files(file.path(root, ".parts", "population"))
   testthat::expect_true(any(grepl("^year_0\\.", parts)))
   testthat::expect_false(any(grepl("^year_20", parts)))
   # no date-range clause on any request -- it is a reference table
@@ -130,7 +130,7 @@ testthat::test_that("get_polis_data writes to disk and returns paths only", {
   testthat::expect_null(result)
 
   # The data is on disk at the canonical path and reads back with every row.
-  out_file <- file.path(root, "data", "im.rds")
+  out_file <- file.path(root, "im.rds")
   testthat::expect_true(file.exists(out_file))
   on_disk <- readRDS(out_file)
   testthat::expect_s3_class(on_disk, "data.frame")
@@ -236,7 +236,7 @@ testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
       stop(e)
     }
   )
-  df <- readRDS(file.path(root, "data", "im.rds"))
+  df <- readRDS(file.path(root, "im.rds"))
   testthat::expect_s3_class(df, "data.frame")
   testthat::expect_gt(nrow(df), 1000L)
   testthat::expect_true("Id" %in% names(df))
@@ -272,7 +272,7 @@ testthat::test_that("get_polis_data fresh pull fetches, merges, verifies and ref
     quiet = FALSE
   )
   testthat::expect_null(res)
-  df <- readRDS(file.path(root, "data", "im.rds"))
+  df <- readRDS(file.path(root, "im.rds"))
   testthat::expect_true(all(1:4 %in% df$Id)) # the missing id was refetched in
 })
 
@@ -284,10 +284,10 @@ testthat::test_that("get_polis_data reports an up-to-date table (verbose) withou
     2024,
     data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
   )
-  dir.create(file.path(root, "data"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(root), recursive = TRUE, showWarnings = FALSE)
   saveRDS(
     data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5)),
-    file.path(root, "data", "im.rds")
+    file.path(root, "im.rds")
   )
   testthat::local_mocked_bindings(
     .polis_get_count = function(...) 5,
@@ -326,8 +326,8 @@ testthat::test_that("get_polis_data tolerates a failed count query (unbounded pr
 
 testthat::test_that("get_polis_data force=TRUE clears both the canonical file and parts", {
   root <- withr::local_tempdir()
-  dir.create(file.path(root, "data"), recursive = TRUE, showWarnings = FALSE)
-  out_file <- file.path(root, "data", "im.rds")
+  dir.create(file.path(root), recursive = TRUE, showWarnings = FALSE)
+  out_file <- file.path(root, "im.rds")
   saveRDS(data.frame(Id = 1, PublishDate = "2024-06-15"), out_file)
   pf <- seed_parts(
     root,
