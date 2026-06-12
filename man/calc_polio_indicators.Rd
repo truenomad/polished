@@ -2,14 +2,19 @@
 % Please edit documentation in R/indicators.R
 \name{calc_polio_indicators}
 \alias{calc_polio_indicators}
-\title{Calculate polio surveillance indicators (NPAFP rate, stool adequacy, ...)}
+\title{Calculate polio surveillance indicators (the POLIS indicator catalogue)}
 \usage{
 calc_polio_indicators(
   cases,
   population = NULL,
-  indicators = c("npafp_rate", "stool_adequacy_pct", "inv_timeliness_pct",
-    "pct_districts_npafp_ge2"),
+  virus = NULL,
+  es = NULL,
+  sia = NULL,
+  lab = NULL,
+  admin_units = NULL,
+  indicators = NULL,
   levels = c("adm0", "adm1", "adm2"),
+  cols = list(),
   class_var = "classification_all",
   age_var = "age_months",
   year_var = "year_onset",
@@ -35,6 +40,7 @@ calc_polio_indicators(
   adequacy_target = 80,
   adequacy_warn = 60,
   invest_timely_days = 2,
+  survindcat_rate_cutoff = 2,
   min_pop = 1e+05,
   min_cases = 10,
   reference_date = Sys.Date(),
@@ -45,94 +51,92 @@ calc_polio_indicators(
 \item{cases}{Cleaned AFP case data, one row per case (data.frame/tibble).}
 
 \item{population}{Optional under-15 population denominators, one row per
-admin unit per year, with columns named by \code{pop_guid_var}, \code{pop_year_var},
-\code{pop_var}. Required for \code{npafp_rate} and \code{pct_districts_npafp_ge2}; if
-absent those indicators are skipped with a message.}
+admin unit per year (\code{pop_guid_var}, \code{pop_year_var}, \code{pop_var}). Required
+for the rate / district indicators; absent -> those are skipped.}
 
-\item{indicators}{Character vector of indicators to compute (default: all).}
+\item{virus, es, sia, lab}{Optional cleaned analytic tables for the virus,
+environmental-surveillance, SIA and human-specimen (lab) indicator families.
+Absent -> those families are skipped with a warning.}
+
+\item{admin_units}{Optional universe of expected district admin units (columns
+\code{adm2_guid}, \code{adm0_guid}, optionally \code{adm1_guid}, \code{year}). Required for the
+silent-districts indicator; absent -> it is skipped.}
+
+\item{indicators}{Character vector of indicator codes to compute (default:
+the full registered catalogue, skipping any that are unavailable).}
 
 \item{levels}{Admin levels to report at: any of \code{"adm0"}, \code{"adm1"}, \code{"adm2"}.}
 
-\item{class_var, age_var, year_var, onset_date_var}{Case columns: final
-classification, age in months, onset year, onset date.}
+\item{cols}{Named list overriding default source-column mappings, e.g.
+\code{list(cases = list(class = "my_class"))}. See
+\code{polished:::.polio_default_cols()} for the full default map.}
+
+\item{class_var, age_var, year_var, onset_date_var}{Case columns (back-compat
+shortcuts that override \code{cols$cases}).}
 
 \item{adm0_guid_var, adm1_guid_var, adm2_guid_var}{Case GUID columns per level.}
 
 \item{adm0_name_var, adm1_name_var, adm2_name_var}{Case admin-name columns.}
 
-\item{adequacy_var}{Case column flagging adequate stool (logical / 0-1 /
-"Yes"-"No").}
+\item{adequacy_var}{Case column flagging adequate stool (timing-based).}
 
-\item{invest_interval_var}{Case column with notification->investigation days
-(default \code{"notify_to_invest"}, as produced by \code{\link[=clean_afp]{clean_afp()}}).}
+\item{invest_interval_var}{Case column with notification->investigation days.}
 
-\item{npafp_classes}{Values of \code{class_var} that count as non-polio AFP
-(default \code{"NPAFP"}). Matched case-insensitively.}
+\item{npafp_classes, pending_classes}{Classification values counted as NPAFP /
+pending (matched case-insensitively).}
 
-\item{pending_classes}{Values treated as pending (default \code{c("PENDING", "LAB PENDING")}).}
-
-\item{include_pending}{If \code{TRUE} (default) pending cases are included in the
-NPAFP numerator, matching \code{ufn_Indicator_NPAFP_RATE}. Set \code{FALSE} for the
-\verb{_NOPENDING} variant.}
+\item{include_pending}{If \code{TRUE} (default) pending cases count in the NPAFP
+numerator (\code{ufn_Indicator_NPAFP_RATE}); the \verb{_nopending} variant is separate.}
 
 \item{afp_exclude_classes}{Classifications excluded from the AFP denominator
-for percentage indicators (default \code{c("NOT-AFP")}).}
+for percentage indicators (default \code{"NOT-AFP"}).}
 
 \item{pop_guid_var, pop_year_var, pop_var}{Column names in \code{population}.}
 
-\item{rate_multiplier}{Population scale for the rate (default \code{1e5}).}
+\item{rate_multiplier}{Population scale for rates (default \code{1e5}).}
 
-\item{npafp_target, npafp_warn}{Good / warning thresholds for NPAFP rate
-(default \code{3} / \code{2} per 100,000).}
+\item{npafp_target, npafp_warn}{Good / warn thresholds for NPAFP rate.}
 
-\item{adequacy_target, adequacy_warn}{Thresholds for stool adequacy \% and
-timeliness \% (default \code{80} / \code{60}).}
+\item{adequacy_target, adequacy_warn}{Thresholds for percentage indicators.}
 
-\item{invest_timely_days}{Max notification->investigation days considered
+\item{invest_timely_days}{Max notification->investigation days that count as
 timely (default \code{2}).}
 
-\item{min_pop}{Population below which a rate is flagged low-confidence
-(default \code{1e5}).}
+\item{survindcat_rate_cutoff}{Policy NPAFP-rate cutoff used by \code{survindcat}
+(default \code{2}; WHO uses region/endemic-specific cutoffs -- override per run).}
 
-\item{min_cases}{Case count below which a percentage is flagged
-low-confidence (default \code{10}).}
+\item{min_pop}{Population below which a rate is flagged low-confidence.}
 
-\item{reference_date}{Date used to cap the annualisation period (default
-today). Pass a fixed date for reproducible runs.}
+\item{min_cases}{Case count below which a percentage is flagged low-confidence.}
+
+\item{reference_date}{Date capping the annualisation period (default today).}
 
 \item{verbose}{Emit a cli progress + summary report (default \code{TRUE}).}
 }
 \value{
-A named list:
-\describe{
-\item{\code{adm0},\code{adm1},\code{adm2}}{Wide tibbles (one row per admin-year) with a
-value column per indicator plus \code{afp_cases}, \code{npafp_cases},
-\code{under15_pop}.}
-\item{\code{long}}{Tidy tibble: one row per level x admin x year x indicator
-with \code{value}, \code{numerator}, \code{denominator}, \code{confidence}, \code{category},
-\code{text_code}.}
-\item{\code{meta}}{Run metadata (indicators, levels, thresholds,
-\code{reference_date}).}
-}
+A named list with per-level wide tibbles (\code{adm0}, \code{adm1}, \code{adm2}), a
+tidy \code{long} tibble (one row per level x admin x year x indicator with
+\code{value}, \code{numerator}, \code{denominator}, \code{confidence}, \code{category}, \code{text_code},
+\code{family}) and a \code{meta} list (indicators, skipped indicators with reasons,
+levels, thresholds, \code{reference_date}).
 }
 \description{
-Computes the headline AFP surveillance indicators from a cleaned case table
-(e.g. the output of \code{\link[=clean_afp]{clean_afp()}}) at country (\code{adm0}), province
-(\code{adm1}) and district (\code{adm2}) level, by year. Rates that need a population
-denominator (NPAFP rate, \% districts NPAFP >= 2) require a \code{population}
-table of \emph{under-15} population per admin unit per year.
+Computes the WHO POLIS surveillance-quality indicator catalogue from cleaned
+analytic tables (the outputs of \code{\link[=clean_afp]{clean_afp()}}, \code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_virus]{clean_virus()}},
+\code{\link[=clean_sia]{clean_sia()}} and \code{\link[=clean_human_spec]{clean_human_spec()}}) at country (\code{adm0}), province (\code{adm1})
+and district (\code{adm2}) level, by year. Each indicator is a registry spec; the
+full catalogue is discoverable with \code{\link[=available_indicators]{available_indicators()}}.
 }
 \details{
-Indicators currently implemented:
-\describe{
-\item{\code{npafp_rate}}{Annualised non-polio AFP cases per 100,000 children
-under 15: \code{annualise(npafp_cases / under15_pop * 100000)}. Target >= 2
-(warn) / >= 3 (good).}
-\item{\code{stool_adequacy_pct}}{\% of AFP cases with two adequate stool
-specimens. Target >= 80\% (good) / >= 60\% (warn).}
-\item{\code{inv_timeliness_pct}}{\% of AFP cases investigated within
-\code{invest_timely_days} days of notification.}
-\item{\code{pct_districts_npafp_ge2}}{\% of districts (adm2) whose annualised
-NPAFP rate is >= \code{npafp_warn}; reported at adm0 and adm1.}
+Indicators whose source table or required columns are absent are \strong{skipped
+with a warning} rather than erroring, so a partial schema (e.g. \code{cases} +
+\code{population} only) still computes every applicable indicator. Rates that need
+a population denominator require a \code{population} table of \emph{under-15} population
+per admin unit per year.
+}
+\examples{
+\donttest{
+# available_indicators() lists the full catalogue without running anything.
+available_indicators()
 }
 }

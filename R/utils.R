@@ -471,17 +471,22 @@
   country_code,
   last_id = NULL
 ) {
-  year_lo <- as.integer(format(as.Date(min_date), "%Y"))
-  year_hi <- as.integer(format(as.Date(max_date), "%Y"))
-  parts <- c(
-    sprintf("%s ge %d-01-01", date_field, year_lo),
-    sprintf("%s le %d-12-31", date_field, year_hi)
-  )
+  # Reference tables (e.g. Population) carry no usable update date and are
+  # pulled whole: a NA `date_field` means "no date filter, fetch everything".
+  parts <- character(0)
+  if (!is.na(date_field) && nzchar(date_field)) {
+    year_lo <- as.integer(format(as.Date(min_date), "%Y"))
+    year_hi <- as.integer(format(as.Date(max_date), "%Y"))
+    parts <- c(
+      sprintf("%s ge %d-01-01", date_field, year_lo),
+      sprintf("%s le %d-12-31", date_field, year_hi)
+    )
+  }
   if (
     isTRUE(length(region) == 1L) &&
       isTRUE(nzchar(region)) &&
       tolower(region) != "global" &&
-      !(endpoint %in% c("LabSpecimen", "Im"))
+      !(endpoint %in% c("LabSpecimen", "Im", "Population"))
   ) {
     region_field <- if (endpoint == "Virus") "RegionName" else "WHORegion"
     parts <- c(parts, sprintf("%s eq '%s'", region_field, region))
@@ -496,6 +501,16 @@
     )
   }
   paste(parts, collapse = " and ")
+}
+
+# OData query prefix for an optional filter clause: "?$filter=...&" when a
+# clause is present, or a bare "?" when there is none (reference-table pulls).
+.polis_filter_query <- function(flt) {
+  if (nzchar(flt)) {
+    paste0("?$filter=", utils::URLencode(flt), "&")
+  } else {
+    "?"
+  }
 }
 
 # Single GET with retry + gzip. Returns the parsed JSON body.
@@ -536,9 +551,8 @@
   url <- paste0(
     "https://extranet.who.int/polis/api/v2/",
     endpoint,
-    "?$filter=",
-    utils::URLencode(flt),
-    "&$count=true&$top=0"
+    .polis_filter_query(flt),
+    "$count=true&$top=0"
   )
   body <- .polis_get_body(url, polis_api_key)
   raw <- body[["@odata.count"]]
@@ -577,9 +591,8 @@
   url <- paste0(
     "https://extranet.who.int/polis/api/v2/",
     endpoint,
-    "?$filter=",
-    utils::URLencode(flt),
-    "&$orderby=Id&$top=",
+    .polis_filter_query(flt),
+    "$orderby=Id&$top=",
     as.integer(page_size),
     select_q
   )

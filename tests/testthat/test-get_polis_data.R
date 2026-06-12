@@ -23,7 +23,7 @@ testthat::test_that("get_polis_data aborts on unknown table names", {
 
 testthat::test_that("polis_tables_mapping has the documented rows + columns", {
   testthat::expect_s3_class(polished::polis_tables_mapping, "data.frame")
-  testthat::expect_equal(nrow(polished::polis_tables_mapping), 10L)
+  testthat::expect_equal(nrow(polished::polis_tables_mapping), 11L)
   testthat::expect_setequal(
     names(polished::polis_tables_mapping),
     c("table_name", "endpoint", "date_field")
@@ -40,9 +40,58 @@ testthat::test_that("polis_tables_mapping has the documented rows + columns", {
       "lqas",
       "im",
       "historized_synonyms",
-      "historized_geoplace_names"
+      "historized_geoplace_names",
+      "population"
     )
   )
+  # population is the lone reference table: NA date_field -> pulled whole
+  pop <- polished::polis_tables_mapping[
+    polished::polis_tables_mapping$table_name == "population",
+  ]
+  testthat::expect_identical(pop$endpoint, "Population")
+  testthat::expect_true(is.na(pop$date_field))
+})
+
+testthat::test_that("population (NA date_field) is pulled whole, Id-only, with no date filter", {
+  root <- withr::local_tempdir()
+  urls <- character(0)
+  testthat::local_mocked_bindings(
+    # count short-circuits to disk-vs-total; the page fetch drives the rest
+    .polis_get_count = function(...) 3,
+    .polis_get_body = function(url, polis_api_key, ...) {
+      urls[[length(urls) + 1L]] <<- url
+      # subsequent pages (Id gt N) and the verification re-page return empty
+      if (grepl("Id%20gt", url)) {
+        return(list(value = list()))
+      }
+      list(
+        value = list(
+          list(Id = 1L, Pop = 100L),
+          list(Id = 2L, Pop = 200L),
+          list(Id = 3L, Pop = 300L)
+        )
+      )
+    },
+    .package = "polished"
+  )
+
+  result <- polished::get_polis_data(
+    tables = "population",
+    polis_folder = root,
+    polis_api_key = "fake",
+    quiet = TRUE
+  )
+
+  # whole table landed in the canonical file
+  pop <- readRDS(file.path(root, "data", "population.rds"))
+  testthat::expect_identical(nrow(pop), 3L)
+  # a single un-partitioned part (year_0), not one per calendar year
+  parts <- list.files(file.path(root, "data", ".parts", "population"))
+  testthat::expect_true(any(grepl("^year_0\\.", parts)))
+  testthat::expect_false(any(grepl("^year_20", parts)))
+  # no date-range clause on any request -- it is a reference table
+  testthat::expect_false(any(grepl("%20ge%20|%20le%20", urls)))
+  testthat::expect_true(any(grepl("Population", urls)))
 })
 
 testthat::test_that("get_polis_data writes to disk and returns paths only", {

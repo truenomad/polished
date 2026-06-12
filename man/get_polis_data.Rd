@@ -23,9 +23,11 @@ get_polis_data(
 }
 \arguments{
 \item{tables}{Optional character vector of table names (see
-\link{polis_tables_mapping} for the supported set). \code{NULL} (default)
-downloads all eight tables. Unknown names abort with a list of valid
-names.}
+\link{polis_tables_mapping} for the supported set, e.g. \code{"case"}, \code{"virus"},
+\code{"population"}). \code{NULL} (default) downloads every table in the catalogue.
+Unknown names abort with a list of valid names. The \code{population} reference
+table has no update date, so \code{min_date}/\code{max_date}/\code{region} do not apply to
+it -- it is pulled whole.}
 
 \item{min_date}{Earliest date to fetch. Defaults to \code{"2000-01-01"}.
 POLIS rejects sub-year date ranges, so this is aligned to January 1
@@ -144,7 +146,7 @@ get_polis_data(tables = "im")
 cache <- tools::R_user_dir("polished", which = "cache")
 im <- readRDS(file.path(cache, "data", "im.rds"))
 
-# All eight tables in parallel into a project folder
+# The whole catalogue in parallel into a project folder
 get_polis_data(
   polis_folder = "data/polis",
   workers = parallel::detectCores() - 1L

@@ -4,25 +4,30 @@
 \alias{available_indicators}
 \title{Dictionary of available polio surveillance indicators}
 \usage{
-available_indicators(as_tibble = TRUE)
+available_indicators(as_tibble = TRUE, family = NULL)
 }
 \arguments{
 \item{as_tibble}{If \code{TRUE} (default) return a tibble; if \code{FALSE} return the
-underlying named list of specs.}
+underlying named list of registry specs.}
+
+\item{family}{Optional family filter (e.g. \code{"AFP"}, \code{"ES"}, \code{"Virus"},
+\code{"SIA"}, \code{"Composite"}, \code{"Timeliness"}, \code{"Stool"}, \code{"Dose"}, \code{"Lab"}).}
 }
 \value{
-A tibble (one row per indicator) with columns: \code{code}, \code{label},
-\code{kind}, \code{formula}, \code{numerator}, \code{denominator}, \code{levels}, \code{requires_pop},
-\code{target}, \code{warn}, \code{unit}, \code{source}, \code{notes}.
+A tibble (one row per indicator) with columns \code{code}, \code{label},
+\code{family}, \code{kind}, \code{formula}, \code{numerator}, \code{denominator}, \code{source},
+\code{period_basis}, \code{levels}, \code{requires_pop}, \code{target}, \code{warn}, \code{unit},
+\code{polis_fn}, \code{notes}.
 }
 \description{
-Returns a tidy description of every indicator \code{\link[=calc_polio_indicators]{calc_polio_indicators()}} can
-compute -- its code, label, formula, numerator/denominator definition, the
-admin levels it is reported at, whether it needs a population denominator,
-its WHO target/warning thresholds and the data source. Call it to discover
-what is available without reading the source.
+Returns a tidy description of every indicator \code{\link[=calc_polio_indicators]{calc_polio_indicators()}} knows
+about -- code, label, family, formula, numerator/denominator, source,
+period basis, admin levels, whether it needs a population denominator, WHO
+target/warn thresholds, unit, the POLIS source function and notes. Derived
+from the same registry the engine runs, so the catalogue and the engine never
+drift.
 }
 \examples{
 available_indicators()
-available_indicators()[, c("code", "label", "formula")]
+available_indicators(family = "ES")[, c("code", "label", "formula")]
 }

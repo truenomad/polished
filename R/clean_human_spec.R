@@ -433,3 +433,6 @@ clean_human_spec <- function(
   )
   data
 }
+
+# NSE column referenced bare in .spec_add_collection_vars().
+utils::globalVariables("date_stool_collected")
