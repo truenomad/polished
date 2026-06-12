@@ -216,21 +216,21 @@ testthat::test_that(".polis_dedup keeps latest per id, plus archive/log housekee
 
   # .polis_archive copies a timestamped backup; keep_n = 0 is a no-op
   root <- withr::local_tempdir()
-  out_file <- file.path(root, "data", "im.rds")
+  out_file <- file.path(root, "im.rds")
   dir.create(dirname(out_file), recursive = TRUE, showWarnings = FALSE)
   saveRDS(data.frame(a = 1), out_file)
   polished:::.polis_archive(out_file, root, "im", "rds", keep_n = 2L)
   testthat::expect_identical(
-    length(list.files(file.path(root, "data", "archive"))),
+    length(list.files(file.path(root, "archive"))),
     1L
   )
 
   root2 <- withr::local_tempdir()
-  out2 <- file.path(root2, "data", "im.rds")
+  out2 <- file.path(root2, "im.rds")
   dir.create(dirname(out2), recursive = TRUE, showWarnings = FALSE)
   saveRDS(data.frame(a = 1), out2)
   polished:::.polis_archive(out2, root2, "im", "rds", keep_n = 0L)
-  testthat::expect_false(dir.exists(file.path(root2, "data", "archive")))
+  testthat::expect_false(dir.exists(file.path(root2, "archive")))
 })
 
 testthat::test_that("utils misc: extdata abort, write_outputs, archive prune, no-id meta, merge dedup", {
@@ -252,9 +252,9 @@ testthat::test_that("utils misc: extdata abort, write_outputs, archive prune, no
 
   # archive copies the canonical file and prunes older copies beyond keep_n
   root <- withr::local_tempdir()
-  arc <- file.path(root, "data", "archive")
+  arc <- file.path(root, "archive")
   dir.create(arc, recursive = TRUE)
-  out_file <- file.path(root, "data", "im.rds")
+  out_file <- file.path(root, "im.rds")
   saveRDS(data.frame(Id = 1), out_file)
   file.create(file.path(
     arc,

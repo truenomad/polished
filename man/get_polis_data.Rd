@@ -44,7 +44,7 @@ to December 31 of its year.}
 filter).}
 
 \item{polis_folder}{Root folder for cached data. Files land under
-\verb{<polis_folder>/data/}. Default
+\verb{<polis_folder>/}. Default
 \code{tools::R_user_dir("polished", which = "cache")} -- the standard
 per-user cache location, persistent across sessions so incremental
 updates "just work". Pass an explicit path to keep data alongside a
@@ -67,7 +67,7 @@ verification + selective refetch at the end of each table. Set to
 \code{NULL}.}
 
 \item{keep_archives}{When \verb{> 0}, on each save also writes a timestamped
-copy under \verb{data/archive/} and prunes older copies. Default \code{0} (no
+copy under \verb{archive/} and prunes older copies. Default \code{0} (no
 archive).}
 
 \item{force}{If \code{TRUE}, deletes the \verb{.parts/<table>/} directory and the
@@ -82,11 +82,11 @@ Default \code{FALSE}.}
 \value{
 \code{NULL}, invisibly. \code{get_polis_data()} is called purely for its
 side effect: each selected table is written to
-\verb{<polis_folder>/data/<table_name>.<ext>} (plus a \verb{.parts/<table_name>/}
+\verb{<polis_folder>/<table_name>.<ext>} (plus a \verb{.parts/<table_name>/}
 resume cache). The data is never loaded into memory, so a
 multi-million-row pull cannot inflate your session. Read a table back
 from disk yourself when you need it, e.g.
-\code{readRDS(file.path(polis_folder, "data", "im.rds"))}.
+\code{readRDS(file.path(polis_folder, "im.rds"))}.
 }
 \description{
 The canonical entry point for fetching data from the POLIS OData service.
@@ -108,10 +108,10 @@ table's "update" column (\code{LastUpdateDate} / \code{UpdatedDate} / \code{Star
 }
 \details{
 \strong{Cache layout.} Each table is fetched into a per-year part file under
-\verb{<polis_folder>/data/.parts/<table_name>/year_YYYY.<ext>}, with a tiny
+\verb{<polis_folder>/.parts/<table_name>/year_YYYY.<ext>}, with a tiny
 \code{year_YYYY.meta.rds} sidecar capturing row count and min/max Id. After
 all years finish the parts are merged into the canonical
-\verb{<polis_folder>/data/<table_name>.<ext>}. The part files are kept so
+\verb{<polis_folder>/<table_name>.<ext>}. The part files are kept so
 the next call can resume per-year from \code{max(Id)} without re-fetching.
 To force a clean re-pull, pass \code{force = TRUE} or delete \verb{.parts/}.
 
@@ -144,7 +144,7 @@ get_polis_data(tables = "im")
 
 # Read it back from disk when you need it
 cache <- tools::R_user_dir("polished", which = "cache")
-im <- readRDS(file.path(cache, "data", "im.rds"))
+im <- readRDS(file.path(cache, "im.rds"))
 
 # The whole catalogue in parallel into a project folder
 get_polis_data(

@@ -20,10 +20,10 @@
 #'
 #' @details
 #' **Cache layout.** Each table is fetched into a per-year part file under
-#' `<polis_folder>/data/.parts/<table_name>/year_YYYY.<ext>`, with a tiny
+#' `<polis_folder>/.parts/<table_name>/year_YYYY.<ext>`, with a tiny
 #' `year_YYYY.meta.rds` sidecar capturing row count and min/max Id. After
 #' all years finish the parts are merged into the canonical
-#' `<polis_folder>/data/<table_name>.<ext>`. The part files are kept so
+#' `<polis_folder>/<table_name>.<ext>`. The part files are kept so
 #' the next call can resume per-year from `max(Id)` without re-fetching.
 #' To force a clean re-pull, pass `force = TRUE` or delete `.parts/`.
 #'
@@ -66,7 +66,7 @@
 #'   `and CountryISO3Code eq '<code>'` clause. Default `NULL` (no country
 #'   filter).
 #' @param polis_folder Root folder for cached data. Files land under
-#'   `<polis_folder>/data/`. Default
+#'   `<polis_folder>/`. Default
 #'   `tools::R_user_dir("polished", which = "cache")` -- the standard
 #'   per-user cache location, persistent across sessions so incremental
 #'   updates "just work". Pass an explicit path to keep data alongside a
@@ -84,7 +84,7 @@
 #' @param log_file Optional path to a per-batch log file (`.rds`). Default
 #'   `NULL`.
 #' @param keep_archives When `> 0`, on each save also writes a timestamped
-#'   copy under `data/archive/` and prunes older copies. Default `0` (no
+#'   copy under `archive/` and prunes older copies. Default `0` (no
 #'   archive).
 #' @param force If `TRUE`, deletes the `.parts/<table>/` directory and the
 #'   canonical file for each selected table before running -- forces a
@@ -95,11 +95,11 @@
 #'
 #' @return `NULL`, invisibly. `get_polis_data()` is called purely for its
 #'   side effect: each selected table is written to
-#'   `<polis_folder>/data/<table_name>.<ext>` (plus a `.parts/<table_name>/`
+#'   `<polis_folder>/<table_name>.<ext>` (plus a `.parts/<table_name>/`
 #'   resume cache). The data is never loaded into memory, so a
 #'   multi-million-row pull cannot inflate your session. Read a table back
 #'   from disk yourself when you need it, e.g.
-#'   `readRDS(file.path(polis_folder, "data", "im.rds"))`.
+#'   `readRDS(file.path(polis_folder, "im.rds"))`.
 #'
 #' @examples
 #' \dontrun{
@@ -108,7 +108,7 @@
 #'
 #' # Read it back from disk when you need it
 #' cache <- tools::R_user_dir("polished", which = "cache")
-#' im <- readRDS(file.path(cache, "data", "im.rds"))
+#' im <- readRDS(file.path(cache, "im.rds"))
 #'
 #' # The whole catalogue in parallel into a project folder
 #' get_polis_data(
@@ -159,7 +159,10 @@ get_polis_data <- function(
     ]
   }
 
-  data_dir <- file.path(polis_folder, "data")
+  # Downloads land directly in `polis_folder` (no extra `data/` subfolder); the
+  # per-year parts and timestamped archives live in `.parts/` and `archive/`
+  # alongside the canonical files.
+  data_dir <- polis_folder
   dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
   max_date <- as.Date(max_date)
@@ -625,7 +628,7 @@ get_polis_data <- function(
   }
 
   # Pure side effect: every selected table is written under
-  # <polis_folder>/data/. Nothing is returned -- read a table back from
+  # <polis_folder>/. Nothing is returned -- read a table back from
   # disk yourself (e.g. readRDS()) when you need it.
   invisible(NULL)
 }

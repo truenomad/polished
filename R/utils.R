@@ -407,7 +407,7 @@
   df[!duplicated(df[[id_col]]), , drop = FALSE]
 }
 
-# Archive the freshly-saved file with a timestamp under data/archive/
+# Archive the freshly-saved file with a timestamp under <polis_folder>/archive/
 # and prune older copies of the same table beyond keep_n.
 .polis_archive <- function(
   out_file,
@@ -419,7 +419,7 @@
   if (keep_n <= 0L) {
     return(invisible())
   }
-  arc_dir <- file.path(polis_folder, "data", "archive")
+  arc_dir <- file.path(polis_folder, "archive")
   dir.create(arc_dir, showWarnings = FALSE, recursive = TRUE)
   ts <- format(Sys.time(), "%Y%m%d_%H%M%S")
   arc_file <- file.path(
