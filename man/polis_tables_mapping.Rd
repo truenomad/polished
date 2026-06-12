@@ -29,5 +29,9 @@ filter on this field catches every row in the table including pre-2000
 legacy records. The clinical/event columns (\code{CaseDate}, \code{VirusDate},
 \code{CollectionDate}) are skipped because they contain pre-2000 legacy
 dates that fall outside typical user-supplied ranges.
+
+A \code{date_field} of \code{NA} marks a \strong{reference table} (e.g. \code{population}) that
+carries no usable update date: it is pulled whole in a single Id-paginated
+pass, ignoring \code{min_date}/\code{max_date}/\code{region}.
 }
 \keyword{datasets}

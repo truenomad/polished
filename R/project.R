@@ -126,7 +126,7 @@ init_polis_project <- function(root, gitignore = TRUE, quiet = FALSE) {
 }
 
 #' Print a polis_project
-#' @param x A [polis_project].
+#' @param x A `polis_project`.
 #' @param ... Ignored.
 #' @return `x`, invisibly.
 #' @export
@@ -146,7 +146,7 @@ print.polis_project <- function(x, ...) {
 #' "processed", "sia")` returns `<root>/processed/sia`. With no extra parts it
 #' returns the zone directory itself.
 #'
-#' @param project A [polis_project].
+#' @param project A `polis_project`.
 #' @param zone One of `"root"`, `"raw"`, `"processed"`, `"validation"`,
 #'   `"cache"`, `"logs"`. Default `"root"`.
 #' @param ... Further path components appended under the zone.
@@ -174,7 +174,7 @@ project_path <- function(project, zone = "root", ...) {
 #' precious `raw/` and derived `processed/`/`validation/` zones are never
 #' touched. Safe to call when the cache is already empty.
 #'
-#' @param project A [polis_project].
+#' @param project A `polis_project`.
 #' @param quiet Suppress the success message. Default `FALSE`.
 #'
 #' @return The `project`, invisibly.
@@ -223,7 +223,7 @@ clear_cache <- function(project, quiet = FALSE) {
 #' Resolve logical partition keys to a table's real columns.
 #'
 #' Maps the request `"year"` to the table's actual year column (the first of
-#' [.polis_year_cols] present); passes any other key through when present.
+#' `.polis_year_cols` present); passes any other key through when present.
 #' @noRd
 .polis_resolve_partition <- function(data, partition_by) {
   out <- character(0)
@@ -323,7 +323,7 @@ clear_cache <- function(project, quiet = FALSE) {
 #' independent SIA stream, so at most one group is resident at a time rather than
 #' the whole cleaned set.
 #'
-#' @param project A [polis_project] whose `raw/` zone holds the source tables.
+#' @param project A `polis_project` whose `raw/` zone holds the source tables.
 #' @param cfg A [polis_config()] (default `polis_config()`).
 #' @param partition_by Columns to partition the parquet output on, when present.
 #'   Default `"year"` (resolved per table to its year column).
@@ -457,7 +457,7 @@ run_pipeline_project <- function(
 #' year, a year filter prunes whole partitions; the country filter uses parquet
 #' predicate pushdown. Only the matching slice is materialised.
 #'
-#' @param project A [polis_project].
+#' @param project A `polis_project`.
 #' @param year Optional year (or years) to keep. Matched against the first of
 #'   `year`, `year_onset`, `year_start`, `collect_yr` present in each table.
 #' @param country Optional country/ISO3 value(s) to keep. Matched against the

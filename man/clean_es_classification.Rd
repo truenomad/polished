@@ -42,7 +42,7 @@ string for poliovirus-positive samples, otherwise the sample outcome --
 samples matching none stay \code{none}/\code{NA}.
 }
 
-The decoding engine (\code{\link[=.polis_classify_virus]{.polis_classify_virus()}}) is shared with
+The decoding engine (\code{.polis_classify_virus()}) is shared with
 \code{\link[=clean_human_spec]{clean_human_spec()}}: ES samples and human lab specimens have the same
 lab-result structure (\code{virus_types} plus a VDPV classification, which may
 arrive as the plural \code{vdpv_classifications} or the singular

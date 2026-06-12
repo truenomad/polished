@@ -13,7 +13,7 @@ run_pipeline_project(
 )
 }
 \arguments{
-\item{project}{A \link{polis_project} whose \verb{raw/} zone holds the source tables.}
+\item{project}{A \code{polis_project} whose \verb{raw/} zone holds the source tables.}
 
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} (default \code{polis_config()}).}
 

@@ -13,7 +13,7 @@ load_polis(
 )
 }
 \arguments{
-\item{project}{A \link{polis_project}.}
+\item{project}{A \code{polis_project}.}
 
 \item{year}{Optional year (or years) to keep. Matched against the first of
 \code{year}, \code{year_onset}, \code{year_start}, \code{collect_yr} present in each table.}
