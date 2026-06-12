@@ -7,7 +7,7 @@
 project_path(project, zone = "root", ...)
 }
 \arguments{
-\item{project}{A \link{polis_project}.}
+\item{project}{A \code{polis_project}.}
 
 \item{zone}{One of \code{"root"}, \code{"raw"}, \code{"processed"}, \code{"validation"},
 \code{"cache"}, \code{"logs"}. Default \code{"root"}.}

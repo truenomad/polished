@@ -50,9 +50,11 @@
 #' entirely.
 #'
 #' @param tables Optional character vector of table names (see
-#'   [polis_tables_mapping] for the supported set). `NULL` (default)
-#'   downloads all eight tables. Unknown names abort with a list of valid
-#'   names.
+#'   [polis_tables_mapping] for the supported set, e.g. `"case"`, `"virus"`,
+#'   `"population"`). `NULL` (default) downloads every table in the catalogue.
+#'   Unknown names abort with a list of valid names. The `population` reference
+#'   table has no update date, so `min_date`/`max_date`/`region` do not apply to
+#'   it -- it is pulled whole.
 #' @param min_date Earliest date to fetch. Defaults to `"2000-01-01"`.
 #'   POLIS rejects sub-year date ranges, so this is aligned to January 1
 #'   of its year.
@@ -108,7 +110,7 @@
 #' cache <- tools::R_user_dir("polished", which = "cache")
 #' im <- readRDS(file.path(cache, "data", "im.rds"))
 #'
-#' # All eight tables in parallel into a project folder
+#' # The whole catalogue in parallel into a project folder
 #' get_polis_data(
 #'   polis_folder = "data/polis",
 #'   workers = parallel::detectCores() - 1L
@@ -228,10 +230,18 @@ get_polis_data <- function(
       }
     )
 
-    # Build one spec per calendar year covered by [min_date, max_date].
-    year_lo <- as.integer(format(as.Date(min_date), "%Y"))
-    year_hi <- as.integer(format(as.Date(max_date), "%Y"))
-    years <- seq.int(year_lo, year_hi)
+    # Reference tables (NA date_field, e.g. population) carry no usable update
+    # date: pull the whole table in a single Id-paginated pass rather than one
+    # request per calendar year. The lone part is named `year_0` so the
+    # existing merge/dedup-by-Id machinery picks it up unchanged.
+    no_date <- is.na(date_field) || !nzchar(date_field)
+    if (no_date) {
+      years <- 0L
+    } else {
+      year_lo <- as.integer(format(as.Date(min_date), "%Y"))
+      year_hi <- as.integer(format(as.Date(max_date), "%Y"))
+      years <- seq.int(year_lo, year_hi)
+    }
     specs <- lapply(years, function(yr) {
       list(
         year = yr,
@@ -633,6 +643,10 @@ get_polis_data <- function(
 #' `CollectionDate`) are skipped because they contain pre-2000 legacy
 #' dates that fall outside typical user-supplied ranges.
 #'
+#' A `date_field` of `NA` marks a **reference table** (e.g. `population`) that
+#' carries no usable update date: it is pulled whole in a single Id-paginated
+#' pass, ignoring `min_date`/`max_date`/`region`.
+#'
 #' @format A data.frame with one row per supported table and columns:
 #' \describe{
 #'   \item{table_name}{Short identifier used by `tables = "..."` and as
@@ -654,7 +668,8 @@ polis_tables_mapping <- data.frame(
     "lqas",
     "im",
     "historized_synonyms",
-    "historized_geoplace_names"
+    "historized_geoplace_names",
+    "population"
   ),
   endpoint = c(
     "Virus",
@@ -666,8 +681,11 @@ polis_tables_mapping <- data.frame(
     "Lqas",
     "Im",
     "HistorizedSynonyms",
-    "HistorizedGeoplaceNames"
+    "HistorizedGeoplaceNames",
+    "Population"
   ),
+  # `NA` = reference table with no usable update date: pulled whole in one
+  # pass (no year partition, no date filter), paginated by Id only.
   date_field = c(
     "UpdatedDate",
     "LastUpdateDate",
@@ -678,7 +696,8 @@ polis_tables_mapping <- data.frame(
     "Start",
     "PublishDate",
     "LastUpdateDate",
-    "LastUpdateDate"
+    "LastUpdateDate",
+    NA_character_
   ),
   stringsAsFactors = FALSE
 )

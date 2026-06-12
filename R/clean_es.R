@@ -368,7 +368,7 @@ clean_es <- function(
 #'   `nvaccine` and `ev_detect` added where derivable; the raw POLIS columns are
 #'   left untouched.
 #'
-#' @details The decoding engine ([.polis_classify_virus()]) is shared with
+#' @details The decoding engine (`.polis_classify_virus()`) is shared with
 #'   [clean_human_spec()]: ES samples and human lab specimens have the same
 #'   lab-result structure (`virus_types` plus a VDPV classification, which may
 #'   arrive as the plural `vdpv_classifications` or the singular

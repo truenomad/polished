@@ -7,7 +7,7 @@
 clear_cache(project, quiet = FALSE)
 }
 \arguments{
-\item{project}{A \link{polis_project}.}
+\item{project}{A \code{polis_project}.}
 
 \item{quiet}{Suppress the success message. Default \code{FALSE}.}
 }
