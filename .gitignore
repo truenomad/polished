@@ -12,3 +12,4 @@ vignettes/*_files/
 /.quarto/
 inst/doc/
 example_script*
+.CLAUDE

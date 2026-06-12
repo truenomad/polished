@@ -32,6 +32,7 @@
 # =============================================================================
 
 utils::globalVariables(c(
+  "surveillance_type",
   "guid",
   "name",
   "year",

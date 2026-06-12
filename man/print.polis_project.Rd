@@ -7,7 +7,7 @@
 \method{print}{polis_project}(x, ...)
 }
 \arguments{
-\item{x}{A \link{polis_project}.}
+\item{x}{A \code{polis_project}.}
 
 \item{...}{Ignored.}
 }
