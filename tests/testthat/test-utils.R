@@ -239,15 +239,16 @@ testthat::test_that("utils misc: extdata abort, write_outputs, archive prune, no
     "Could not locate"
   )
 
-  # write a named list of cleaned tables to disk
+  # write a named list of cleaned tables to disk as polished_*, format per source
   dir <- withr::local_tempdir()
   polished:::.polis_write_outputs(
     list(afp = data.frame(a = 1), es = data.frame(b = 2)),
-    dir
+    dir,
+    formats = list(afp = "rds", es = "rds")
   )
   testthat::expect_true(all(file.exists(file.path(
     dir,
-    c("afp.rds", "es.rds")
+    c("polished_afp.rds", "polished_es.rds")
   ))))
 
   # archive copies the canonical file and prunes older copies beyond keep_n
@@ -295,4 +296,202 @@ testthat::test_that(".polis_polio_type uses the fallback column; .polis_dedup no
   )
   testthat::expect_identical(pt$polio_type, "Type 1")
   testthat::expect_identical(nrow(polished:::.polis_dedup(data.frame())), 0L)
+})
+
+testthat::test_that("legacy-name migration renames canonical, parts and archives", {
+  dir <- withr::local_tempdir()
+  # no-op when the stem already matches the table name
+  testthat::expect_invisible(
+    polished:::.polis_migrate_legacy_names(dir, "raw_im", "raw_im", "rds")
+  )
+  # seed an old-convention canonical file, parts dir and archive copy
+  saveRDS(data.frame(a = 1), file.path(dir, "case.rds"))
+  dir.create(file.path(dir, ".parts", "case"), recursive = TRUE)
+  writeLines("x", file.path(dir, ".parts", "case", "year_2024.rds"))
+  dir.create(file.path(dir, "archive"))
+  saveRDS(
+    data.frame(a = 1),
+    file.path(dir, "archive", "case_20240101_120000.rds")
+  )
+
+  suppressMessages(
+    polished:::.polis_migrate_legacy_names(dir, "case", "raw_afp", "rds")
+  )
+  testthat::expect_true(file.exists(file.path(dir, "raw_afp.rds")))
+  testthat::expect_false(file.exists(file.path(dir, "case.rds")))
+  testthat::expect_true(dir.exists(file.path(dir, ".parts", "raw_afp")))
+  testthat::expect_true(file.exists(
+    file.path(dir, "archive", "raw_afp_20240101_120000.rds")
+  ))
+})
+
+testthat::test_that("io helpers round-trip qs2, reject unknown formats; resolve_ref reads paths", {
+  dir <- withr::local_tempdir()
+  df <- data.frame(a = 1:2, b = c("x", "y"), stringsAsFactors = FALSE)
+
+  # csv round-trip
+  csv_path <- file.path(dir, "t.csv")
+  polished:::.polis_write(df, csv_path)
+  testthat::expect_equal(nrow(polished:::.polis_read(csv_path)), 2L)
+
+  # qs2 round-trip (optional dep)
+  if (requireNamespace("qs2", quietly = TRUE)) {
+    qs_path <- file.path(dir, "t.qs2")
+    polished:::.polis_write(df, qs_path)
+    testthat::expect_equal(nrow(polished:::.polis_read(qs_path)), 2L)
+  }
+
+  # unsupported extension aborts on both read and write
+  testthat::expect_error(
+    polished:::.polis_write(df, file.path(dir, "t.json")),
+    "Unsupported file type"
+  )
+  writeLines("x", file.path(dir, "t.json"))
+  testthat::expect_error(
+    polished:::.polis_read(file.path(dir, "t.json")),
+    "Unsupported file type"
+  )
+
+  # .polis_resolve_ref: path -> read, missing -> abort, non-path -> passthrough
+  ref_path <- file.path(dir, "ref.rds")
+  saveRDS(df, ref_path)
+  testthat::expect_s3_class(
+    polished:::.polis_resolve_ref(ref_path),
+    "data.frame"
+  )
+  testthat::expect_error(
+    polished:::.polis_resolve_ref(file.path(dir, "missing.rds")),
+    "does not exist"
+  )
+  testthat::expect_null(polished:::.polis_resolve_ref(NULL))
+  testthat::expect_s3_class(polished:::.polis_resolve_ref(df), "data.frame")
+})
+
+testthat::test_that(".polis_write_outputs expands a list value to one file per frame", {
+  dir <- withr::local_tempdir()
+  cleaned <- list(
+    afp = data.frame(a = 1),
+    indicators = list(adm0 = data.frame(b = 1), meta = list(x = 1))
+  )
+  polished:::.polis_write_outputs(
+    cleaned,
+    dir,
+    formats = list(afp = "rds"),
+    default_format = "rds"
+  )
+  testthat::expect_true(file.exists(file.path(dir, "polished_afp.rds")))
+  # data-frame component written, non-frame (meta list) skipped
+  testthat::expect_true(file.exists(file.path(
+    dir,
+    "polished_indicators_adm0.rds"
+  )))
+  testthat::expect_false(file.exists(file.path(
+    dir,
+    "polished_indicators_meta.rds"
+  )))
+})
+
+testthat::test_that("excel helpers: utf8, sheet names, prepare, widths", {
+  # .polis_to_utf8: factor coerced; bytes that don't decode in the locale
+  # (encoding left "unknown") fall back through latin1 to valid UTF-8;
+  # non-data.frame passes through
+  raw_bytes <- "caf\xe9" # invalid UTF-8, undeclared encoding
+  u <- polished:::.polis_to_utf8(
+    data.frame(f = factor("a"), c = raw_bytes, n = 1, stringsAsFactors = FALSE)
+  )
+  testthat::expect_true(is.character(u$f))
+  testthat::expect_true(validUTF8(u$c))
+  testthat::expect_identical(polished:::.polis_to_utf8(1:3), 1:3)
+
+  # .polis_excel_sheet_names: blank/NA -> Sheet, illegal stripped, trunc + dedupe
+  nm <- polished:::.polis_excel_sheet_names(
+    c("", NA, "bad:name*", paste0(strrep("x", 40), c("a", "b")))
+  )
+  testthat::expect_true(all(nchar(nm) <= 31L))
+  testthat::expect_equal(length(unique(nm)), length(nm))
+  testthat::expect_false(any(grepl("[:*]", nm)))
+
+  # .polis_prepare_for_excel: data.frame path (dates/list-cols stringified,
+  # duplicate names made unique)
+  df <- data.frame(x = 1, check.names = FALSE)
+  df$d <- as.Date("2024-01-01")
+  df$lst <- I(list(1:2))
+  names(df) <- c("z", "z", "z")
+  prepped <- polished:::.polis_prepare_for_excel(df)
+  testthat::expect_true(is.character(prepped[[2]])) # date -> character
+  testthat::expect_equal(length(unique(names(prepped))), 3L)
+  # list input keeps only data frames and sanitises names
+  lst <- polished:::.polis_prepare_for_excel(
+    list(a = data.frame(x = 1), not_df = 1L)
+  )
+  testthat::expect_named(lst, "a")
+  # non-df, non-list coercible input -> coerced
+  testthat::expect_s3_class(
+    polished:::.polis_prepare_for_excel(matrix(1:4, 2)),
+    "data.frame"
+  )
+  # non-coercible input (a function) -> returned unchanged
+  testthat::expect_identical(polished:::.polis_prepare_for_excel(sum), sum)
+
+  # .polis_excel_col_width: clamps to [12, 60]; no candidates -> 12
+  testthat::expect_equal(
+    polished:::.polis_excel_col_width(integer(0), character(0)),
+    12
+  )
+  testthat::expect_equal(
+    polished:::.polis_excel_col_width(strrep("y", 80), "h"),
+    60
+  )
+  # .polis_is_integerish: empty TRUE, integers TRUE, decimals FALSE
+  testthat::expect_true(polished:::.polis_is_integerish(numeric(0)))
+  testthat::expect_true(polished:::.polis_is_integerish(c(1, 2, NA)))
+  testthat::expect_false(polished:::.polis_is_integerish(c(1.5, 2)))
+})
+
+testthat::test_that("formatted xlsx writer styles every column type", {
+  testthat::skip_if_not_installed("openxlsx")
+  dir <- withr::local_tempdir()
+
+  data <- data.frame(
+    name = c("a", "b", "c"),
+    count = c(1L, 2L, 3L), # integer format
+    rate = c(1.5, 2.5, 3.5), # decimal format
+    pct_pos = c(50, 60, 70), # percent, > 1 -> rescaled
+    year_onset = c(2024L, 2024L, 2024L), # "year" -> left unformatted
+    stringsAsFactors = FALSE
+  )
+  # an sf sheet (geometry dropped), an empty-rows sheet, and duplicate long names
+  sf_sheet <- sf::st_sf(
+    a = 1L,
+    geometry = sf::st_sfc(sf::st_point(c(0, 0)))
+  )
+  long <- strrep("s", 40)
+  sheets <- stats::setNames(
+    list(data, sf_sheet, data[0, ]),
+    c(long, long, "empty")
+  )
+
+  path <- file.path(dir, "wb.xlsx")
+  testthat::expect_identical(polished:::.polis_write_xlsx(sheets, path), path)
+  testthat::expect_true(file.exists(path))
+  got <- openxlsx::getSheetNames(path)
+  testthat::expect_equal(length(got), 3L)
+  testthat::expect_true(all(nchar(got) <= 31L))
+
+  # data.frame input writes a single "Data" sheet
+  path2 <- file.path(dir, "single.xlsx")
+  polished:::.polis_write_xlsx(data, path2)
+  testthat::expect_identical(openxlsx::getSheetNames(path2), "Data")
+
+  # direct writer covers the structural edges prepare() would otherwise smooth
+  # over: a non-data.frame sheet, a zero-column sheet, and a column-free-numeric
+  # (character-only) sheet
+  path3 <- file.path(dir, "edges.xlsx")
+  edges <- list(
+    chars = data.frame(a = c("x", "y"), stringsAsFactors = FALSE),
+    no_cols = data.frame(),
+    mat = matrix(1:4, 2)
+  )
+  polished:::.polis_write_excel_formatted(edges, path3)
+  testthat::expect_true(file.exists(path3))
 })

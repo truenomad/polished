@@ -867,6 +867,59 @@
 # One-time migration: when an older run left a single canonical file
 # on disk with no per-year parts, split it into parts so the workers
 # can resume per-year. Tolerant of a corrupt/truncated input.
+# Rename files written under the old bare `<table_name>` convention to their
+# `raw_*` stem, in place, so an existing download is reused rather than
+# re-fetched. Covers the canonical file, the per-year parts dir (meta sidecars
+# travel inside it), and any timestamped archive copies. A no-op once migrated
+# or on a fresh folder.
+.polis_migrate_legacy_names <- function(
+  data_dir,
+  table_name,
+  file_stem,
+  ext
+) {
+  if (identical(table_name, file_stem)) {
+    return(invisible())
+  }
+
+  old_canon <- file.path(data_dir, paste0(table_name, ".", ext))
+  new_canon <- file.path(data_dir, paste0(file_stem, ".", ext))
+  if (file.exists(old_canon) && !file.exists(new_canon)) {
+    if (isTRUE(file.rename(old_canon, new_canon))) {
+      cli::cli_alert_info(
+        "Renamed {.file {basename(old_canon)}} -> {.file {basename(new_canon)}}."
+      )
+    }
+  }
+
+  old_parts <- file.path(data_dir, ".parts", table_name)
+  new_parts <- file.path(data_dir, ".parts", file_stem)
+  if (dir.exists(old_parts) && !dir.exists(new_parts)) {
+    dir.create(dirname(new_parts), showWarnings = FALSE, recursive = TRUE)
+    if (isTRUE(file.rename(old_parts, new_parts))) {
+      cli::cli_alert_info(
+        "Renamed cache {.file .parts/{table_name}} -> {.file .parts/{file_stem}}."
+      )
+    }
+  }
+
+  arc_dir <- file.path(data_dir, "archive")
+  if (dir.exists(arc_dir)) {
+    pattern <- sprintf("^%s_(\\d{8}_\\d{6})\\.%s$", table_name, ext)
+    for (old_arc in list.files(arc_dir, pattern = pattern, full.names = TRUE)) {
+      new_arc <- file.path(
+        arc_dir,
+        sub(pattern, paste0(file_stem, "_\\1.", ext), basename(old_arc))
+      )
+      if (!file.exists(new_arc)) {
+        file.rename(old_arc, new_arc)
+      }
+    }
+  }
+
+  invisible()
+}
+
 .polis_migrate_to_parts <- function(out_file, parts_dir, ext, date_field) {
   if (dir.exists(parts_dir)) return(invisible())
   if (!file.exists(out_file)) return(invisible())
@@ -910,6 +963,21 @@
     .polis_io_write_part(part_df, part_file, ext, date_field)
   }
   invisible()
+}
+
+# Drop the per-year resume cache for one table. Called when `prune_parts =
+# TRUE` once the canonical file is written and verified: the canonical is a
+# complete, Id-deduped checkpoint, so the parts are redundant. The next run
+# rebuilds them from the canonical via `.polis_migrate_to_parts()`, which
+# re-buckets every Id into its current `date_field` year -- clearing any stale
+# cross-year duplicate copies and keeping the parts row count honest. Returns
+# `TRUE` if a parts dir was removed, `FALSE` if there was nothing to remove.
+.polis_prune_parts <- function(parts_dir) {
+  if (!dir.exists(parts_dir)) {
+    return(invisible(FALSE))
+  }
+  unlink(parts_dir, recursive = TRUE, force = TRUE)
+  invisible(!dir.exists(parts_dir))
 }
 
 # Bind all part files into the canonical file, then dedup by Id keeping the
@@ -1114,9 +1182,13 @@
     NULL
   }
   if (!is.null(pb_id)) {
-    cli::cli_progress_update(
-      id = pb_id,
-      set = .polis_pb_set(current_rows, declared_total)
+    # Cosmetic bar: a dropped bar id must not abort the download.
+    try(
+      cli::cli_progress_update(
+        id = pb_id,
+        set = .polis_pb_set(current_rows, declared_total)
+      ),
+      silent = TRUE
     )
   }
 
@@ -1142,9 +1214,13 @@
       n_cum <<- .polis_pretty_num(current_total)
       pb_cur <<- n_cum
       if (!is.null(pb_id)) {
-        cli::cli_progress_update(
-          id = pb_id,
-          set = .polis_pb_set(current_total, declared_total)
+        # Cosmetic bar: a dropped bar id must not abort the download.
+        try(
+          cli::cli_progress_update(
+            id = pb_id,
+            set = .polis_pb_set(current_total, declared_total)
+          ),
+          silent = TRUE
         )
       }
       .polis_log_window(
@@ -1343,6 +1419,19 @@
   invisible(path)
 }
 
+# Resolve a config reference handle (population / shape): a length-1 character
+# path is read from disk (extension-dispatched); anything else (an already-loaded
+# data frame or sf object, or NULL) is returned unchanged.
+.polis_resolve_ref <- function(x) {
+  if (is.character(x) && length(x) == 1L) {
+    if (!file.exists(x)) {
+      cli::cli_abort("Reference file {.file {x}} does not exist.")
+    }
+    return(.polis_read(x))
+  }
+  x
+}
+
 # Require an optional package, returning its namespace, with a clear message.
 .polis_require <- function(pkg, what) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
@@ -1351,47 +1440,357 @@
   asNamespace(pkg)
 }
 
+# ---------------------------------------------------------------------
+# Formatted Excel export (no versioning)
+#
+# A small, dependency-light xlsx writer: drops sf geometry, stringifies
+# dates/list-columns, enforces UTF-8, sanitises sheet names, and styles each
+# sheet (navy header, sized columns, integer/decimal/percent number formats).
+# Writes straight to `path` (overwrite); no date stamps, version tags or
+# pruning -- callers that want versioning handle it themselves.
+# ---------------------------------------------------------------------
+
+# Coerce character/factor columns (and names) to valid UTF-8. Bytes that don't
+# decode in the locale are retried as latin1, which maps every byte, so the
+# result is always valid UTF-8.
+.polis_to_utf8 <- function(x) {
+  if (!is.data.frame(x)) {
+    return(x)
+  }
+  x[] <- lapply(x, function(col) {
+    if (is.factor(col)) {
+      col <- as.character(col)
+    }
+    if (!is.character(col)) {
+      return(col)
+    }
+    conv <- iconv(col, from = "", to = "UTF-8")
+    bad <- is.na(conv) & !is.na(col)
+    if (any(bad)) {
+      conv[bad] <- iconv(col[bad], from = "latin1", to = "UTF-8")
+    }
+    Encoding(conv) <- "UTF-8"
+    conv
+  })
+  names(x) <- iconv(names(x), from = "", to = "UTF-8", sub = "")
+  Encoding(names(x)) <- "UTF-8"
+  x
+}
+
+# Make Excel-safe sheet names: UTF-8, illegal characters stripped, truncated to
+# 31 chars and de-duplicated.
+.polis_excel_sheet_names <- function(nm) {
+  nm[nm == "" | is.na(nm)] <- paste0(
+    "Sheet",
+    which(nm == "" | is.na(nm))
+  )
+  nm <- iconv(nm, from = "", to = "UTF-8", sub = "")
+  nm <- gsub("[\\[\\]\\*\\:\\?\\/\\\\]", "_", nm, perl = TRUE)
+  nm <- substr(nm, 1L, 31L)
+  if (any(duplicated(nm))) {
+    used <- character(0)
+    for (i in seq_along(nm)) {
+      stem <- substr(nm[i], 1L, 28L)
+      cand <- nm[i]
+      j <- 1L
+      while (cand %in% used) {
+        cand <- paste0(stem, "_", j %% 100L)
+        j <- j + 1L
+      }
+      nm[i] <- cand
+      used <- c(used, cand)
+    }
+  }
+  nm
+}
+
+# Make a data.frame (or list of them) Excel-ready: drop sf geometry, stringify
+# dates and list-columns, unique column names, UTF-8. Returns a cleaned frame or
+# a named list of cleaned frames with sanitised sheet names.
+.polis_prepare_for_excel <- function(x) {
+  clean_df <- function(df) {
+    if (inherits(df, "sf") && requireNamespace("sf", quietly = TRUE)) {
+      df <- sf::st_drop_geometry(df)
+    }
+    df[] <- lapply(df, function(col) {
+      if (inherits(col, c("POSIXct", "POSIXt", "Date"))) {
+        return(as.character(col))
+      }
+      if (is.list(col)) {
+        return(vapply(
+          col,
+          function(v) {
+            paste0(
+              utils::capture.output(utils::str(v, give.attr = FALSE)),
+              collapse = " "
+            )
+          },
+          character(1)
+        ))
+      }
+      col
+    })
+    names(df) <- make.names(names(df), unique = TRUE)
+    .polis_to_utf8(df)
+  }
+
+  if (is.data.frame(x)) {
+    return(clean_df(x))
+  }
+  if (is.list(x)) {
+    dfs <- x[vapply(x, is.data.frame, logical(1))]
+    dfs <- lapply(dfs, clean_df)
+    nm <- names(dfs) %||% paste0("Sheet", seq_along(dfs))
+    names(dfs) <- .polis_excel_sheet_names(nm)
+    return(dfs)
+  }
+  coerced <- tryCatch(as.data.frame(x), error = function(e) NULL)
+  if (!is.null(coerced)) clean_df(coerced) else x
+}
+
+# Choose a per-column width from the header and the formatted cell strings,
+# clamped to [12, 60].
+.polis_excel_col_width <- function(col, header) {
+  cell_strings <- if (is.numeric(col)) {
+    format(col, trim = TRUE, scientific = FALSE)
+  } else {
+    as.character(col)
+  }
+  cell_strings <- cell_strings[!is.na(cell_strings)]
+  candidates <- c(header, cell_strings)
+  if (length(candidates) == 0L) {
+    return(12)
+  }
+  min(60, max(12, max(nchar(candidates)) + 2L))
+}
+
+# TRUE for a numeric column that is all (near-)integers.
+.polis_is_integerish <- function(col) {
+  non_na_vals <- col[!is.na(col)]
+  if (length(non_na_vals) == 0L) {
+    return(TRUE)
+  }
+  all(abs(non_na_vals - round(non_na_vals)) < sqrt(.Machine$double.eps))
+}
+
+# Write a named list of data.frames to a styled .xlsx via openxlsx: navy header,
+# sized columns, and integer/decimal/percent number formats inferred per column
+# (columns whose name contains "year" are left unformatted; "percent"/"pct"/"%"
+# columns scaled to fractions when stored as whole percents).
+.polis_write_excel_formatted <- function(sheets, path) {
+  if (is.data.frame(sheets)) {
+    sheets <- list(Data = sheets)
+  }
+  names(sheets) <- names(sheets) %||% paste0("Sheet", seq_along(sheets))
+
+  wb <- openxlsx::createWorkbook()
+  header_style <- openxlsx::createStyle(
+    fgFill = "#003865",
+    fontColour = "#FFFFFF",
+    textDecoration = "bold",
+    halign = "center",
+    wrapText = FALSE
+  )
+  body_style <- openxlsx::createStyle(wrapText = FALSE)
+  integer_style <- openxlsx::createStyle(numFmt = "#,##0", wrapText = FALSE)
+  decimal_style <- openxlsx::createStyle(
+    numFmt = "#,##0.############",
+    wrapText = FALSE
+  )
+  percent_style <- openxlsx::createStyle(numFmt = "0.00%", wrapText = FALSE)
+
+  for (sheet_name in names(sheets)) {
+    data <- sheets[[sheet_name]]
+    if (!is.data.frame(data)) {
+      data <- as.data.frame(data)
+    }
+    openxlsx::addWorksheet(wb, sheet_name)
+    openxlsx::writeData(wb, sheet_name, data, withFilter = FALSE)
+    n_cols <- ncol(data)
+    n_rows <- nrow(data)
+    if (n_cols == 0L) {
+      next
+    }
+
+    widths <- vapply(
+      seq_len(n_cols),
+      function(idx) .polis_excel_col_width(data[[idx]], names(data)[idx]),
+      double(1)
+    )
+    openxlsx::setColWidths(
+      wb,
+      sheet_name,
+      cols = seq_len(n_cols),
+      widths = widths
+    )
+    openxlsx::addStyle(
+      wb,
+      sheet_name,
+      header_style,
+      rows = 1L,
+      cols = seq_len(n_cols),
+      gridExpand = TRUE
+    )
+    if (n_rows == 0L) {
+      next
+    }
+
+    body_rows <- 1L + seq_len(n_rows)
+    openxlsx::addStyle(
+      wb,
+      sheet_name,
+      body_style,
+      rows = body_rows,
+      cols = seq_len(n_cols),
+      gridExpand = TRUE
+    )
+
+    numeric_cols <- which(vapply(data, is.numeric, logical(1)))
+    # year columns read as plain integers, not formatted counts
+    numeric_cols <- numeric_cols[
+      !grepl("year", tolower(names(data)[numeric_cols]), fixed = TRUE)
+    ]
+    if (length(numeric_cols) == 0L) {
+      next
+    }
+
+    percent_mask <- grepl(
+      "percent|pct|%",
+      tolower(names(data)[numeric_cols])
+    )
+    for (col_idx in numeric_cols[percent_mask]) {
+      column_data <- data[[col_idx]]
+      non_na_vals <- column_data[!is.na(column_data)]
+      if (length(non_na_vals) > 0L && max(abs(non_na_vals)) > 1) {
+        data[[col_idx]] <- column_data / 100
+        openxlsx::writeData(
+          wb,
+          sheet_name,
+          data[[col_idx]],
+          startCol = col_idx,
+          startRow = 2L,
+          colNames = FALSE
+        )
+      }
+      openxlsx::addStyle(
+        wb,
+        sheet_name,
+        percent_style,
+        rows = body_rows,
+        cols = col_idx,
+        gridExpand = TRUE
+      )
+    }
+
+    remaining <- numeric_cols[!percent_mask]
+    if (length(remaining) > 0L) {
+      is_int <- vapply(data[remaining], .polis_is_integerish, logical(1))
+      if (any(is_int)) {
+        openxlsx::addStyle(
+          wb,
+          sheet_name,
+          integer_style,
+          rows = body_rows,
+          cols = remaining[is_int],
+          gridExpand = TRUE
+        )
+      }
+      if (any(!is_int)) {
+        openxlsx::addStyle(
+          wb,
+          sheet_name,
+          decimal_style,
+          rows = body_rows,
+          cols = remaining[!is_int],
+          gridExpand = TRUE
+        )
+      }
+    }
+  }
+
+  dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
+  openxlsx::saveWorkbook(wb, file = path, overwrite = TRUE)
+  invisible(path)
+}
+
+# Prepare then write an object (data.frame or named list of them) to a styled
+# .xlsx workbook. Single entry point used by the check-workbook export.
+.polis_write_xlsx <- function(x, path) {
+  .polis_require("openxlsx", "write .xlsx files")
+  .polis_write_excel_formatted(.polis_prepare_for_excel(x), path)
+}
+
 # Read the raw POLIS tables present in a directory (most recent match wins).
+# Read the raw_* tables get_polis_data() writes, keyed by pipeline name. Each
+# stem is matched against the supported extensions in `exts` order (first hit
+# wins), so the on-disk format is whatever the download produced. The matched
+# extension per key is recorded on the returned list as the "formats" attribute
+# so the writer can mirror each output's format to its source.
 .polis_read_inputs <- function(
   dir,
-  patterns = c(
-    afp = "Human",
-    es = "EnvSample",
-    virus = "Virus",
-    subactivity = "SubActivity",
-    activity = "Activity"
-  )
+  stems = c(
+    afp = "raw_afp",
+    es = "raw_es",
+    hum_spec = "raw_hum_spec",
+    activity = "raw_activity",
+    subactivity = "raw_sub_activity"
+  ),
+  exts = c("qs2", "parquet", "rds", "csv")
 ) {
   if (!dir.exists(dir)) {
     cli::cli_abort("Input directory {.file {dir}} does not exist.")
   }
-  files <- list.files(dir, full.names = TRUE)
   inputs <- list()
-  # match subactivity before activity, claiming each file once, so "Activity"
-  # can't grab the SubActivity file.
-  for (key in names(patterns)) {
-    hit <- sort(
-      files[grepl(patterns[[key]], basename(files))],
-      decreasing = TRUE
-    )
-    if (length(hit) > 0) {
-      inputs[[key]] <- .polis_read(hit[[1]])
-      files <- setdiff(files, hit[[1]])
+  formats <- list()
+  for (key in names(stems)) {
+    cand <- file.path(dir, paste0(stems[[key]], ".", exts))
+    hit <- cand[file.exists(cand)]
+    if (length(hit) > 0L) {
+      inputs[[key]] <- .polis_read(hit[[1L]])
+      formats[[key]] <- tolower(tools::file_ext(hit[[1L]]))
       cli::cli_alert_info(
-        "Read {.val {key}} from {.file {basename(hit[[1]])}}."
+        "Read {.val {key}} from {.file {basename(hit[[1L]])}}."
       )
     }
   }
+  attr(inputs, "formats") <- formats
   inputs
 }
 
-# Write a named list of cleaned tibbles to a directory; returns `dir` invisibly.
-.polis_write_outputs <- function(cleaned, dir, format = "rds") {
+# Write the pipeline outputs to a directory as polished_<key> files. Each
+# output's format follows its source raw file (via `formats`, a key -> ext
+# list); derived outputs with no source fall back to `default_format`. A list
+# value (e.g. the indicators result) is written one file per data-frame
+# component (polished_<key>_<component>); non-frame components (metadata) are
+# skipped. Returns `dir` invisibly.
+.polis_write_outputs <- function(
+  cleaned,
+  dir,
+  formats = list(),
+  default_format = "qs2"
+) {
+  written <- 0L
   for (key in names(cleaned)) {
-    .polis_write(cleaned[[key]], file.path(dir, paste0(key, ".", format)))
+    value <- cleaned[[key]]
+    ext <- formats[[key]] %||% default_format
+    if (is.data.frame(value)) {
+      .polis_write(value, file.path(dir, paste0("polished_", key, ".", ext)))
+      written <- written + 1L
+    } else if (is.list(value)) {
+      for (comp in names(value)) {
+        part <- value[[comp]]
+        if (is.data.frame(part)) {
+          .polis_write(
+            part,
+            file.path(dir, paste0("polished_", key, "_", comp, ".", ext))
+          )
+          written <- written + 1L
+        }
+      }
+    }
   }
   cli::cli_alert_success(
-    "Wrote {length(cleaned)} cleaned table{?s} to {.file {dir}}."
+    "Wrote {written} polished file{?s} to {.file {dir}}."
   )
   invisible(dir)
 }

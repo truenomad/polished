@@ -20,12 +20,22 @@
 #'
 #' @details
 #' **Cache layout.** Each table is fetched into a per-year part file under
-#' `<polis_folder>/.parts/<table_name>/year_YYYY.<ext>`, with a tiny
+#' `<polis_folder>/.parts/<stem>/year_YYYY.<ext>`, with a tiny
 #' `year_YYYY.meta.rds` sidecar capturing row count and min/max Id. After
 #' all years finish the parts are merged into the canonical
-#' `<polis_folder>/<table_name>.<ext>`. The part files are kept so
-#' the next call can resume per-year from `max(Id)` without re-fetching.
-#' To force a clean re-pull, pass `force = TRUE` or delete `.parts/`.
+#' `<polis_folder>/<stem>.<ext>`. The `<stem>` is the table's `raw_*` name
+#' (e.g. `case` is written as `raw_afp`; see [polis_tables_mapping]), so the
+#' download and cleaning halves share one naming convention. By default
+#' (`prune_parts = TRUE`) the parts are deleted once the canonical is written
+#' and the next call rebuilds them from the canonical; pass `prune_parts =
+#' FALSE` to keep them on disk so the next call can resume per-year from
+#' `max(Id)` without the re-split. Either way the next call resumes per-year
+#' from `max(Id)` without re-fetching. To force a clean re-pull, pass `force =
+#' TRUE` or delete `.parts/`.
+#'
+#' Files written by older versions under the bare `<table_name>` name (e.g.
+#' `case.<ext>`) are renamed to their `raw_*` stem in place on the next run --
+#' no re-download.
 #'
 #' **Resume semantics.** The part files ARE the resume marker. If a
 #' previous run died (network blip, Ctrl-C, OOM), the next call picks up
@@ -89,6 +99,17 @@
 #' @param force If `TRUE`, deletes the `.parts/<table>/` directory and the
 #'   canonical file for each selected table before running -- forces a
 #'   fresh full re-pull instead of resuming. Default `FALSE`.
+#' @param prune_parts If `TRUE` (default), deletes the `.parts/<table>/` resume
+#'   cache after the canonical file has been written and verified. The canonical
+#'   is a complete, Id-deduped checkpoint, so the next run rebuilds the parts
+#'   from it (re-bucketing each row into its current `date_field` year). This
+#'   keeps the parts free of stale cross-year duplicate copies that otherwise
+#'   accumulate when a record's update date crosses a year boundary between runs
+#'   -- which in turn keeps the "already up to date" short-circuit honest -- at
+#'   the cost of re-splitting the canonical on the next run. Incremental resume
+#'   still works. Set to `FALSE` to retain the parts for the fastest possible
+#'   resume (at the risk of the parts row count drifting above the true distinct
+#'   total over many incremental re-pulls).
 #' @param polis_api_key API key. Defaults to `Sys.getenv("POLIS_API_KEY")`.
 #' @param quiet Suppress headers, progress bars, and the info alert.
 #'   Default `FALSE`.
@@ -131,6 +152,7 @@ get_polis_data <- function(
   log_file = NULL,
   keep_archives = 0L,
   force = FALSE,
+  prune_parts = TRUE,
   polis_api_key = Sys.getenv("POLIS_API_KEY"),
   quiet = FALSE
 ) {
@@ -176,9 +198,12 @@ get_polis_data <- function(
     nm <- row$table_name
     date_field <- row$date_field
     endpoint <- row$endpoint
+    # `nm` stays the human-facing identity (logging, resume hints); `stem` is the
+    # on-disk `raw_*` name used for the canonical file and the per-year parts.
+    stem <- row$file_stem
 
-    out_file <- file.path(data_dir, paste0(nm, ".", ext))
-    parts_dir <- file.path(data_dir, ".parts", nm)
+    out_file <- file.path(data_dir, paste0(stem, ".", ext))
+    parts_dir <- file.path(data_dir, ".parts", stem)
 
     # Force re-pull: blow away the canonical file and the per-year
     # cache so the year workers start from Id = 0.
@@ -201,6 +226,10 @@ get_polis_data <- function(
         "]"
       ))
     }
+
+    # Rename any files left under the old bare `<table_name>` convention to the
+    # `raw_*` stem so an existing download is reused, not re-fetched.
+    .polis_migrate_legacy_names(data_dir, nm, stem, ext)
 
     # If a pre-parallel run left a single canonical file with no per-
     # year parts, split it once so the workers can resume per-year.
@@ -280,14 +309,41 @@ get_polis_data <- function(
       # canonical is missing or smaller than parts -- a prior refetch
       # may have padded the canonical with rows that aren't on disk in
       # any single part, and re-merging would silently overwrite those
-      # extra rows with parts-only data.
+      # extra rows with parts-only data. A canonical that is unreadable or
+      # corrupt (e.g. a torn write or a bad manual conversion) is also
+      # rebuilt from the intact parts.
+      canonical_corrupt <- FALSE
       out_rows <- if (file.exists(out_file)) {
-        tryCatch(nrow(.polis_io_read(out_file, ext)), error = function(e) 0L)
+        withCallingHandlers(
+          tryCatch(
+            nrow(.polis_io_read(out_file, ext)),
+            error = function(e) {
+              canonical_corrupt <<- TRUE
+              0L
+            }
+          ),
+          warning = function(w) {
+            if (grepl("hash mismatch|corrupt", conditionMessage(w))) {
+              canonical_corrupt <<- TRUE
+              invokeRestart("muffleWarning")
+            }
+          }
+        )
       } else {
         0L
       }
-      if (!file.exists(out_file) || out_rows < current_rows) {
+      if (canonical_corrupt && !isTRUE(quiet)) {
+        cli::cli_alert_warning(
+          "{.val {nm}}: canonical file corrupt; rebuilding from parts."
+        )
+      }
+      if (
+        !file.exists(out_file) || out_rows < current_rows || canonical_corrupt
+      ) {
         .polis_merge_parts(parts_dir, out_file, ext, date_field)
+      }
+      if (isTRUE(prune_parts) && file.exists(out_file)) {
+        .polis_prune_parts(parts_dir)
       }
       if (!isTRUE(quiet)) {
         cli::cli_alert_info(paste0(
@@ -463,7 +519,7 @@ get_polis_data <- function(
       cli::cli_alert_info("Merging year parts -> canonical file...")
     }
     .polis_merge_parts(parts_dir, out_file, ext, date_field)
-    .polis_archive(out_file, polis_folder, nm, ext, keep_archives)
+    .polis_archive(out_file, polis_folder, stem, ext, keep_archives)
 
     # Completeness check across the full requested range -- not just the
     # newly-added window -- so prior silent drops in earlier sessions get
@@ -542,7 +598,7 @@ get_polis_data <- function(
               .polis_archive(
                 out_file,
                 polis_folder,
-                nm,
+                stem,
                 ext,
                 keep_archives
               )
@@ -625,6 +681,13 @@ get_polis_data <- function(
         }
       }
     }
+
+    # Drop the resume cache now that the canonical is a complete, deduped
+    # checkpoint. The next run rebuilds it from the canonical, so this only
+    # trades a re-split for parts that never carry stale cross-year duplicates.
+    if (isTRUE(prune_parts) && file.exists(out_file)) {
+      .polis_prune_parts(parts_dir)
+    }
   }
 
   # Pure side effect: every selected table is written under
@@ -652,12 +715,14 @@ get_polis_data <- function(
 #'
 #' @format A data.frame with one row per supported table and columns:
 #' \describe{
-#'   \item{table_name}{Short identifier used by `tables = "..."` and as
-#'         the canonical filename stem.}
+#'   \item{table_name}{Short identifier used by `tables = "..."`.}
 #'   \item{endpoint}{OData endpoint suffix appended to
 #'         `https://extranet.who.int/polis/api/v2/`.}
 #'   \item{date_field}{Column used for both the OData filter and the
 #'         dedup tiebreaker.}
+#'   \item{file_stem}{Canonical on-disk filename stem (the `raw_*` name the
+#'         downloaded table is written under, e.g. `raw_afp` for `case`). The
+#'         cleaning pipeline reads these stems and writes `polished_*` outputs.}
 #' }
 #' @export
 polis_tables_mapping <- data.frame(
@@ -701,6 +766,21 @@ polis_tables_mapping <- data.frame(
     "LastUpdateDate",
     "LastUpdateDate",
     NA_character_
+  ),
+  # On-disk stem: the cleaning pipeline speaks the afp/es/sia language, so each
+  # table is written as `raw_<key>` to keep one naming convention end to end.
+  file_stem = c(
+    "raw_virus",
+    "raw_afp",
+    "raw_hum_spec",
+    "raw_es",
+    "raw_activity",
+    "raw_sub_activity",
+    "raw_lqas",
+    "raw_im",
+    "raw_historized_synonyms",
+    "raw_historized_geoplace_names",
+    "raw_population"
   ),
   stringsAsFactors = FALSE
 )

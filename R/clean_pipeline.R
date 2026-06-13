@@ -31,6 +31,14 @@
 #'   `NULL` (default) makes synonym remapping a no-op.
 #' @param qa Optional handle (path or list) where ambiguous-key flags are routed
 #'   by [flag_ambiguous()]. `NULL` (default) collects flags in-memory only.
+#' @param population Optional under-15 population denominators used by
+#'   [calc_polio_indicators()] in [run_pipeline()]. Either a data frame or a
+#'   path to one (read via the file extension); `NULL` (default) skips the
+#'   rate indicators that need a denominator.
+#' @param shape Optional **already-processed** district shape passed to every
+#'   cleaner as `shape =` for admin reconciliation (an `sf` polygon layer or a
+#'   long ADM2 attribute table, or a path to one). `NULL` (default) disables
+#'   shape-based admin recovery.
 #' @param parse_types If `TRUE` (default) each cleaner finishes by inferring
 #'   column base types (character -> numeric/integer/date/datetime/logical) via
 #'   [auto_parse_types()] (no factor conversion). Set `FALSE` to keep the raw
@@ -54,6 +62,8 @@ polis_config <- function(
   seed = 1234L,
   synonyms = NULL,
   qa = NULL,
+  population = NULL,
+  shape = NULL,
   parse_types = TRUE,
   drop_empty_cols = TRUE
 ) {
@@ -137,6 +147,8 @@ polis_config <- function(
       crosswalk = crosswalk,
       synonyms = synonyms,
       qa = qa,
+      population = population,
+      shape = shape,
       parse_types = parse_types,
       drop_empty_cols = drop_empty_cols
     ),
@@ -161,6 +173,8 @@ print.polis_config <- function(x, ...) {
   cli::cli_text("Column-order groups: {.val {names(x$column_roles)}} -> other")
   cli::cli_text("Rule tables: {.val {names(x$rules)}}")
   cli::cli_text("Synonyms: {.val {!is.null(x$synonyms)}}")
+  cli::cli_text("Population: {.val {!is.null(x$population)}}")
+  cli::cli_text("Shape: {.val {!is.null(x$shape)}}")
   invisible(x)
 }
 
@@ -184,14 +198,23 @@ print.polis_config <- function(x, ...) {
 #' The virus (positives) table is *built* from the cleaned AFP and ES streams via
 #' [clean_virus()] whenever either is present -- it is not read from `inputs`.
 #'
+#' Each cleaner receives `cfg$shape` (an already-processed district shape) for
+#' admin reconciliation, and -- when AFP cases are present -- the surveillance
+#' indicators are computed via [calc_polio_indicators()] using `cfg$population`
+#' as the under-15 denominator.
+#'
 #' @param inputs Named list of raw POLIS data frames. Recognised names:
-#'   `afp`, `es`, `activity`, `subactivity`. (A raw `virus` table is not used --
-#'   positives are derived from the cleaned `afp`/`es` outputs.)
-#' @param cfg A [polis_config()] object (default `polis_config()`).
+#'   `afp`, `es`, `hum_spec`, `activity`, `subactivity`. (A raw `virus` table is
+#'   not used -- positives are derived from the cleaned `afp`/`es` outputs.)
+#' @param cfg A [polis_config()] object (default `polis_config()`). Its
+#'   `shape` and `population` handles drive admin reconciliation and the
+#'   indicators step respectively.
 #' @param reconcile_with Optional named list of full-pull data frames (same keys
 #'   as `inputs`) used to prune deleted/merged `id`s via [reconcile()].
 #'
-#' @return A named list of cleaned tibbles: any of `afp`, `es`, `sia`, `virus`.
+#' @return A named list holding any of the cleaned tibbles `afp`, `es`,
+#'   `hum_spec`, `sia`, `virus`, plus `indicators` (the [calc_polio_indicators()]
+#'   result list) when AFP cases are present.
 #'
 #' @examples
 #' afp <- data.frame(
@@ -211,24 +234,45 @@ run_pipeline <- function(
   if (!is.list(inputs) || is.data.frame(inputs)) {
     cli::cli_abort("{.arg inputs} must be a named list of raw data frames.")
   }
+  # Resolve the reference handles once: a path is read from disk, an in-memory
+  # object passes through. The shape feeds every cleaner; population feeds
+  # indicators.
+  shape <- .polis_resolve_ref(cfg$shape)
   cleaned <- list()
 
   # ---- AFP (cases) ----------------------------------------------------------
   if (!is.null(inputs$afp)) {
     cli::cli_h1("Cleaning AFP cases")
-    cleaned$afp <- clean_afp(inputs$afp, cfg)
+    cleaned$afp <- clean_afp(inputs$afp, cfg, shape = shape)
   }
 
   # ---- ES (environmental) ---------------------------------------------------
   if (!is.null(inputs$es)) {
     cli::cli_h1("Cleaning environmental surveillance")
-    cleaned$es <- clean_es(inputs$es, cfg)
+    cleaned$es <- clean_es(inputs$es, cfg, shape = shape)
+  }
+
+  # ---- Human specimens ------------------------------------------------------
+  # Passed the cleaned cases so a specimen inherits its parent case's geography.
+  if (!is.null(inputs$hum_spec)) {
+    cli::cli_h1("Cleaning human specimens")
+    cleaned$hum_spec <- clean_human_spec(
+      inputs$hum_spec,
+      cfg,
+      shape = shape,
+      cases = cleaned$afp
+    )
   }
 
   # ---- SIA (campaigns) ------------------------------------------------------
   if (!is.null(inputs$activity)) {
     cli::cli_h1("Cleaning SIA campaigns")
-    cleaned$sia <- clean_sia(inputs$activity, inputs$subactivity, cfg)
+    cleaned$sia <- clean_sia(
+      inputs$activity,
+      inputs$subactivity,
+      cfg,
+      shape = shape
+    )
   }
 
   # ---- Virus (positives): built from the cleaned human + ES streams ---------
@@ -251,42 +295,87 @@ run_pipeline <- function(
     }
   }
 
+  # ---- Indicators -----------------------------------------------------------
+  # Computed off the cleaned set; a thin dataset that leaves every indicator
+  # un-computable warns and is skipped rather than aborting the whole run.
+  if (!is.null(cleaned$afp) && nrow(cleaned$afp) > 0L) {
+    cli::cli_h1("Computing surveillance indicators")
+    indicators <- tryCatch(
+      calc_polio_indicators(
+        cases = cleaned$afp,
+        es = cleaned$es,
+        sia = cleaned$sia,
+        virus = cleaned$virus,
+        population = .polis_resolve_ref(cfg$population)
+      ),
+      error = function(e) {
+        cli::cli_alert_warning(
+          "Indicators skipped: {conditionMessage(e)}"
+        )
+        NULL
+      }
+    )
+    if (!is.null(indicators)) {
+      cleaned$indicators <- indicators
+    }
+  }
+
   cli::cli_alert_success(
-    "Cleaned {length(cleaned)} dataset{?s}: {.val {names(cleaned)}}."
+    "Produced {length(cleaned)} output{?s}: {.val {names(cleaned)}}."
   )
   cleaned
 }
 
 #' Run the cleaning pipeline from a directory of raw files
 #'
-#' File-based convenience over [run_pipeline()]: reads the raw POLIS tables from
-#' `source_dir`, cleans them, and (optionally) writes the cleaned outputs to
-#' `output_dir`.
+#' File-based convenience over [run_pipeline()]: reads the `raw_*` POLIS tables
+#' (the names [get_polis_data()] writes) from `source_dir`, runs the full
+#' pipeline, and (optionally) writes the outputs to `output_dir` as
+#' `polished_*` files. Each output's file format follows its source raw file;
+#' derived outputs (virus, indicators) default to `qs2`.
 #'
-#' @param source_dir Directory holding the raw POLIS exports.
-#' @param output_dir Optional directory to write cleaned outputs to. If `NULL`
-#'   the cleaned set is only returned.
-#' @param cfg A [polis_config()] object (default `polis_config()`).
-#' @param format Output file extension when writing (default `"rds"`).
+#' @param source_dir Directory holding the `raw_*` POLIS tables.
+#' @param output_dir Optional directory to write `polished_*` outputs to. If
+#'   `NULL` the output set is only returned.
+#' @param cfg A [polis_config()] object (default `polis_config()`); its
+#'   `shape` and `population` handles drive reconciliation and indicators.
 #'
-#' @return A named list of cleaned tibbles (invisibly when writing).
+#' @details
+#' When `output_dir` is supplied a data-quality workbook (`checks_<dataset>.xlsx`)
+#' is also written per cleaned dataset via the `checks_*()` functions -- a
+#' `Summary` tab plus one tab of flagged rows per failing check. Requires the
+#' optional `openxlsx` package.
+#'
+#' @return A named list of pipeline outputs (invisibly when writing).
 #'
 #' @export
 run_pipeline_dir <- function(
   source_dir,
   output_dir = NULL,
-  cfg = polis_config(),
-  format = "rds"
+  cfg = polis_config()
 ) {
   inputs <- .polis_read_inputs(source_dir)
   if (length(inputs) == 0) {
-    cli::cli_abort("No recognised POLIS tables found in {.file {source_dir}}.")
+    cli::cli_abort("No recognised raw_* tables found in {.file {source_dir}}.")
   }
+  src_formats <- attr(inputs, "formats") %||% list()
   cleaned <- run_pipeline(inputs, cfg)
 
   if (is.null(output_dir)) {
     return(cleaned)
   }
-  .polis_write_outputs(cleaned, output_dir, format = format)
+  # Map each output to the format of the raw file it derives from; SIA follows
+  # its activity source, derived outputs fall back to the writer default.
+  out_formats <- list(
+    afp = src_formats[["afp"]],
+    es = src_formats[["es"]],
+    hum_spec = src_formats[["hum_spec"]],
+    sia = src_formats[["activity"]]
+  )
+  .polis_write_outputs(cleaned, output_dir, formats = out_formats)
+
+  # ---- data-quality check workbooks ----------------------------------------
+  cli::cli_h1("Running data-quality checks")
+  .polis_write_check_workbooks(cleaned, output_dir, reference_date = Sys.Date())
   invisible(cleaned)
 }
