@@ -112,9 +112,12 @@ clean_virus <- function(
     )
     out <- .virus_separate(out)
   }
-  # report_date after any split, so each serotype row gets its own date
+  # report_date after any split, so each serotype row gets its own date.
+  # Parse column base types like every other cleaner, so the derived positives
+  # table carries typed columns too (gated by cfg$parse_types).
   out <- out |>
     .virus_add_report_date() |>
+    .polis_parse_types(cfg) |>
     .geo_guid_display_cols() |>
     order_columns(cfg$column_roles)
 

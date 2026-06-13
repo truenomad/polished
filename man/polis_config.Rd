@@ -12,6 +12,8 @@ polis_config(
   seed = 1234L,
   synonyms = NULL,
   qa = NULL,
+  population = NULL,
+  shape = NULL,
   parse_types = TRUE,
   drop_empty_cols = TRUE
 )
@@ -39,6 +41,16 @@ runs (default \code{1234}).}
 
 \item{qa}{Optional handle (path or list) where ambiguous-key flags are routed
 by \code{\link[=flag_ambiguous]{flag_ambiguous()}}. \code{NULL} (default) collects flags in-memory only.}
+
+\item{population}{Optional under-15 population denominators used by
+\code{\link[=calc_polio_indicators]{calc_polio_indicators()}} in \code{\link[=run_pipeline]{run_pipeline()}}. Either a data frame or a
+path to one (read via the file extension); \code{NULL} (default) skips the
+rate indicators that need a denominator.}
+
+\item{shape}{Optional \strong{already-processed} district shape passed to every
+cleaner as \verb{shape =} for admin reconciliation (an \code{sf} polygon layer or a
+long ADM2 attribute table, or a path to one). \code{NULL} (default) disables
+shape-based admin recovery.}
 
 \item{parse_types}{If \code{TRUE} (default) each cleaner finishes by inferring
 column base types (character -> numeric/integer/date/datetime/logical) via
