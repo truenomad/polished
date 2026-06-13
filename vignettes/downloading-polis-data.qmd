@@ -8,7 +8,7 @@ format:
   html:
     toc: true
     toc-depth: 3
-    df-print: kable
+    df-print: default
 knitr:
   opts_chunk:
     collapse: true
