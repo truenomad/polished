@@ -2,6 +2,49 @@ url: https://truenomad.github.io/polished/
 
 template:
   bootstrap: 5
+  bootswatch: flatly
+  light-switch: true
+  includes:
+    in_header: |
+      <script>
+        (function() {
+          try {
+            if (!localStorage.getItem('pkgdown-theme')) {
+              localStorage.setItem('pkgdown-theme', 'dark');
+            }
+            document.documentElement.dataset.bsTheme =
+              localStorage.getItem('pkgdown-theme');
+          } catch (e) {
+            document.documentElement.dataset.bsTheme = 'dark';
+          }
+        })();
+      </script>
+  bslib:
+    # palette drawn from the polished logo (deep navy badge) and the Global
+    # Polio Eradication Initiative blue
+    primary: "#15263F"
+    secondary: "#628DA5"
+    success: "#5BA86F"
+    info: "#0094D4"
+    warning: "#F2A900"
+    danger: "#D8443C"
+    link-color: "#0094D4"
+    link-hover-color: "#1FA0DC"
+    navbar-bg: "#15263F"
+    navbar-fg: "#FFFFFF"
+    headings-color: "#15263F"
+    base_font: {google: "Inter"}
+    heading_font: {google: "Inter"}
+    code_font: {google: "JetBrains Mono"}
+
+development:
+  mode: auto
+
+navbar:
+  bg: primary
+  structure:
+    left:  [intro, articles, reference, news]
+    right: [search, lightswitch, github]
 
 reference:
 - title: Download POLIS data
@@ -105,21 +148,40 @@ reference:
   contents:
   - calc_polio_indicators
   - available_indicators
-- title: Quality assurance
+- title: Data-quality checks
   desc: >
-    Post-cleaning checks: the QA report over a processed folder, the check
-    registry, per-column missingness, and ES site validation.
+    Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs,
+    out-of-range values and date-ordering problems straight from the cleaned
+    tables, exported as a styled Excel workbook (one tab per check), plus the
+    ES-specific quality helpers.
   contents:
-  - polis_qa_report
-  - polis_qa_checks
+  - checks_afp
+  - checks_es
+  - checks_hum_spec
+  - checks_sia
+  - checks_virus
+  - write_checks_excel
   - es_missingness
   - validate_es_sites
 - title: Other surveillance processing
   desc: >
-    Independent-monitoring (IM) and LQAS campaign-monitoring processors.
+    Independent-monitoring (IM), LQAS campaign-monitoring, and SIA round-quality
+    processors.
   contents:
   - process_im
   - process_lqas
+  - process_sia_quality
+- title: Project workspace
+  desc: >
+    Set up a standard on-disk project (raw / processed / cache zones), stream the
+    cleaning pipeline into it, and read partitioned slices back out.
+  contents:
+  - init_polis_project
+  - run_pipeline_project
+  - load_polis
+  - project_path
+  - clear_cache
+  - print.polis_project
 
 articles:
 - title: Get started
@@ -127,5 +189,8 @@ articles:
   contents:
   - downloading-polis-data
   - cleaning-polis-data
+  - end-to-end-pipeline
+  - surveillance-indicators
+  - data-quality-checks
   - epid-geo-cleaning
   - cleaning-spatial-data

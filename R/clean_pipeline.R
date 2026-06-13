@@ -204,8 +204,10 @@ print.polis_config <- function(x, ...) {
 #' as the under-15 denominator.
 #'
 #' @param inputs Named list of raw POLIS data frames. Recognised names:
-#'   `afp`, `es`, `hum_spec`, `activity`, `subactivity`. (A raw `virus` table is
-#'   not used -- positives are derived from the cleaned `afp`/`es` outputs.)
+#'   `afp`, `es`, `hum_spec`, `activity`, `subactivity`, `lqas`, `im`. (A raw
+#'   `virus` table is not used -- positives are derived from the cleaned
+#'   `afp`/`es` outputs. `lqas`/`im` are campaign-quality tables turned into
+#'   district-year roll-ups via [process_sia_quality()].)
 #' @param cfg A [polis_config()] object (default `polis_config()`). Its
 #'   `shape` and `population` handles drive admin reconciliation and the
 #'   indicators step respectively.
@@ -213,8 +215,9 @@ print.polis_config <- function(x, ...) {
 #'   as `inputs`) used to prune deleted/merged `id`s via [reconcile()].
 #'
 #' @return A named list holding any of the cleaned tibbles `afp`, `es`,
-#'   `hum_spec`, `sia`, `virus`, plus `indicators` (the [calc_polio_indicators()]
-#'   result list) when AFP cases are present.
+#'   `hum_spec`, `sia`, `virus`, the SIA-quality roll-ups `lqas` / `im` (each a
+#'   list of `lots`/`district`/`meta`), plus `indicators` (the
+#'   [calc_polio_indicators()] result list) when AFP cases are present.
 #'
 #' @examples
 #' afp <- data.frame(
@@ -273,6 +276,28 @@ run_pipeline <- function(
       cfg,
       shape = shape
     )
+  }
+
+  # ---- SIA quality (LQAS / IM) ----------------------------------------------
+  # Campaign-quality monitoring: rolled up to district-year indicators rather
+  # than cleaned like the surveillance streams. Each processor's result is a
+  # list (lots/district/meta), attached under its own key so the file writer
+  # emits one polished_<key>_<component> table per data-frame component.
+  if (!is.null(inputs$lqas) || !is.null(inputs$im)) {
+    cli::cli_h1("Processing SIA quality (LQAS / IM)")
+    sia_quality <- process_sia_quality(
+      lqas = inputs$lqas,
+      im = inputs$im,
+      cfg = cfg,
+      shape = shape,
+      verbose = TRUE
+    )
+    if (!is.null(sia_quality$lqas)) {
+      cleaned$lqas <- sia_quality$lqas
+    }
+    if (!is.null(sia_quality$im)) {
+      cleaned$im <- sia_quality$im
+    }
   }
 
   # ---- Virus (positives): built from the cleaned human + ES streams ---------
@@ -370,7 +395,9 @@ run_pipeline_dir <- function(
     afp = src_formats[["afp"]],
     es = src_formats[["es"]],
     hum_spec = src_formats[["hum_spec"]],
-    sia = src_formats[["activity"]]
+    sia = src_formats[["activity"]],
+    lqas = src_formats[["lqas"]],
+    im = src_formats[["im"]]
   )
   .polis_write_outputs(cleaned, output_dir, formats = out_formats)
 
