@@ -4,28 +4,30 @@
 \alias{run_pipeline_dir}
 \title{Run the cleaning pipeline from a directory of raw files}
 \usage{
-run_pipeline_dir(
-  source_dir,
-  output_dir = NULL,
-  cfg = polis_config(),
-  format = "rds"
-)
+run_pipeline_dir(source_dir, output_dir = NULL, cfg = polis_config())
 }
 \arguments{
-\item{source_dir}{Directory holding the raw POLIS exports.}
+\item{source_dir}{Directory holding the \verb{raw_*} POLIS tables.}
 
-\item{output_dir}{Optional directory to write cleaned outputs to. If \code{NULL}
-the cleaned set is only returned.}
+\item{output_dir}{Optional directory to write \verb{polished_*} outputs to. If
+\code{NULL} the output set is only returned.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
-
-\item{format}{Output file extension when writing (default \code{"rds"}).}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}); its
+\code{shape} and \code{population} handles drive reconciliation and indicators.}
 }
 \value{
-A named list of cleaned tibbles (invisibly when writing).
+A named list of pipeline outputs (invisibly when writing).
 }
 \description{
-File-based convenience over \code{\link[=run_pipeline]{run_pipeline()}}: reads the raw POLIS tables from
-\code{source_dir}, cleans them, and (optionally) writes the cleaned outputs to
-\code{output_dir}.
+File-based convenience over \code{\link[=run_pipeline]{run_pipeline()}}: reads the \verb{raw_*} POLIS tables
+(the names \code{\link[=get_polis_data]{get_polis_data()}} writes) from \code{source_dir}, runs the full
+pipeline, and (optionally) writes the outputs to \code{output_dir} as
+\verb{polished_*} files. Each output's file format follows its source raw file;
+derived outputs (virus, indicators) default to \code{qs2}.
+}
+\details{
+When \code{output_dir} is supplied a data-quality workbook (\verb{checks_<dataset>.xlsx})
+is also written per cleaned dataset via the \verb{checks_*()} functions -- a
+\code{Summary} tab plus one tab of flagged rows per failing check. Requires the
+optional \code{openxlsx} package.
 }

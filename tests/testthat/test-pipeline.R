@@ -55,13 +55,14 @@ testthat::test_that("run_pipeline rejects a non-list input", {
 testthat::test_that("run_pipeline_dir round-trips through disk", {
   src <- withr::local_tempdir()
   out_dir <- withr::local_tempdir()
-  saveRDS(raw_afp(), file.path(src, "Human_Detailed.rds"))
+  saveRDS(raw_afp(), file.path(src, "raw_afp.rds"))
 
   cleaned <- suppressMessages(
-    polished::run_pipeline_dir(src, out_dir, format = "rds")
+    polished::run_pipeline_dir(src, out_dir)
   )
-  testthat::expect_named(cleaned, "afp")
-  testthat::expect_true(file.exists(file.path(out_dir, "afp.rds")))
+  testthat::expect_true("afp" %in% names(cleaned))
+  # output is polished_<key> with the format of its raw source (rds here)
+  testthat::expect_true(file.exists(file.path(out_dir, "polished_afp.rds")))
 })
 
 testthat::test_that("polis_config validates its scalar args and prints a summary", {
@@ -114,10 +115,10 @@ testthat::test_that("run_pipeline cleans es + sia and reconciles against a full 
 testthat::test_that("run_pipeline_dir aborts on an empty dir and returns without writing", {
   testthat::expect_error(
     suppressMessages(polished::run_pipeline_dir(withr::local_tempdir())),
-    "No recognised POLIS tables"
+    "No recognised raw_"
   )
   src <- withr::local_tempdir()
-  saveRDS(raw_afp(), file.path(src, "Human_Detailed.rds"))
+  saveRDS(raw_afp(), file.path(src, "raw_afp.rds"))
   cleaned <- suppressMessages(polished::run_pipeline_dir(src))
-  testthat::expect_named(cleaned, "afp")
+  testthat::expect_true("afp" %in% names(cleaned))
 })

@@ -8,22 +8,32 @@ run_pipeline(inputs, cfg = polis_config(), reconcile_with = NULL)
 }
 \arguments{
 \item{inputs}{Named list of raw POLIS data frames. Recognised names:
-\code{afp}, \code{es}, \code{activity}, \code{subactivity}. (A raw \code{virus} table is not used --
-positives are derived from the cleaned \code{afp}/\code{es} outputs.)}
+\code{afp}, \code{es}, \code{hum_spec}, \code{activity}, \code{subactivity}. (A raw \code{virus} table is
+not used -- positives are derived from the cleaned \code{afp}/\code{es} outputs.)}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Its
+\code{shape} and \code{population} handles drive admin reconciliation and the
+indicators step respectively.}
 
 \item{reconcile_with}{Optional named list of full-pull data frames (same keys
 as \code{inputs}) used to prune deleted/merged \code{id}s via \code{\link[=reconcile]{reconcile()}}.}
 }
 \value{
-A named list of cleaned tibbles: any of \code{afp}, \code{es}, \code{sia}, \code{virus}.
+A named list holding any of the cleaned tibbles \code{afp}, \code{es},
+\code{hum_spec}, \code{sia}, \code{virus}, plus \code{indicators} (the \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}
+result list) when AFP cases are present.
 }
 \description{
 Cleans the raw POLIS tables supplied in \code{inputs} and returns the canonical
 analytic set. Any subset of tables may be supplied; absent tables are skipped.
 The virus (positives) table is \emph{built} from the cleaned AFP and ES streams via
 \code{\link[=clean_virus]{clean_virus()}} whenever either is present -- it is not read from \code{inputs}.
+}
+\details{
+Each cleaner receives \code{cfg$shape} (an already-processed district shape) for
+admin reconciliation, and -- when AFP cases are present -- the surveillance
+indicators are computed via \code{\link[=calc_polio_indicators]{calc_polio_indicators()}} using \code{cfg$population}
+as the under-15 denominator.
 }
 \examples{
 afp <- data.frame(

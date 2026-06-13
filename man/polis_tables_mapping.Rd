@@ -7,12 +7,14 @@
 \format{
 A data.frame with one row per supported table and columns:
 \describe{
-\item{table_name}{Short identifier used by \code{tables = "..."} and as
-the canonical filename stem.}
+\item{table_name}{Short identifier used by \code{tables = "..."}.}
 \item{endpoint}{OData endpoint suffix appended to
 \verb{https://extranet.who.int/polis/api/v2/}.}
 \item{date_field}{Column used for both the OData filter and the
 dedup tiebreaker.}
+\item{file_stem}{Canonical on-disk filename stem (the \verb{raw_*} name the
+downloaded table is written under, e.g. \code{raw_afp} for \code{case}). The
+cleaning pipeline reads these stems and writes \verb{polished_*} outputs.}
 }
 }
 \usage{
