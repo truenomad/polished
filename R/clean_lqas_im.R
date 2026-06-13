@@ -265,6 +265,13 @@ process_lqas <- function(
   pass_threshold,
   warn_threshold
 ) {
+  # guarantee the admin grouping columns exist on the grain (a trimmed input may
+  # carry only adm2_guid); absent name levels roll up as NA, never an error.
+  for (col in c("adm0", "adm1", "adm2")) {
+    if (!col %in% names(data)) {
+      data[[col]] <- NA_character_
+    }
+  }
   checked <- .lqasim_num(data, "children_checked")
   unvacc <- .lqasim_num(data, "children_found_unvaccinated")
   checked <- dplyr::if_else(

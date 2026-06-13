@@ -130,7 +130,9 @@ testthat::test_that("clean_human_spec recovers district from the parent case by 
   # without the case reference the district stays missing (nothing to borrow);
   # the all-NA adm2 column may be dropped entirely by drop_empty_cols
   out_nocase <- polished::clean_human_spec(raw, verbose = FALSE)
-  testthat::expect_true(is.null(out_nocase$adm2) || is.na(out_nocase$adm2))
+  testthat::expect_true(
+    !"adm2" %in% names(out_nocase) || is.na(out_nocase[["adm2"]])
+  )
 })
 
 testthat::test_that("clean_human_spec verbose run reconciles via sf shape + fills from cases; guards", {
