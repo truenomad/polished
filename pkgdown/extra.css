@@ -1,7 +1,7 @@
 /* Collapsible <details> blocks styled like a note callout. */
 details {
   border: 1px solid #d0d7de;
-  border-left: 4px solid #4a86c5;
+  border-left: 4px solid #0094d4;
   border-radius: 6px;
   padding: 0.6em 1em;
   margin: 1em 0;
@@ -20,7 +20,7 @@ details > summary::-webkit-details-marker {
 
 details > summary::before {
   content: "\25B6";
-  color: #4a86c5;
+  color: #0094d4;
   display: inline-block;
   margin-right: 0.5em;
   font-size: 0.8em;

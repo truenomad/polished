@@ -1,0 +1,142 @@
+---
+title: "Computing surveillance indicators"
+vignette: >
+  %\VignetteIndexEntry{Computing surveillance indicators}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    df-print: kable
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+    message: false
+    warning: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(polished)
+```
+
+Once the surveillance streams are cleaned (see the *Cleaning POLIS data* article),
+`calc_polio_indicators()` computes the WHO POLIS indicator catalogue — the NPAFP
+rate, stool adequacy, timeliness, dose history, environmental, virus, SIA and
+composite families — at the admin levels you ask for.
+
+## Browse the catalogue: `available_indicators()`
+
+Every indicator the package knows about lives in a single registry. Read it with
+`available_indicators()`, optionally filtered by `family`:
+
+```{r}
+#| label: catalogue
+fams <- available_indicators()
+table(fams$family)
+
+# the AFP family, with what each indicator needs
+available_indicators(family = "AFP")[, c("code", "label", "requires_pop")]
+```
+
+`requires_pop = TRUE` marks the indicators that need an under-15 population
+denominator (the rate families); everything else is computed from the case/ES/
+virus/SIA tables alone.
+
+## Inputs
+
+`calc_polio_indicators()` needs only a cleaned `cases` table to start; `es`,
+`sia`, `virus`, `lab`, `population` and `admin_units` are optional and unlock
+the indicators that depend on them. A missing source simply skips its
+indicators with a message rather than erroring.
+
+The example below builds a small **cleaned** AFP table by hand so it renders
+without a live pull — in practice `cases` is the output of `clean_afp()` or
+`run_pipeline()`.
+
+```{r}
+#| label: cases
+cases <- tibble::tibble(
+  epid = sprintf("NIE-BOR-D%02d-24-%03d", rep(1:2, length.out = 24), 1:24),
+  classification_all = rep(c("NPAFP", "NPAFP", "NPAFP", "WPV1", "NOT-AFP", "PENDING"), 4),
+  age_months = rep(c(12, 30, 48, 24), 6),
+  year_onset = 2024L,
+  paralysis_onset_date = as.Date("2024-01-01") + (1:24),
+  adm0 = "NIGERIA", adm0_guid = "G0",
+  adm1 = rep(c("BORNO", "YOBE"), length.out = 24),
+  adm1_guid = rep(c("P1", "P2"), length.out = 24),
+  adm2 = rep(c("MMC", "JERE", "GUJBA", "NGANZAI"), length.out = 24),
+  adm2_guid = rep(c("D1", "D2", "D3", "D4"), length.out = 24),
+  adequate_stool = rep(c("Yes", "No"), length.out = 24),
+  notify_to_invest = rep(c(1, 2, 5, 1), 6)
+)
+```
+
+The under-15 population denominator is an external table keyed by admin `guid`,
+`year` and `pop` (one row per admin unit per year):
+
+```{r}
+#| label: pop
+population <- tibble::tibble(
+  guid = c("G0", "P1", "P2", "D1", "D2", "D3", "D4"),
+  year = 2024L,
+  pop = c(2e6, 1e6, 1e6, 5e5, 5e5, 5e5, 5e5)
+)
+```
+
+## Compute
+
+Ask for the admin levels you want; each is aggregated independently from the
+case GUIDs:
+
+```{r}
+#| label: calc
+ind <- calc_polio_indicators(
+  cases = cases,
+  population = population,
+  levels = c("adm0", "adm1", "adm2"),
+  verbose = FALSE
+)
+names(ind)
+```
+
+The result is a list: one **wide** tibble per level (`adm0` / `adm1` / `adm2`,
+one row per admin unit × year with every indicator as a column), a tidy
+**`long`** table (one row per admin × year × indicator), and a `meta` record of
+what ran, was skipped, and the thresholds used.
+
+```{r}
+#| label: long
+ind$long[
+  ind$long$indicator %in% c("afp_count", "npafp_count", "npafp_rate", "stool_adequacy_pct"),
+  c("level", "name", "indicator", "value")
+]
+```
+
+The wide per-level tibble is the analyst-facing shape — one row per unit:
+
+```{r}
+#| label: wide
+ind$adm1[, c("name", "afp_count", "npafp_count", "npafp_rate", "stool_adequacy_pct")]
+```
+
+## Population denominators and suppression
+
+Rate indicators (e.g. `npafp_rate`) divide a count by the under-15 population
+and scale by `rate_multiplier` (default per 100,000). To keep small-denominator
+noise out of the output, a unit's rate is suppressed (`NA`) when its population
+is below `min_pop` or its case count is below `min_cases`. Pass no `population`
+and the rate families are skipped entirely — every population-independent
+indicator (counts, percentages, timeliness) still computes:
+
+```{r}
+#| label: no-pop
+no_pop <- calc_polio_indicators(cases = cases, levels = "adm0", verbose = FALSE)
+no_pop$long[no_pop$long$indicator %in% c("npafp_count", "npafp_rate"), c("indicator", "value")]
+```
+
+See `?calc_polio_indicators` for the full argument set — the column-name
+overrides, the classification vocabularies, and every threshold.

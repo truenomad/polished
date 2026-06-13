@@ -1,0 +1,105 @@
+---
+title: "Data-quality checks"
+vignette: >
+  %\VignetteIndexEntry{Data-quality checks}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    df-print: kable
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+    message: false
+    warning: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(polished)
+```
+
+The check functions surface data-quality problems in a cleaned table by
+**reading the columns the cleaners already produced** — duplicates, blank keys,
+unreconciled admin GUIDs, out-of-range values and date-ordering violations.
+Nothing here re-derives geography or recomputes anything; each check is a cheap
+filter, so running them is fast even on millions of rows.
+
+There is one function per stream:
+
+| Function | Stream |
+|---|---|
+| `checks_afp()` | cleaned AFP cases |
+| `checks_es()` | cleaned environmental samples |
+| `checks_hum_spec()` | cleaned human specimens |
+| `checks_sia()` | cleaned SIA campaigns |
+| `checks_virus()` | cleaned poliovirus positives |
+
+## Running a check
+
+Each `checks_*()` takes a cleaned table and returns a list: a `summary` tibble
+counting every applicable check, plus one tibble of flagged rows per check that
+found problems. The example below seeds a small cleaned AFP table with a few
+deliberate issues:
+
+```{r}
+#| label: fixture
+afp <- tibble::tibble(
+  id = 1:5,
+  epid = c("NIE-A-1", "NIE-A-1", "NIE-C-3", "NIE-D-4", "NIE-E-5"),
+  adm0 = c("NIGERIA", "NIGERIA", "CHAD", "MALI", "NIGER"),
+  adm1 = "p", adm2 = "d",
+  paralysis_onset_date = c("2024-01-02", "2024-01-02", NA, "2999-01-01", "2024-03-03"),
+  year_onset = c(2024L, 2024L, NA, 2999L, 2024L),
+  classification_all = c("NPAFP", "NPAFP", "", "NPAFP", "NPAFP"),
+  adm1_guid = c("g", "g", NA, "g", "g"),
+  adm2_guid = "g",
+  latitude = c(9.1, 9.1, 0, 9.1, 9.1),
+  longitude = 7.2,
+  age_months = c(24, 24, -5, 30, 36),
+  notify_to_invest = c(1, 1, -1, 2, 1),
+  adequate_stool = c("Yes", "Yes", "No", "Yes", "Yes")
+)
+
+res <- checks_afp(afp)
+res$summary
+```
+
+The `summary` lists each check, its `severity` (`error` / `warning` / `info`,
+sorted worst first), and how many rows it flagged. Checks whose required columns
+are absent are skipped, so a trimmed table is handled gracefully.
+
+The flagged rows for any failing check live under its name, holding the key
+columns plus whatever the check is about:
+
+```{r}
+#| label: detail
+names(res)
+res$afp_missing_guid
+```
+
+## Export to Excel
+
+`write_checks_excel()` turns a check result into one styled `.xlsx` workbook — a
+`Summary` tab plus one tab of flagged rows per failing check (navy headers, sized
+columns, inferred number formats). There is no versioning; the file is written
+straight to `path`.
+
+```{r}
+#| label: excel
+#| eval: false
+write_checks_excel(res, "checks_afp.xlsx")
+```
+
+## Automatic check workbooks in the pipeline
+
+When you run the file-based pipeline with an output directory,
+`run_pipeline_dir()` writes a `checks_<dataset>.xlsx` workbook next to each
+`polished_*` output automatically — so a single call produces both the cleaned
+data and its quality report (see the *End-to-end pipeline* article). This step
+needs the optional `openxlsx` package; without it the checks are skipped with a
+message rather than failing the run.

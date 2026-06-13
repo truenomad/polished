@@ -1,6 +1,24 @@
 # polished 0.1.0
 
 * Initial development version.
+* Unified `raw_*` / `polished_*` naming end to end: `get_polis_data()` writes
+  each table under its `raw_*` stem (new `file_stem` column on
+  `polis_tables_mapping`) and migrates files written under the old bare table
+  name in place on the next run (no re-download). `run_pipeline_dir()` reads
+  `raw_*` inputs and writes `polished_*` outputs, with each output's format
+  following its source file.
+* `run_pipeline()` now runs end to end: it cleans human specimens via
+  `clean_human_spec()`, passes a configured `shape` to every cleaner for admin
+  reconciliation, and computes the surveillance indicators
+  (`calc_polio_indicators()`) using a configured `population` denominator.
+  `polis_config()` gains `population` and `shape` reference handles.
+* Added per-stream data-quality checks — `checks_afp()`, `checks_es()`,
+  `checks_sia()`, `checks_virus()`, `checks_hum_spec()` — and
+  `write_checks_excel()`, a styled one-tab-per-check workbook. `run_pipeline_dir()`
+  writes a `checks_<dataset>.xlsx` per output.
+* `get_polis_data()` gains `prune_parts` (delete the resume cache after a verified
+  write, rebuilt from the canonical next run) and self-heals a corrupt canonical
+  by rebuilding it from the intact parts.
 * Extended `calc_polio_indicators()` from 4 to the full WHO POLIS indicator
   catalogue (~62 indicators across AFP, Stool, Dose, Timeliness, Lab, ES,
   Virus, SIA and Composite families), driven by DRY generators and a unified
