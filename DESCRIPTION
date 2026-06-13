@@ -43,6 +43,7 @@ Suggests:
     dtplyr,
     fs,
     jsonlite,
+    openxlsx,
     qs2,
     quarto,
     skimr,

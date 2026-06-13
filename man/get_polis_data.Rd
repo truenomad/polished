@@ -17,6 +17,7 @@ get_polis_data(
   log_file = NULL,
   keep_archives = 0L,
   force = FALSE,
+  prune_parts = TRUE,
   polis_api_key = Sys.getenv("POLIS_API_KEY"),
   quiet = FALSE
 )
@@ -74,6 +75,18 @@ archive).}
 canonical file for each selected table before running -- forces a
 fresh full re-pull instead of resuming. Default \code{FALSE}.}
 
+\item{prune_parts}{If \code{TRUE} (default), deletes the \verb{.parts/<table>/} resume
+cache after the canonical file has been written and verified. The canonical
+is a complete, Id-deduped checkpoint, so the next run rebuilds the parts
+from it (re-bucketing each row into its current \code{date_field} year). This
+keeps the parts free of stale cross-year duplicate copies that otherwise
+accumulate when a record's update date crosses a year boundary between runs
+-- which in turn keeps the "already up to date" short-circuit honest -- at
+the cost of re-splitting the canonical on the next run. Incremental resume
+still works. Set to \code{FALSE} to retain the parts for the fastest possible
+resume (at the risk of the parts row count drifting above the true distinct
+total over many incremental re-pulls).}
+
 \item{polis_api_key}{API key. Defaults to \code{Sys.getenv("POLIS_API_KEY")}.}
 
 \item{quiet}{Suppress headers, progress bars, and the info alert.
@@ -108,12 +121,20 @@ table's "update" column (\code{LastUpdateDate} / \code{UpdatedDate} / \code{Star
 }
 \details{
 \strong{Cache layout.} Each table is fetched into a per-year part file under
-\verb{<polis_folder>/.parts/<table_name>/year_YYYY.<ext>}, with a tiny
+\verb{<polis_folder>/.parts/<stem>/year_YYYY.<ext>}, with a tiny
 \code{year_YYYY.meta.rds} sidecar capturing row count and min/max Id. After
 all years finish the parts are merged into the canonical
-\verb{<polis_folder>/<table_name>.<ext>}. The part files are kept so
-the next call can resume per-year from \code{max(Id)} without re-fetching.
-To force a clean re-pull, pass \code{force = TRUE} or delete \verb{.parts/}.
+\verb{<polis_folder>/<stem>.<ext>}. The \verb{<stem>} is the table's \verb{raw_*} name
+(e.g. \code{case} is written as \code{raw_afp}; see \link{polis_tables_mapping}), so the
+download and cleaning halves share one naming convention. By default
+(\code{prune_parts = TRUE}) the parts are deleted once the canonical is written
+and the next call rebuilds them from the canonical; pass \code{prune_parts = FALSE} to keep them on disk so the next call can resume per-year from
+\code{max(Id)} without the re-split. Either way the next call resumes per-year
+from \code{max(Id)} without re-fetching. To force a clean re-pull, pass \code{force = TRUE} or delete \verb{.parts/}.
+
+Files written by older versions under the bare \verb{<table_name>} name (e.g.
+\verb{case.<ext>}) are renamed to their \verb{raw_*} stem in place on the next run --
+no re-download.
 
 \strong{Resume semantics.} The part files ARE the resume marker. If a
 previous run died (network blip, Ctrl-C, OOM), the next call picks up

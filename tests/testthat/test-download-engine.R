@@ -170,6 +170,23 @@ testthat::test_that(".polis_migrate_to_parts splits a canonical file; .polis_mer
   testthat::expect_true(file.exists(merged_file))
 })
 
+testthat::test_that(".polis_prune_parts removes a parts dir and no-ops when absent", {
+  dir <- withr::local_tempdir()
+  parts_dir <- file.path(dir, ".parts", "raw_im")
+  dir.create(parts_dir, recursive = TRUE)
+  saveRDS(
+    data.frame(Id = 1:2, PublishDate = "2024-06-15"),
+    file.path(parts_dir, "year_2024.rds")
+  )
+
+  # present -> removed, returns TRUE
+  testthat::expect_true(polished:::.polis_prune_parts(parts_dir))
+  testthat::expect_false(dir.exists(parts_dir))
+
+  # absent -> no error, returns FALSE
+  testthat::expect_false(polished:::.polis_prune_parts(parts_dir))
+})
+
 testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batch, and ends on a stalled cursor", {
   dir <- withr::local_tempdir()
   spec <- list(

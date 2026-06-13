@@ -41,12 +41,15 @@
     check.names = FALSE
   )
 }
-# seed a project's raw/ with all four tables under reader-recognised names
+# seed a project's raw/ with all four tables under reader-recognised raw_* names
 .proj_seed_raw <- function(project) {
-  saveRDS(.proj_afp_raw(), file.path(project$raw, "Human.rds"))
-  saveRDS(.proj_es_raw(), file.path(project$raw, "EnvSample.rds"))
-  saveRDS(.proj_activity_raw(), file.path(project$raw, "Activity.rds"))
-  saveRDS(.proj_subactivity_raw(), file.path(project$raw, "SubActivity.rds"))
+  saveRDS(.proj_afp_raw(), file.path(project$raw, "raw_afp.rds"))
+  saveRDS(.proj_es_raw(), file.path(project$raw, "raw_es.rds"))
+  saveRDS(.proj_activity_raw(), file.path(project$raw, "raw_activity.rds"))
+  saveRDS(
+    .proj_subactivity_raw(),
+    file.path(project$raw, "raw_sub_activity.rds")
+  )
   invisible(project)
 }
 

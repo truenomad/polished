@@ -54,7 +54,7 @@ testthat::test_that("auto_refetch adds a missing Id to the canonical file", {
     quiet = TRUE
   )
 
-  out_file <- file.path(root, "im.rds")
+  out_file <- file.path(root, "raw_im.rds")
   testthat::expect_true(file.exists(out_file))
   out <- readRDS(out_file)
   testthat::expect_equal(nrow(out), 6L)

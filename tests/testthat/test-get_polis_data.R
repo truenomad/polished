@@ -26,7 +26,14 @@ testthat::test_that("polis_tables_mapping has the documented rows + columns", {
   testthat::expect_equal(nrow(polished::polis_tables_mapping), 11L)
   testthat::expect_setequal(
     names(polished::polis_tables_mapping),
-    c("table_name", "endpoint", "date_field")
+    c("table_name", "endpoint", "date_field", "file_stem")
+  )
+  # file_stem is the raw_* on-disk name (e.g. case -> raw_afp)
+  testthat::expect_identical(
+    polished::polis_tables_mapping$file_stem[
+      polished::polis_tables_mapping$table_name == "case"
+    ],
+    "raw_afp"
   )
   testthat::expect_setequal(
     polished::polis_tables_mapping$table_name,
@@ -79,14 +86,16 @@ testthat::test_that("population (NA date_field) is pulled whole, Id-only, with n
     tables = "population",
     polis_folder = root,
     polis_api_key = "fake",
+    # keep the resume cache so the part layout can be inspected below
+    prune_parts = FALSE,
     quiet = TRUE
   )
 
   # whole table landed in the canonical file
-  pop <- readRDS(file.path(root, "population.rds"))
+  pop <- readRDS(file.path(root, "raw_population.rds"))
   testthat::expect_identical(nrow(pop), 3L)
   # a single un-partitioned part (year_0), not one per calendar year
-  parts <- list.files(file.path(root, ".parts", "population"))
+  parts <- list.files(file.path(root, ".parts", "raw_population"))
   testthat::expect_true(any(grepl("^year_0\\.", parts)))
   testthat::expect_false(any(grepl("^year_20", parts)))
   # no date-range clause on any request -- it is a reference table
@@ -130,7 +139,7 @@ testthat::test_that("get_polis_data writes to disk and returns paths only", {
   testthat::expect_null(result)
 
   # The data is on disk at the canonical path and reads back with every row.
-  out_file <- file.path(root, "im.rds")
+  out_file <- file.path(root, "raw_im.rds")
   testthat::expect_true(file.exists(out_file))
   on_disk <- readRDS(out_file)
   testthat::expect_s3_class(on_disk, "data.frame")
@@ -205,6 +214,165 @@ testthat::test_that("force = TRUE deletes existing parts before running", {
 })
 
 # -------------------------------------------------------------------
+# prune_parts — the resume cache is dropped once the canonical is a
+# complete, deduped checkpoint, and rebuilt from it on the next run.
+# -------------------------------------------------------------------
+
+testthat::test_that("prune_parts = TRUE (default) deletes the .parts cache after a successful pull", {
+  root <- withr::local_tempdir()
+  n <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = function(...) {
+      n <<- n + 1L
+      if (n == 1L) {
+        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+      } else {
+        data.frame()
+      }
+    },
+    .polis_fetch_id_list = function(...) 1:3,
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE
+  )
+  # canonical is complete; the resume cache is gone
+  testthat::expect_equal(nrow(readRDS(file.path(root, "raw_im.rds"))), 3L)
+  testthat::expect_false(dir.exists(file.path(root, ".parts", "raw_im")))
+})
+
+testthat::test_that("prune_parts = FALSE retains the resume cache", {
+  root <- withr::local_tempdir()
+  n <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = function(...) {
+      n <<- n + 1L
+      if (n == 1L) {
+        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+      } else {
+        data.frame()
+      }
+    },
+    .polis_fetch_id_list = function(...) 1:3,
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    prune_parts = FALSE,
+    quiet = TRUE
+  )
+  parts_dir <- file.path(root, ".parts", "raw_im")
+  testthat::expect_true(dir.exists(parts_dir))
+  testthat::expect_true(file.exists(file.path(parts_dir, "year_2024.rds")))
+})
+
+testthat::test_that("a pruned run rebuilds parts from the canonical and resumes incrementally", {
+  root <- withr::local_tempdir()
+
+  # Run 1: fresh pull of Id 1:3; parts pruned afterwards (default).
+  n1 <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 3,
+    .polis_fetch_id_page = function(...) {
+      n1 <<- n1 + 1L
+      if (n1 == 1L) {
+        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+      } else {
+        data.frame()
+      }
+    },
+    .polis_fetch_id_list = function(...) 1:3,
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE
+  )
+  testthat::expect_false(dir.exists(file.path(root, ".parts", "raw_im")))
+
+  # Run 2: POLIS now has a 4th row. The part rebuilt from the canonical seeds
+  # last_id = 3, so the worker fetches ONLY Id 4 -- proving resume survives the
+  # prune rather than re-pulling 1:3.
+  seen_last <- NULL
+  n2 <- 0L
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 4,
+    .polis_fetch_id_page = function(..., last_id = NULL) {
+      n2 <<- n2 + 1L
+      if (n2 == 1L) {
+        seen_last <<- last_id
+        data.frame(Id = 4L, PublishDate = "2024-06-16")
+      } else {
+        data.frame()
+      }
+    },
+    .polis_fetch_id_list = function(...) 1:4,
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE
+  )
+  out <- readRDS(file.path(root, "raw_im.rds"))
+  testthat::expect_setequal(out$Id, 1:4)
+  # resumed from the rebuilt part's max(Id), not from scratch
+  testthat::expect_equal(seen_last, 3)
+})
+
+testthat::test_that("the up-to-date skip prunes the cache by default", {
+  root <- withr::local_tempdir()
+  seed_parts(
+    root,
+    "raw_im",
+    2024,
+    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
+  )
+  saveRDS(
+    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5)),
+    file.path(root, "raw_im.rds")
+  )
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 5,
+    .polis_fetch_id_list = function(...) 1:5,
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE
+  )
+  testthat::expect_false(dir.exists(file.path(root, ".parts", "raw_im")))
+  testthat::expect_equal(nrow(readRDS(file.path(root, "raw_im.rds"))), 5L)
+})
+
+# -------------------------------------------------------------------
 # Live smoke test — hits POLIS for one small table.
 # -------------------------------------------------------------------
 
@@ -236,7 +404,7 @@ testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
       stop(e)
     }
   )
-  df <- readRDS(file.path(root, "im.rds"))
+  df <- readRDS(file.path(root, "raw_im.rds"))
   testthat::expect_s3_class(df, "data.frame")
   testthat::expect_gt(nrow(df), 1000L)
   testthat::expect_true("Id" %in% names(df))
@@ -272,7 +440,7 @@ testthat::test_that("get_polis_data fresh pull fetches, merges, verifies and ref
     quiet = FALSE
   )
   testthat::expect_null(res)
-  df <- readRDS(file.path(root, "im.rds"))
+  df <- readRDS(file.path(root, "raw_im.rds"))
   testthat::expect_true(all(1:4 %in% df$Id)) # the missing id was refetched in
 })
 
@@ -287,7 +455,7 @@ testthat::test_that("get_polis_data reports an up-to-date table (verbose) withou
   dir.create(file.path(root), recursive = TRUE, showWarnings = FALSE)
   saveRDS(
     data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5)),
-    file.path(root, "im.rds")
+    file.path(root, "raw_im.rds")
   )
   testthat::local_mocked_bindings(
     .polis_get_count = function(...) 5,
@@ -303,6 +471,36 @@ testthat::test_that("get_polis_data reports an up-to-date table (verbose) withou
     workers = 1L,
     quiet = FALSE
   ))
+})
+
+testthat::test_that("get_polis_data rebuilds a corrupt canonical from parts when up to date", {
+  root <- withr::local_tempdir()
+  seed_parts(
+    root,
+    "raw_im",
+    2024,
+    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
+  )
+  # a canonical that cannot be read (corrupt / torn write)
+  out_file <- file.path(root, "raw_im.rds")
+  writeLines("not an rds file", out_file)
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 5,
+    .polis_fetch_id_list = function(...) 1:5,
+    .package = "polished"
+  )
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE
+  )
+  # canonical was rebuilt from the intact parts and is readable again
+  rebuilt <- readRDS(out_file)
+  testthat::expect_equal(nrow(rebuilt), 5L)
 })
 
 testthat::test_that("get_polis_data tolerates a failed count query (unbounded progress)", {
@@ -327,11 +525,11 @@ testthat::test_that("get_polis_data tolerates a failed count query (unbounded pr
 testthat::test_that("get_polis_data force=TRUE clears both the canonical file and parts", {
   root <- withr::local_tempdir()
   dir.create(file.path(root), recursive = TRUE, showWarnings = FALSE)
-  out_file <- file.path(root, "im.rds")
+  out_file <- file.path(root, "raw_im.rds")
   saveRDS(data.frame(Id = 1, PublishDate = "2024-06-15"), out_file)
   pf <- seed_parts(
     root,
-    "im",
+    "raw_im",
     2024,
     data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
   )
