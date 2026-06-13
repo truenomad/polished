@@ -8,8 +8,10 @@ run_pipeline(inputs, cfg = polis_config(), reconcile_with = NULL)
 }
 \arguments{
 \item{inputs}{Named list of raw POLIS data frames. Recognised names:
-\code{afp}, \code{es}, \code{hum_spec}, \code{activity}, \code{subactivity}. (A raw \code{virus} table is
-not used -- positives are derived from the cleaned \code{afp}/\code{es} outputs.)}
+\code{afp}, \code{es}, \code{hum_spec}, \code{activity}, \code{subactivity}, \code{lqas}, \code{im}. (A raw
+\code{virus} table is not used -- positives are derived from the cleaned
+\code{afp}/\code{es} outputs. \code{lqas}/\code{im} are campaign-quality tables turned into
+district-year roll-ups via \code{\link[=process_sia_quality]{process_sia_quality()}}.)}
 
 \item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Its
 \code{shape} and \code{population} handles drive admin reconciliation and the
@@ -20,8 +22,9 @@ as \code{inputs}) used to prune deleted/merged \code{id}s via \code{\link[=recon
 }
 \value{
 A named list holding any of the cleaned tibbles \code{afp}, \code{es},
-\code{hum_spec}, \code{sia}, \code{virus}, plus \code{indicators} (the \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}
-result list) when AFP cases are present.
+\code{hum_spec}, \code{sia}, \code{virus}, the SIA-quality roll-ups \code{lqas} / \code{im} (each a
+list of \code{lots}/\code{district}/\code{meta}), plus \code{indicators} (the
+\code{\link[=calc_polio_indicators]{calc_polio_indicators()}} result list) when AFP cases are present.
 }
 \description{
 Cleans the raw POLIS tables supplied in \code{inputs} and returns the canonical
