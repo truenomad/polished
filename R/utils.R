@@ -1733,7 +1733,9 @@
     es = "raw_es",
     hum_spec = "raw_hum_spec",
     activity = "raw_activity",
-    subactivity = "raw_sub_activity"
+    subactivity = "raw_sub_activity",
+    lqas = "raw_lqas",
+    im = "raw_im"
   ),
   exts = c("qs2", "parquet", "rds", "csv")
 ) {
