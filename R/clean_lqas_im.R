@@ -272,12 +272,13 @@ process_lqas <- function(
       data[[col]] <- NA_character_
     }
   }
-  checked <- .lqasim_num(data, "children_checked")
+  checked_raw <- .lqasim_num(data, "children_checked")
   unvacc <- .lqasim_num(data, "children_found_unvaccinated")
+  size_missing <- is.na(checked_raw) | checked_raw <= 0
   checked <- dplyr::if_else(
-    is.na(checked) | checked <= 0,
+    size_missing,
     as.numeric(default_checked),
-    checked
+    checked_raw
   )
   coverage <- dplyr::if_else(
     !is.na(unvacc) & checked > 0,
@@ -291,7 +292,7 @@ process_lqas <- function(
   }
   invalid <- !is.na(year) &
     year >= enforce_since &
-    (checked %% multiple_of != 0)
+    (size_missing | checked %% multiple_of != 0)
 
   data$children_checked <- checked
   data$coverage <- coverage
@@ -536,7 +537,8 @@ process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
   out <- if (total_checked == 0) {
     mean(result, na.rm = TRUE)
   } else {
-    1 - sum(marked, na.rm = TRUE) / total_checked
+    both <- !is.na(checked) & !is.na(marked)
+    1 - sum(marked[both]) / sum(checked[both])
   }
   dplyr::if_else(is.nan(out), NA_real_, out)
 }

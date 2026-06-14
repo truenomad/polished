@@ -283,16 +283,18 @@ clean_virus <- function(
 #' Split one fused poliovirus label into its component serotype labels
 #'
 #' The classification vocabulary joins co-detections with `and`
-#' (`WPV1andcVDPV 2`, `cVDPV2andcVDPV3`), with `VDPV12and3` as the only
-#' non-splittable special case. Returns the component labels, each spaced
-#' (`WPV1` -> `WPV 1`); a single label (or `NA`) is returned unchanged.
+#' (`WPV1andcVDPV 2`, `cVDPV2andcVDPV3`); `VDPV12and3` (with an optional kind
+#' prefix) is the only non-splittable special case. Returns the component
+#' labels, each spaced (`WPV1` -> `WPV 1`); a single label (or `NA`) is returned
+#' unchanged.
 #' @noRd
 .virus_split_label <- function(label) {
   if (is.na(label)) {
     return(NA_character_)
   }
-  if (label == "VDPV12and3") {
-    return(c("VDPV 1", "VDPV 2", "VDPV 3"))
+  triple <- stringr::str_match(label, "^([cai]?)VDPV12and3$")
+  if (!is.na(triple[1, 1])) {
+    return(paste0(triple[1, 2], "VDPV ", c("1", "2", "3")))
   }
   parts <- trimws(strsplit(label, "and", fixed = TRUE)[[1]])
   sub("([A-Za-z])([123])$", "\\1 \\2", parts)

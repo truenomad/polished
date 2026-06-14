@@ -345,15 +345,31 @@ clean_sia <- function(
     dplyr::across(
       dplyr::all_of(cols),
       \(x) {
-        parsed <- suppressWarnings(lubridate::as_date(x))
+        parsed <- .sia_parse_date(x)
         dplyr::if_else(
-          parsed >= floor_date & parsed <= reference_date,
+          !is.na(parsed) & parsed >= floor_date & parsed <= reference_date,
           parsed,
           lubridate::NA_Date_
         )
       }
     )
   )
+}
+
+#' Parse a heterogeneous campaign-date column to Date (tries several formats).
+#' @noRd
+.sia_parse_date <- function(x) {
+  if (inherits(x, "Date")) {
+    return(x)
+  }
+  if (inherits(x, "POSIXt")) {
+    return(as.Date(x))
+  }
+  suppressWarnings(lubridate::as_date(lubridate::parse_date_time(
+    as.character(x),
+    orders = c("Ymd", "Y-m-d", "Y-m-d H:M:S", "dmY", "mdY"),
+    quiet = TRUE
+  )))
 }
 
 #' Derive year/month of campaign start from the sanitised `date_from`

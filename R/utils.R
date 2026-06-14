@@ -199,6 +199,27 @@
   )
 }
 
+# Write to a sibling tmp file then atomically rename into place, so a crash
+# mid-write can't leave a torn destination.
+.polis_io_write_atomic <- function(x, path, fmt) {
+  tmp <- paste0(path, ".tmp.", Sys.getpid())
+  tryCatch(
+    .polis_io_write(x, tmp, fmt),
+    error = function(e) {
+      try(file.remove(tmp), silent = TRUE)
+      cli::cli_abort(conditionMessage(e), call = conditionCall(e))
+    }
+  )
+  if (!isTRUE(file.rename(tmp, path))) {
+    ok <- file.copy(tmp, path, overwrite = TRUE)
+    try(file.remove(tmp), silent = TRUE)
+    if (!isTRUE(ok)) {
+      cli::cli_abort("Failed to write {.file {path}}.")
+    }
+  }
+  invisible(path)
+}
+
 # ---------------------------------------------------------------------
 # Part metadata sidecars
 # ---------------------------------------------------------------------
@@ -642,7 +663,12 @@
     }
     if (!"Id" %in% names(page)) break
     ids[[length(ids) + 1L]] <- page$Id
-    last_id <- max(page$Id, na.rm = TRUE)
+    new_last_id <- max(page$Id, na.rm = TRUE)
+    # stall guard (mirrors the year worker): a non-advancing cursor would loop
+    if (!is.finite(new_last_id) || new_last_id <= last_id) {
+      break
+    }
+    last_id <- new_last_id
     # Do NOT break on `nrow(page) < page_size`. POLIS sometimes
     # truncates mid-query (gateway load, query timeout) and returns
     # a partial page even when more rows exist for `Id gt last_id`.
@@ -1020,7 +1046,7 @@
     date_col = date_field
   )
 
-  .polis_io_write(combined, out_file, ext)
+  .polis_io_write_atomic(combined, out_file, ext)
   invisible(nrow(combined))
 }
 

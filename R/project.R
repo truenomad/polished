@@ -206,9 +206,11 @@ clear_cache <- function(project, quiet = FALSE) {
 #' @noRd
 .polis_write_dataset <- function(data, dir, partition_by = "year") {
   arrow <- .polis_require("arrow", "write a parquet dataset")
-  if (!dir.exists(dir)) {
-    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  # clear first: delete_matching alone leaves stale partitions absent from `data`
+  if (dir.exists(dir)) {
+    unlink(dir, recursive = TRUE, force = TRUE)
   }
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   part <- intersect(partition_by, names(data))
   arrow$write_dataset(
     data,
