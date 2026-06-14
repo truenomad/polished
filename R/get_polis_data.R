@@ -227,6 +227,22 @@ get_polis_data <- function(
       ))
     }
 
+    # POLIS exposes no region field on these endpoints, so the query builder
+    # silently drops the `region` clause (see .polis_build_filter). Warn rather
+    # than let a non-global `region` imply a subset the caller never receives.
+    region_ignored <- endpoint %in% c("LabSpecimen", "Im", "Population")
+    if (
+      region_ignored &&
+        !identical(tolower(region), "global") &&
+        !isTRUE(quiet)
+    ) {
+      cli::cli_alert_warning(
+        "{.val {nm}}: POLIS has no region field for this table; \\
+        {.arg region} = {.val {region}} is ignored and all regions \\
+        are returned."
+      )
+    }
+
     # Rename any files left under the old bare `<table_name>` convention to the
     # `raw_*` stem so an existing download is reused, not re-fetched.
     .polis_migrate_legacy_names(data_dir, nm, stem, ext)

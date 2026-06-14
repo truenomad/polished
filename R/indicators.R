@@ -809,6 +809,13 @@ calc_polio_indicators <- function(
   out$is_wpv <- grepl("^WPV", out$class)
   out$is_cvdpv <- grepl("CVDPV", out$class)
   out$is_vdpv <- grepl("VDPV", out$class)
+  # Reporting basis keys on when the lab result was reported, not when the
+  # sample was collected; fall back to the collection year when the result
+  # date is absent so the `_rep` indicators still resolve.
+  if (!is.null(m$result_date) && m$result_date %in% names(df)) {
+    result_year <- .as_int(format(.as_date(df[[m$result_date]]), "%Y"))
+    out$report_year <- dplyr::coalesce(result_year, out$year)
+  }
   if (
     !is.null(m$result_date) &&
       m$result_date %in% names(df) &&
