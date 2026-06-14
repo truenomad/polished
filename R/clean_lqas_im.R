@@ -318,12 +318,30 @@ process_lqas <- function(
   data
 }
 
+#' Per-district key: GUID when present (so name spelling variants don't split a
+#' district), else the admin-name composite (so GUID-less districts don't merge).
+#' @noRd
+.lqasim_district_key <- function(adm2_guid, adm0, adm1, adm2) {
+  dplyr::if_else(
+    !is.na(adm2_guid) & adm2_guid != "",
+    adm2_guid,
+    paste(adm0, adm1, adm2, sep = "")
+  )
+}
+
 #' Roll the cleaned lots up to a per-district-year pass-rate table.
 #' @noRd
 .lqas_rollup <- function(lots) {
   lots |>
-    dplyr::group_by(adm2_guid, adm2, adm1, adm0, year) |>
+    dplyr::mutate(
+      .district = .lqasim_district_key(adm2_guid, adm0, adm1, adm2)
+    ) |>
+    dplyr::group_by(.district, year) |>
     dplyr::summarise(
+      adm2_guid = dplyr::first(adm2_guid),
+      adm0 = dplyr::first(adm0),
+      adm1 = dplyr::first(adm1),
+      adm2 = dplyr::first(adm2),
       n_lots = dplyr::n(),
       n_pass_polis = sum(lqas2_polis == "Pass", na.rm = TRUE),
       n_fail_polis = sum(lqas2_polis == "Fail", na.rm = TRUE),
@@ -333,6 +351,7 @@ process_lqas <- function(
       n_invalid_derived = sum(lqas2_derived == "INVALID", na.rm = TRUE),
       .groups = "drop"
     ) |>
+    dplyr::select(-.district) |>
     dplyr::mutate(
       pass_pct_polis = .lqasim_pass_pct(n_pass_polis, n_fail_polis),
       pass_pct_derived = .lqasim_pass_pct(n_pass_derived, n_fail_derived)
@@ -512,8 +531,15 @@ process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
   )
 
   std |>
-    dplyr::group_by(adm2_guid, adm2, adm1, adm0, year) |>
+    dplyr::mutate(
+      .district = .lqasim_district_key(adm2_guid, adm0, adm1, adm2)
+    ) |>
+    dplyr::group_by(.district, year) |>
     dplyr::summarise(
+      adm2_guid = dplyr::first(adm2_guid),
+      adm0 = dplyr::first(adm0),
+      adm1 = dplyr::first(adm1),
+      adm2 = dplyr::first(adm2),
       n_checked_inhouse = sum(checked_in, na.rm = TRUE),
       n_marked_inhouse = sum(marked_in, na.rm = TRUE),
       missed_frac_inhouse = .im_missed(checked_in, marked_in, result_in),
@@ -522,6 +548,7 @@ process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
       missed_frac_outhouse = .im_missed(checked_out, marked_out, result_out),
       .groups = "drop"
     ) |>
+    dplyr::select(-.district) |>
     dplyr::mutate(
       im_status_inhouse = .im_status(missed_frac_inhouse),
       im_status_outhouse = .im_status(missed_frac_outhouse)
