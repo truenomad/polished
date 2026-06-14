@@ -431,6 +431,14 @@ clean_es_classification <- function(data) {
   # detection runs on the POLIS tokens ("WILD1", "VDPV2", ...), but the emitted
   # label uses WPV so it matches the standard surveillance vocabulary. This is
   # the same cascade as clean_afp_classification(), kept token-for-token in step.
+  # compact wild label, kept so a wild+VDPV co-detection names the real serotype
+  wild <- dplyr::case_when(
+    has("WILD1") & has("WILD3") ~ "WPV1andWPV3",
+    has("WILD3") ~ "WPV3",
+    has("WILD2") ~ "WPV2",
+    has("WILD1") ~ "WPV1",
+    TRUE ~ NA_character_
+  )
   vtype <- dplyr::if_else(has("WILD1"), "WPV 1", "none")
   vtype <- dplyr::if_else(has("WILD2"), "WPV 2", vtype)
   vtype <- dplyr::if_else(has("WILD3"), "WPV 3", vtype)
@@ -446,10 +454,10 @@ clean_es_classification <- function(data) {
     "VDPV12and3",
     vtype
   )
-  # a combined wild + VDPV detection -> "WPV1and<vdpv>"
+  # a combined wild + VDPV detection -> "<wild>and<vdpv>"
   vtype <- dplyr::if_else(
     has("WILD") & has("VDPV"),
-    paste0("WPV1and", vtype),
+    paste0(wild, "and", vtype),
     vtype
   )
   # circulating / ambiguous / immune-deficient prefix from the classification
@@ -473,10 +481,9 @@ clean_es_classification <- function(data) {
     "none",
     vtype
   )
-  # move the kind prefix onto the VDPV component of a co-detection
-  vtype <- dplyr::if_else(vtype == "cWPV1andVDPV 2", "WPV1andcVDPV 2", vtype)
-  vtype <- dplyr::if_else(vtype == "cWPV1andVDPV 3", "WPV1andcVDPV 3", vtype)
-  vtype <- dplyr::if_else(vtype == "cWPV1andVDPV 1", "WPV1andcVDPV 1", vtype)
+  # move the kind prefix off the wild stem onto the VDPV component of a
+  # co-detection (cWPV1andVDPV 2 -> WPV1andcVDPV 2), for any wild serotype
+  vtype <- stringr::str_replace(vtype, "^([cai])(WPV.*?and)(VDPV)", "\\2\\1\\3")
   vtype <- dplyr::if_else(vtype == "cVDPV2andVDPV3", "cVDPV2andcVDPV3", vtype)
   data$vtype <- vtype
 
