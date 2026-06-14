@@ -809,9 +809,7 @@ calc_polio_indicators <- function(
   out$is_wpv <- grepl("^WPV", out$class)
   out$is_cvdpv <- grepl("CVDPV", out$class)
   out$is_vdpv <- grepl("VDPV", out$class)
-  # Reporting basis keys on when the lab result was reported, not when the
-  # sample was collected; fall back to the collection year when the result
-  # date is absent so the `_rep` indicators still resolve.
+  # reporting basis keys on the lab result year, falling back to collection year
   if (!is.null(m$result_date) && m$result_date %in% names(df)) {
     result_year <- .as_int(format(.as_date(df[[m$result_date]]), "%Y"))
     out$report_year <- dplyr::coalesce(result_year, out$year)
@@ -1256,7 +1254,11 @@ calc_polio_indicators <- function(
     dplyr::filter(!is.na(year), !is.na(site)) |>
     dplyr::group_by(guid, name, year, site) |>
     dplyr::summarise(
-      site_rate = 100 * sum(ev_pos, na.rm = TRUE) / dplyr::n(),
+      site_rate = dplyr::if_else(
+        sum(!is.na(ev_pos)) > 0,
+        100 * sum(ev_pos, na.rm = TRUE) / sum(!is.na(ev_pos)),
+        NA_real_
+      ),
       .groups = "drop"
     ) |>
     dplyr::group_by(guid, name, year) |>

@@ -227,9 +227,7 @@ get_polis_data <- function(
       ))
     }
 
-    # POLIS exposes no region field on these endpoints, so the query builder
-    # silently drops the `region` clause (see .polis_build_filter). Warn rather
-    # than let a non-global `region` imply a subset the caller never receives.
+    # these endpoints have no region field, so .polis_build_filter drops it
     region_ignored <- endpoint %in% c("LabSpecimen", "Im", "Population")
     if (
       region_ignored &&
@@ -610,7 +608,7 @@ get_polis_data <- function(
                 id_col = "Id",
                 date_col = date_field
               )
-              .polis_io_write(combined, out_file, ext)
+              .polis_io_write_atomic(combined, out_file, ext)
               .polis_archive(
                 out_file,
                 polis_folder,
