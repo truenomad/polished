@@ -44,6 +44,51 @@ testthat::test_that("flag_ambiguous flags but never drops rows", {
   out <- suppressMessages(polished::flag_ambiguous(df, key = c("epid", "adm0")))
   testthat::expect_equal(nrow(out), 3L)
   testthat::expect_equal(nrow(attr(out, "polis_ambiguous")), 2L)
+
+  # blank/NA key values are not a business key: many no-epid ids in one country
+  # must never group together and look ambiguous.
+  blank <- tibble::tibble(
+    id = c(1, 2, 3),
+    epid = c(NA_character_, "", ""),
+    adm0 = c("X", "X", "X")
+  )
+  blank_out <- polished::flag_ambiguous(blank, key = c("epid", "adm0"))
+  testthat::expect_null(attr(blank_out, "polis_ambiguous"))
+})
+
+testthat::test_that("collapse_business_key keeps latest, passes blank keys through", {
+  df <- tibble::tibble(
+    id = 1:6,
+    epid = c("A-1", "A-1", "B-2", NA_character_, "", ""),
+    adm0 = "X",
+    last_update_date = as.Date(c(
+      "2024-01-01",
+      "2024-03-01",
+      "2024-02-01",
+      "2024-01-01",
+      "2024-01-01",
+      "2024-02-01"
+    ))
+  )
+  out <- suppressMessages(
+    polished::collapse_business_key(df, key = c("epid", "adm0"))
+  )
+  # A-1 collapses to its latest row (id 2); B-2 and all blank-epid rows survive.
+  testthat::expect_setequal(out$id, c(2, 3, 4, 5, 6))
+  testthat::expect_equal(
+    out$last_update_date[out$id == 2],
+    as.Date("2024-03-01")
+  )
+
+  # no-op branches: missing key column and an empty frame are returned unchanged.
+  testthat::expect_identical(
+    polished::collapse_business_key(df, key = c("missing", "adm0")),
+    df
+  )
+  testthat::expect_equal(
+    nrow(polished::collapse_business_key(df[0, ], key = c("epid", "adm0"))),
+    0L
+  )
 })
 
 testthat::test_that("upsert/flag_ambiguous/remap_synonyms/reconcile cover their branches", {
