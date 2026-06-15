@@ -39,8 +39,10 @@
 #' }
 #' The raw POLIS `classification`, `polio_virus_types`, `vdpv_classifications`,
 #' `adequate_stool` and `paralysis_hot_case` fields are kept as-is alongside the
-#' derived columns. The business key `epid` + `adm0` is asserted as a tripwire:
-#' violations are flagged to QA, never dropped.
+#' derived columns. Records sharing the business key `epid` + `adm0` (the same
+#' case re-entered under a new POLIS Id) are collapsed to the latest by
+#' `last_update_date`; a tripwire then flags any key still spanning multiple Ids
+#' to QA, never dropping it.
 #'
 #' @param data A raw POLIS case data frame.
 #' @param cfg A [polis_config()] object (default `polis_config()`). Supply
@@ -64,8 +66,10 @@
 #'   kept). Adds `*_source` provenance columns.
 #' @param verbose Emit cli progress messages for each phase. Default `TRUE`.
 #'
-#' @return A tibble of cleaned AFP records, one row per POLIS `id`, with columns
-#'   ordered id -> location -> time -> other. The canonical and derived columns
+#' @return A tibble of cleaned AFP records, one row per POLIS `id` (and at most
+#'   one per `epid` + `adm0` business key after the duplicate collapse), with
+#'   columns ordered id -> location -> time -> other. The canonical and derived
+#'   columns
 #'   (`year_onset`, `month_onset`, `age_months`, the `*_to_*` intervals,
 #'   `onset_date_quality`, `timeliness` and the 60-day follow-up flags) are added
 #'   only when their prerequisite source columns are present in `data`, so a
@@ -198,6 +202,11 @@ clean_afp <- function(
   step("Deduplicating by id and finalising", "Deduplicated by id and finalised")
   out <- data |>
     polis_upsert(id = "id", date = "last_update_date") |>
+    collapse_business_key(
+      key = c("epid", "adm0"),
+      date = "last_update_date",
+      verbose = verbose
+    ) |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
     .geo_guid_display_cols() |>

@@ -47,7 +47,8 @@
 #' alongside the derived columns. The business key `sample_id` + `adm0` (the ES
 #' analogue of the AFP `epid` + `adm0` key, `sample_id` being the EPID-equivalent
 #' sample identifier) is asserted as a tripwire: violations are flagged to QA,
-#' never dropped.
+#' never dropped. (Unlike AFP, a sample can legitimately yield several virus
+#' detections, so this key is not collapsed.)
 #'
 #' @param data A raw POLIS environmental-samples data frame.
 #' @param cfg A [polis_config()] object (default `polis_config()`). Supply

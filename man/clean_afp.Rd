@@ -40,8 +40,10 @@ kept). Adds \verb{*_source} provenance columns.}
 \item{verbose}{Emit cli progress messages for each phase. Default \code{TRUE}.}
 }
 \value{
-A tibble of cleaned AFP records, one row per POLIS \code{id}, with columns
-ordered id -> location -> time -> other. The canonical and derived columns
+A tibble of cleaned AFP records, one row per POLIS \code{id} (and at most
+one per \code{epid} + \code{adm0} business key after the duplicate collapse), with
+columns ordered id -> location -> time -> other. The canonical and derived
+columns
 (\code{year_onset}, \code{month_onset}, \code{age_months}, the \verb{*_to_*} intervals,
 \code{onset_date_quality}, \code{timeliness} and the 60-day follow-up flags) are added
 only when their prerequisite source columns are present in \code{data}, so a
@@ -76,8 +78,10 @@ building blocks \code{vtype} / \code{vtype_fixed}) plus the Sabin flags
 }
 The raw POLIS \code{classification}, \code{polio_virus_types}, \code{vdpv_classifications},
 \code{adequate_stool} and \code{paralysis_hot_case} fields are kept as-is alongside the
-derived columns. The business key \code{epid} + \code{adm0} is asserted as a tripwire:
-violations are flagged to QA, never dropped.
+derived columns. Records sharing the business key \code{epid} + \code{adm0} (the same
+case re-entered under a new POLIS Id) are collapsed to the latest by
+\code{last_update_date}; a tripwire then flags any key still spanning multiple Ids
+to QA, never dropping it.
 }
 \examples{
 raw <- data.frame(

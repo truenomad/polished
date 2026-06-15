@@ -36,8 +36,9 @@ for changed/unresolved rows are written there as CSV.}
 }
 \value{
 \code{data} with reconciled admin name/GUID columns and an added
-\code{geo_source} factor (\code{guid_match} / \code{guid_corrected_from_name} /
-\code{unresolved}). A \code{reconcile_qa} attribute carries per-country issue counts.
+\code{geo_source} factor (\code{guid_match} / \code{guid_match_other_year} /
+\code{guid_corrected_from_name} / \code{unresolved}). A \code{reconcile_qa} attribute
+carries per-country issue counts.
 }
 \description{
 Validates and, where possible, corrects the admin GUIDs and names on a case
@@ -48,6 +49,8 @@ year, with the parent ADM0/ADM1 names and GUIDs). For each case:
 \item If the ADM2 GUID matches a district valid in the case's onset year,
 the shape is authoritative: missing/mismatched admin names and parent
 GUIDs are filled from it.
+\item Otherwise, if the ADM2 GUID matches the district in another year, the
+most recent real boundary is adopted (\code{guid_match_other_year}).
 \item Otherwise, if the ADM0+ADM1+ADM2 names unambiguously identify one
 district that year, its GUIDs are adopted (\code{guid_corrected_from_name}).
 \item Otherwise the row is left unchanged and flagged \code{unresolved}.

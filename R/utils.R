@@ -2154,7 +2154,9 @@ flag_ambiguous <- function(data, key, id = "id", sink = NULL) {
     return(data)
   }
 
-  flags <- data |>
+  # a missing/blank key value is not a business key: exclude it so every no-key
+  # case in a country does not group together and look ambiguous.
+  flags <- data[.polis_key_present(data, key), , drop = FALSE] |>
     dplyr::group_by(dplyr::across(dplyr::all_of(key))) |>
     dplyr::filter(dplyr::n_distinct(.data[[id]]) > 1) |>
     dplyr::ungroup()
@@ -2175,6 +2177,79 @@ flag_ambiguous <- function(data, key, id = "id", sink = NULL) {
   }
   attr(data, "polis_ambiguous") <- flags
   data
+}
+
+#' Logical mask of rows whose every key column is present and non-blank
+#' @keywords internal
+#' @noRd
+.polis_key_present <- function(data, key) {
+  Reduce(
+    `&`,
+    lapply(key, function(k) {
+      v <- data[[k]]
+      !is.na(v) & (!is.character(v) | nzchar(v))
+    })
+  )
+}
+
+#' Collapse business-key duplicates, keeping the latest record
+#'
+#' After [polis_upsert()] has reduced the data to one row per `id`, distinct ids
+#' can still share a business key -- the same case re-entered under a new POLIS
+#' Id. This keeps one row per `key` combination, the latest by `date`, so those
+#' duplicates collapse. Rows with a missing or blank key value are passed through
+#' untouched, never merged together.
+#'
+#' @param data A data frame (already deduped by `id`).
+#' @param key Character vector naming the business key columns.
+#' @param date Name of the recency column (default `"last_update_date"`).
+#' @param verbose Emit a cli summary of how many rows collapsed. Default `TRUE`.
+#'
+#' @return `data` with at most one row per non-blank `key` combination; rows
+#'   whose key is missing or blank are passed through unchanged. Row order is
+#'   not guaranteed.
+#'
+#' @examples
+#' df <- data.frame(
+#'   id = c(1, 2, 3),
+#'   epid = c("A-1", "A-1", "B-2"),
+#'   adm0 = c("X", "X", "X"),
+#'   last_update_date = as.Date(c("2024-01-01", "2024-03-01", "2024-02-01"))
+#' )
+#' collapse_business_key(df, key = c("epid", "adm0"))
+#'
+#' @export
+collapse_business_key <- function(
+  data,
+  key,
+  date = "last_update_date",
+  verbose = TRUE
+) {
+  if (!all(key %in% names(data)) || nrow(data) == 0) {
+    return(data)
+  }
+
+  present <- .polis_key_present(data, key)
+  collapsed <- .polis_keep_latest(
+    data[present, , drop = FALSE],
+    keys = key,
+    date_col = date
+  )
+  n_dropped <- sum(present, na.rm = TRUE) - nrow(collapsed)
+
+  if (n_dropped == 0L) {
+    return(data)
+  }
+
+  if (isTRUE(verbose)) {
+    n_fmt <- .polis_big_num(n_dropped)
+    cli::cli_alert_info(
+      "Collapsed {n_fmt} duplicate {cli::qty(n_dropped)}record{?s} sharing a \\
+      business key ({.field {key}}); kept the latest by {.field {date}}."
+    )
+  }
+
+  dplyr::bind_rows(collapsed, data[!present, , drop = FALSE])
 }
 
 # =============================================================================

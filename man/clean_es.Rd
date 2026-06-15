@@ -88,7 +88,8 @@ The raw POLIS \code{virus_types}, \code{vdpv_classifications}, the per-serotype
 alongside the derived columns. The business key \code{sample_id} + \code{adm0} (the ES
 analogue of the AFP \code{epid} + \code{adm0} key, \code{sample_id} being the EPID-equivalent
 sample identifier) is asserted as a tripwire: violations are flagged to QA,
-never dropped.
+never dropped. (Unlike AFP, a sample can legitimately yield several virus
+detections, so this key is not collapsed.)
 }
 \examples{
 raw <- data.frame(
