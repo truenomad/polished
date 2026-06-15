@@ -992,10 +992,15 @@ get_admin_info_from_coords <- function(
         adm2_guid
       )
     ) |>
-    dplyr::filter(!is.na(adm2_guid)) |>
+    # drop points matching >1 distinct district before discarding NA-guid matches
     dplyr::group_by(dplyr::across(dplyr::all_of(".point_id"))) |>
-    dplyr::filter(dplyr::n() == 1L) |>
+    dplyr::filter(dplyr::n_distinct(.geo_guid_key(adm2_guid)) == 1L) |>
     dplyr::ungroup() |>
+    dplyr::filter(!is.na(adm2_guid)) |>
+    dplyr::distinct(
+      dplyr::across(dplyr::all_of(".point_id")),
+      .keep_all = TRUE
+    ) |>
     dplyr::select(
       -dplyr::ends_with("_shp"),
       -dplyr::any_of(c("year_start", "year_end", ".point_id"))
@@ -1125,10 +1130,12 @@ impute_geo_from_coords <- function(
     is.na(joined$year_end) |
     is.na(joined$.yr) |
     (joined$.yr >= joined$year_start & joined$.yr <= joined$year_end)
+  # compare on the canonical key so spelling variants are not seen as distinct
+  joined$.guid_key <- .geo_guid_key(joined$adm2_guid)
   resolved <- joined |>
     dplyr::group_by(.crow) |>
-    dplyr::filter(dplyr::n_distinct(adm2_guid) == 1L | .year_ok) |>
-    dplyr::filter(dplyr::n_distinct(adm2_guid) == 1L) |>
+    dplyr::filter(dplyr::n_distinct(.guid_key) == 1L | .year_ok) |>
+    dplyr::filter(dplyr::n_distinct(.guid_key) == 1L) |>
     dplyr::slice(1L) |>
     dplyr::ungroup()
   crow <- resolved$.crow
@@ -2558,6 +2565,8 @@ fix_geo_names <- function(data, fixes = polis_geo_name_fixes()) {
 #'   \item If the ADM2 GUID matches a district valid in the case's onset year,
 #'     the shape is authoritative: missing/mismatched admin names and parent
 #'     GUIDs are filled from it.
+#'   \item Otherwise, if the ADM2 GUID matches the district in another year, the
+#'     most recent real boundary is adopted (`guid_match_other_year`).
 #'   \item Otherwise, if the ADM0+ADM1+ADM2 names unambiguously identify one
 #'     district that year, its GUIDs are adopted (`guid_corrected_from_name`).
 #'   \item Otherwise the row is left unchanged and flagged `unresolved`.
@@ -2580,8 +2589,9 @@ fix_geo_names <- function(data, fixes = polis_geo_name_fixes()) {
 #' @param verbose Emit a cli summary. Default `TRUE`.
 #'
 #' @return `data` with reconciled admin name/GUID columns and an added
-#'   `geo_source` factor (`guid_match` / `guid_corrected_from_name` /
-#'   `unresolved`). A `reconcile_qa` attribute carries per-country issue counts.
+#'   `geo_source` factor (`guid_match` / `guid_match_other_year` /
+#'   `guid_corrected_from_name` / `unresolved`). A `reconcile_qa` attribute
+#'   carries per-country issue counts.
 #'
 #' @examples
 #' shape <- data.frame(
@@ -2649,6 +2659,7 @@ reconcile_admin_guids <- function(
     cli::cli_alert_info(
       "Reconciled {nrow(out)} case{?s}: \\
       {tab[['guid_match']] %||% 0L} by GUID, \\
+      {tab[['guid_match_other_year']] %||% 0L} by GUID (other year), \\
       {tab[['guid_corrected_from_name']] %||% 0L} corrected from name, \\
       {tab[['unresolved']] %||% 0L} unresolved."
     )
@@ -2685,11 +2696,21 @@ reconcile_admin_guids <- function(
 
   # unambiguous name -> single district: keep (adm0, adm1, adm2, year) combos
   # that map to exactly one GUID, an ambiguous name never overwrites a GUID.
-  single <- base |>
+  # Require all three names present, else a blank-name join matches NA==NA.
+  named <- dplyr::filter(
+    base,
+    !is.na(s_adm0) &
+      nzchar(s_adm0) &
+      !is.na(s_adm1) &
+      nzchar(s_adm1) &
+      !is.na(s_adm2) &
+      nzchar(s_adm2)
+  )
+  single <- named |>
     dplyr::distinct(s_adm0, s_adm1, s_adm2, year, s_g2) |>
     dplyr::count(s_adm0, s_adm1, s_adm2, year, name = ".n") |>
     dplyr::filter(.n == 1L)
-  by_name <- base |>
+  by_name <- named |>
     dplyr::distinct(s_adm0, s_adm1, s_adm2, year, .keep_all = TRUE) |>
     dplyr::semi_join(
       single,
@@ -2912,8 +2933,12 @@ impute_missing_coords <- function(
         poly,
         of_largest_polygon = TRUE
       ))
-      buffered <- sf::st_buffer(centroid, dist = fallback_buffer)
-      pts <- suppressWarnings(suppressMessages(sf::st_sample(buffered, n)))
+      # buffer is in metres: project longlat first, then sample back to shape CRS
+      longlat <- !is.na(sf::st_crs(poly)) && sf::st_is_longlat(poly)
+      cent_m <- if (longlat) sf::st_transform(centroid, 6933) else centroid
+      buffered <- sf::st_buffer(cent_m, dist = fallback_buffer)
+      samp <- suppressWarnings(suppressMessages(sf::st_sample(buffered, n)))
+      pts <- if (longlat) sf::st_transform(samp, sf::st_crs(shp)) else samp
     }
     coords <- sf::st_coordinates(sf::st_transform(
       sf::st_sfc(
