@@ -7,7 +7,7 @@
 clean_virus(
   cases = NULL,
   es = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   nopv_emergence = NULL,
   separate_rows = FALSE,
   verbose = TRUE
@@ -52,13 +52,16 @@ harmonised to a shared schema and tagged by source:
 Contact -- or \code{"Environmental"});
 \item \code{measurement} and \code{classification_all}: the analytic virus label in
 the shared \code{WPV}/\code{cVDPV}/\code{aVDPV}/\code{iVDPV} vocabulary both cleaners emit;
-\item the case/sample geography (\code{adm0}/\code{adm1}/\code{adm2} + GUIDs),
+\item the case/sample geography (\code{country_iso3code}, \code{adm0}/\code{adm1}/\code{adm2}
++ GUIDs),
 \code{latitude}/\code{longitude}, the event \code{virus_date} (paralysis onset for cases,
 collection for ES) with \code{year_onset}/\code{month_onset}, and \code{notification_date};
 \item \code{report_date}: the VDPV classification-change date for VDPV records,
 the notification date for WPV records;
-\item \code{emergence_group}, \code{nt_changes}, \code{virus_cluster}, and -- when a
-\code{nopv_emergence} reference is supplied -- the novel-OPV2 flag \code{nopv2}.
+\item \code{emergence_group}, \code{nt_changes}, \code{virus_cluster}, \code{virus_is_orphan}
+(the orphan-isolate flag, \code{NA} for ES rows since POLIS carries it only on
+cases), and -- when a \code{nopv_emergence} reference is supplied -- the
+novel-OPV2 flag \code{nopv2}.
 }
 }
 \examples{
