@@ -12,7 +12,7 @@ calc_polio_indicators(
   sia = NULL,
   lab = NULL,
   admin_units = NULL,
-  indicators = NULL,
+  indicators = "core",
   levels = c("adm0", "adm1", "adm2"),
   cols = list(),
   class_var = "classification_all",
@@ -31,9 +31,9 @@ calc_polio_indicators(
   pending_classes = c("PENDING", "LAB PENDING"),
   include_pending = TRUE,
   afp_exclude_classes = "NOT-AFP",
-  pop_guid_var = "guid",
+  pop_guid_var = "adm2_guid",
   pop_year_var = "year",
-  pop_var = "pop",
+  pop_var = "u15_pop",
   rate_multiplier = 1e+05,
   npafp_target = 3,
   npafp_warn = 2,
@@ -44,7 +44,8 @@ calc_polio_indicators(
   min_pop = 1e+05,
   min_cases = 10,
   reference_date = Sys.Date(),
-  verbose = TRUE
+  verbose = TRUE,
+  summary = TRUE
 )
 }
 \arguments{
@@ -58,12 +59,18 @@ for the rate / district indicators; absent -> those are skipped.}
 environmental-surveillance, SIA and human-specimen (lab) indicator families.
 Absent -> those families are skipped with a warning.}
 
-\item{admin_units}{Optional universe of expected district admin units (columns
-\code{adm2_guid}, \code{adm0_guid}, optionally \code{adm1_guid}, \code{year}). Required for the
-silent-districts indicator; absent -> it is skipped.}
+\item{admin_units}{Optional universe of expected district admin units: a data
+frame with columns \code{adm2_guid}, \code{adm0_guid}, optionally \code{adm1_guid}. Build
+it from a district shape with \code{create_long_shape(shape, "adm2")} or
+\code{dplyr::distinct(sf::st_drop_geometry(shape), adm0_guid, adm1_guid, adm2_guid)}. Required for the silent-districts indicator; absent -> it is
+skipped. (\code{\link[=run_pipeline]{run_pipeline()}} derives this from \code{cfg$shape} automatically.)}
 
-\item{indicators}{Character vector of indicator codes to compute (default:
-the full registered catalogue, skipping any that are unavailable).}
+\item{indicators}{Which indicators to compute: the keyword \code{"core"} (default
+-- the core KPI set: NPAFP rate, condition-aware stool adequacy, EV
+detection rate, and timely detection), \code{"all"} (the full registered
+catalogue), or an explicit character vector of indicator codes. Anything
+whose source/columns are unavailable is skipped with a warning. See
+\code{available_indicators(core_only = TRUE)} for the core set.}
 
 \item{levels}{Admin levels to report at: any of \code{"adm0"}, \code{"adm1"}, \code{"adm2"}.}
 
@@ -91,7 +98,8 @@ numerator (\code{ufn_Indicator_NPAFP_RATE}); the \verb{_nopending} variant is se
 \item{afp_exclude_classes}{Classifications excluded from the AFP denominator
 for percentage indicators (default \code{"NOT-AFP"}).}
 
-\item{pop_guid_var, pop_year_var, pop_var}{Column names in \code{population}.}
+\item{pop_guid_var, pop_year_var, pop_var}{Column names in \code{population}
+(defaults \code{"adm2_guid"}, \code{"year"}, \code{"u15_pop"}).}
 
 \item{rate_multiplier}{Population scale for rates (default \code{1e5}).}
 
@@ -111,14 +119,21 @@ timely (default \code{2}).}
 
 \item{reference_date}{Date capping the annualisation period (default today).}
 
-\item{verbose}{Emit a cli progress + summary report (default \code{TRUE}).}
+\item{verbose}{Emit cli progress + the key one-line steps (default \code{TRUE}).}
+
+\item{summary}{Emit the full cli summary panel (coverage-by-family report).
+Default \code{TRUE}; \code{\link[=run_pipeline]{run_pipeline()}} passes \code{FALSE} to keep the pipeline terse.}
 }
 \value{
 A named list with per-level wide tibbles (\code{adm0}, \code{adm1}, \code{adm2}), a
 tidy \code{long} tibble (one row per level x admin x year x indicator with
 \code{value}, \code{numerator}, \code{denominator}, \code{confidence}, \code{category}, \code{text_code},
-\code{family}) and a \code{meta} list (indicators, skipped indicators with reasons,
-levels, thresholds, \code{reference_date}).
+\code{family}), a \code{meta} list (indicators, skipped indicators with reasons,
+levels, thresholds, \code{reference_date}), and a \code{validation} tibble: one row per
+automatically-run sense check (\code{check}, \code{severity}, \code{n_flagged},
+\code{description}) flagging out-of-range values, numerator/denominator and
+value-vs-formula problems, duplicate keys, blank admin keys, and level
+numerator-conservation gaps.
 }
 \description{
 Computes the WHO POLIS surveillance-quality indicator catalogue from cleaned

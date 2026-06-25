@@ -12,6 +12,7 @@ testthat::test_that("full multi-source run computes every family with hand-check
     sia = make_indicator_sia(),
     lab = make_indicator_lab(),
     admin_units = make_indicator_admin_units(),
+    indicators = "all",
     reference_date = as.Date("2024-01-01"),
     verbose = TRUE
   )
@@ -90,10 +91,36 @@ testthat::test_that("full multi-source run computes every family with hand-check
   )
 })
 
+testthat::test_that("npafp_rate rolls a district-only population up to adm0 and adm1", {
+  # Real population feeds are keyed on true adm2 GUIDs only -- no parent rows.
+  # The parent levels must sum their districts, not look for a missing match.
+  district_pop <- dplyr::filter(
+    make_indicator_population(),
+    adm2_guid %in% c("D1", "D2", "D3", "D4")
+  )
+  res <- polished::calc_polio_indicators(
+    make_indicator_cases(),
+    population = district_pop,
+    indicators = "npafp_rate",
+    levels = c("adm0", "adm1", "adm2"),
+    reference_date = as.Date("2024-01-01"),
+    verbose = FALSE,
+    summary = FALSE
+  )
+  rate <- dplyr::filter(res$long, indicator == "npafp_rate")
+  # Every level resolves a denominator -- no NOPOP leaks to the parents.
+  testthat::expect_true(all(is.na(rate$text_code)))
+  denom <- function(g) rate$denominator[rate$guid == g]
+  testthat::expect_equal(denom("G0"), 2e6) # D1+D2+D3+D4
+  testthat::expect_equal(denom("P1"), 1e6) # D1+D2
+  testthat::expect_equal(denom("P2"), 1e6) # D3+D4
+})
+
 testthat::test_that("bucket and dose families are mutually exclusive and sum to 100% of the denominator", {
   res <- polished::calc_polio_indicators(
     make_indicator_cases(),
     population = make_indicator_population(),
+    indicators = "all",
     reference_date = as.Date("2024-01-01"),
     verbose = FALSE
   )
@@ -117,6 +144,7 @@ testthat::test_that("skip-if-unavailable: missing source tables and missing colu
   res <- polished::calc_polio_indicators(
     make_indicator_cases(),
     population = make_indicator_population(),
+    indicators = "all",
     reference_date = as.Date("2024-01-01"),
     verbose = FALSE
   )
@@ -134,6 +162,7 @@ testthat::test_that("skip-if-unavailable: missing source tables and missing colu
   res2 <- polished::calc_polio_indicators(
     cases_no_invest,
     population = make_indicator_population(),
+    indicators = "all",
     reference_date = as.Date("2024-01-01"),
     verbose = FALSE
   )
@@ -146,6 +175,7 @@ testthat::test_that("skip-if-unavailable: missing source tables and missing colu
   # no population -> rate / district indicators skip but percents still compute
   res3 <- polished::calc_polio_indicators(
     make_indicator_cases(),
+    indicators = "all",
     reference_date = as.Date("2024-01-01"),
     verbose = FALSE
   )
@@ -293,6 +323,44 @@ testthat::test_that("annualisation and yes/no coercion helpers behave", {
   )
 })
 
+testthat::test_that("indicators = core/all selects the right indicator set", {
+  cases <- make_indicator_cases()
+  core_codes <- polished::available_indicators(core_only = TRUE)$code
+  testthat::expect_true(all(
+    c("npafp_rate", "stool_adequacy_cond_pct", "ev_rate") %in% core_codes
+  ))
+  testthat::expect_false("afp_count" %in% core_codes)
+  testthat::expect_true(all(
+    polished::available_indicators(core_only = TRUE)$core
+  ))
+
+  # default is core: only core indicators run (non-core afp_count never appears)
+  core_run <- polished::calc_polio_indicators(
+    cases,
+    population = make_indicator_population(),
+    es = make_indicator_es(),
+    reference_date = as.Date("2024-01-01"),
+    verbose = FALSE
+  )
+  testthat::expect_true(all(core_run$meta$indicators %in% core_codes))
+  testthat::expect_false("afp_count" %in% core_run$meta$indicators)
+
+  # all computes the full catalogue (afp_count present); core is a strict subset
+  all_run <- polished::calc_polio_indicators(
+    cases,
+    population = make_indicator_population(),
+    es = make_indicator_es(),
+    indicators = "all",
+    reference_date = as.Date("2024-01-01"),
+    verbose = FALSE
+  )
+  testthat::expect_true("afp_count" %in% all_run$meta$indicators)
+  testthat::expect_lt(
+    length(core_run$meta$indicators),
+    length(all_run$meta$indicators)
+  )
+})
+
 testthat::test_that("input validation aborts on bad arguments and empty data", {
   cases <- make_indicator_cases()
   testthat::expect_error(
@@ -316,7 +384,7 @@ testthat::test_that("input validation aborts on bad arguments and empty data", {
     "positive number"
   )
   # population missing its key column aborts with a clear message
-  bad_pop <- dplyr::rename(make_indicator_population(), wrong = guid)
+  bad_pop <- dplyr::rename(make_indicator_population(), wrong = adm2_guid)
   testthat::expect_error(
     polished::calc_polio_indicators(
       cases,
@@ -382,6 +450,16 @@ testthat::test_that("edge branches: all-skip abort, derived/level skips, column 
     200 / 3
   )
 
+  # admin_units passed as a non-data-frame (e.g. column names) aborts clearly
+  testthat::expect_error(
+    polished::calc_polio_indicators(
+      cases,
+      admin_units = c("adm2_guid", "year"),
+      indicators = "silent_districts",
+      verbose = FALSE
+    ),
+    "must be a data frame"
+  )
   # admin_units must carry adm2_guid; a year column is honoured when present
   testthat::expect_error(
     polished::calc_polio_indicators(
@@ -404,6 +482,41 @@ testthat::test_that("edge branches: all-skip abort, derived/level skips, column 
   testthat::expect_equal(
     res_s$long$value[res_s$long$indicator == "silent_districts"],
     20
+  )
+
+  # a year-duplicated universe (e.g. create_long_shape output) must not inflate
+  # the silent count -- the universe is deduped to distinct districts
+  au_dup <- dplyr::bind_rows(
+    dplyr::mutate(make_indicator_admin_units(), year = 2022L),
+    dplyr::mutate(make_indicator_admin_units(), year = 2023L)
+  )
+  res_dup <- polished::calc_polio_indicators(
+    cases,
+    admin_units = au_dup,
+    indicators = "silent_districts",
+    levels = "adm0",
+    reference_date = as.Date("2024-01-01"),
+    verbose = FALSE
+  )
+  testthat::expect_equal(
+    res_dup$long$value[res_dup$long$indicator == "silent_districts"],
+    20
+  )
+
+  # .polio_admin_units_from_shape derives the distinct-guid universe from a shape
+  shp_like <- tibble::tibble(
+    adm0_guid = "G0",
+    adm1_guid = c("P1", "P1", "P2"),
+    adm2_guid = c("D1", "D1", "D2"),
+    extra = 1:3
+  )
+  au_from_shape <- polished:::.polio_admin_units_from_shape(shp_like)
+  testthat::expect_setequal(au_from_shape$adm2_guid, c("D1", "D2"))
+  testthat::expect_equal(nrow(au_from_shape), 2L)
+  # absent shape or one lacking guid columns -> NULL (pass-through safe)
+  testthat::expect_null(polished:::.polio_admin_units_from_shape(NULL))
+  testthat::expect_null(
+    polished:::.polio_admin_units_from_shape(tibble::tibble(x = 1))
   )
 
   # .polis_as_logical passes a logical vector straight through
@@ -440,4 +553,36 @@ testthat::test_that("edge branches: all-skip abort, derived/level skips, column 
     verbose = FALSE
   )
   testthat::expect_false("combined_standard" %in% res_comb$long$indicator)
+})
+
+testthat::test_that("calc_polio_indicators attaches a validation report and passes clean fixtures", {
+  res <- polished::calc_polio_indicators(
+    make_indicator_cases(),
+    population = make_indicator_population(),
+    es = make_indicator_es(),
+    virus = make_indicator_virus(),
+    sia = make_indicator_sia(),
+    lab = make_indicator_lab(),
+    admin_units = make_indicator_admin_units(),
+    indicators = "all",
+    reference_date = as.Date("2024-01-01"),
+    verbose = FALSE
+  )
+
+  # the report rides along on $validation, one row per check, and the canonical
+  # (correct) fixtures trip nothing
+  testthat::expect_true(is.data.frame(res$validation))
+  testthat::expect_named(
+    res$validation,
+    c("check", "severity", "n_flagged", "description")
+  )
+  testthat::expect_equal(sum(res$validation$n_flagged), 0L)
+
+  # corrupting a value is caught by the negative + formula-recompute checks
+  res$long$value[res$long$indicator == "stool_adequacy_pct"][1] <- -10
+  v <- suppressMessages(polished:::.polio_validate_indicators(
+    res,
+    verbose = FALSE
+  ))
+  testthat::expect_gt(v$n_flagged[v$check == "negative_value"], 0L)
 })

@@ -120,11 +120,18 @@ utils::globalVariables(c(
 #' @param virus,es,sia,lab Optional cleaned analytic tables for the virus,
 #'   environmental-surveillance, SIA and human-specimen (lab) indicator families.
 #'   Absent -> those families are skipped with a warning.
-#' @param admin_units Optional universe of expected district admin units (columns
-#'   `adm2_guid`, `adm0_guid`, optionally `adm1_guid`, `year`). Required for the
-#'   silent-districts indicator; absent -> it is skipped.
-#' @param indicators Character vector of indicator codes to compute (default:
-#'   the full registered catalogue, skipping any that are unavailable).
+#' @param admin_units Optional universe of expected district admin units: a data
+#'   frame with columns `adm2_guid`, `adm0_guid`, optionally `adm1_guid`. Build
+#'   it from a district shape with `create_long_shape(shape, "adm2")` or
+#'   `dplyr::distinct(sf::st_drop_geometry(shape), adm0_guid, adm1_guid,
+#'   adm2_guid)`. Required for the silent-districts indicator; absent -> it is
+#'   skipped. ([run_pipeline()] derives this from `cfg$shape` automatically.)
+#' @param indicators Which indicators to compute: the keyword `"core"` (default
+#'   -- the core KPI set: NPAFP rate, condition-aware stool adequacy, EV
+#'   detection rate, and timely detection), `"all"` (the full registered
+#'   catalogue), or an explicit character vector of indicator codes. Anything
+#'   whose source/columns are unavailable is skipped with a warning. See
+#'   `available_indicators(core_only = TRUE)` for the core set.
 #' @param levels Admin levels to report at: any of `"adm0"`, `"adm1"`, `"adm2"`.
 #' @param cols Named list overriding default source-column mappings, e.g.
 #'   `list(cases = list(class = "my_class"))`. See
@@ -141,7 +148,8 @@ utils::globalVariables(c(
 #'   numerator (`ufn_Indicator_NPAFP_RATE`); the `_nopending` variant is separate.
 #' @param afp_exclude_classes Classifications excluded from the AFP denominator
 #'   for percentage indicators (default `"NOT-AFP"`).
-#' @param pop_guid_var,pop_year_var,pop_var Column names in `population`.
+#' @param pop_guid_var,pop_year_var,pop_var Column names in `population`
+#'   (defaults `"adm2_guid"`, `"year"`, `"u15_pop"`).
 #' @param rate_multiplier Population scale for rates (default `1e5`).
 #' @param npafp_target,npafp_warn Good / warn thresholds for NPAFP rate.
 #' @param adequacy_target,adequacy_warn Thresholds for percentage indicators.
@@ -152,13 +160,19 @@ utils::globalVariables(c(
 #' @param min_pop Population below which a rate is flagged low-confidence.
 #' @param min_cases Case count below which a percentage is flagged low-confidence.
 #' @param reference_date Date capping the annualisation period (default today).
-#' @param verbose Emit a cli progress + summary report (default `TRUE`).
+#' @param verbose Emit cli progress + the key one-line steps (default `TRUE`).
+#' @param summary Emit the full cli summary panel (coverage-by-family report).
+#'   Default `TRUE`; [run_pipeline()] passes `FALSE` to keep the pipeline terse.
 #'
 #' @return A named list with per-level wide tibbles (`adm0`, `adm1`, `adm2`), a
 #'   tidy `long` tibble (one row per level x admin x year x indicator with
 #'   `value`, `numerator`, `denominator`, `confidence`, `category`, `text_code`,
-#'   `family`) and a `meta` list (indicators, skipped indicators with reasons,
-#'   levels, thresholds, `reference_date`).
+#'   `family`), a `meta` list (indicators, skipped indicators with reasons,
+#'   levels, thresholds, `reference_date`), and a `validation` tibble: one row per
+#'   automatically-run sense check (`check`, `severity`, `n_flagged`,
+#'   `description`) flagging out-of-range values, numerator/denominator and
+#'   value-vs-formula problems, duplicate keys, blank admin keys, and level
+#'   numerator-conservation gaps.
 #' @examples
 #' \donttest{
 #' # available_indicators() lists the full catalogue without running anything.
@@ -173,7 +187,7 @@ calc_polio_indicators <- function(
   sia = NULL,
   lab = NULL,
   admin_units = NULL,
-  indicators = NULL,
+  indicators = "core",
   levels = c("adm0", "adm1", "adm2"),
   cols = list(),
   class_var = "classification_all",
@@ -192,9 +206,9 @@ calc_polio_indicators <- function(
   pending_classes = c("PENDING", "LAB PENDING"),
   include_pending = TRUE,
   afp_exclude_classes = "NOT-AFP",
-  pop_guid_var = "guid",
+  pop_guid_var = "adm2_guid",
   pop_year_var = "year",
-  pop_var = "pop",
+  pop_var = "u15_pop",
   rate_multiplier = 1e5,
   npafp_target = 3,
   npafp_warn = 2,
@@ -205,7 +219,8 @@ calc_polio_indicators <- function(
   min_pop = 1e5,
   min_cases = 10,
   reference_date = Sys.Date(),
-  verbose = TRUE
+  verbose = TRUE,
+  summary = TRUE
 ) {
   registry <- .polio_indicator_registry()
 
@@ -216,16 +231,7 @@ calc_polio_indicators <- function(
   if (nrow(cases) == 0) {
     cli::cli_abort("{.arg cases} is empty.")
   }
-  if (is.null(indicators)) {
-    indicators <- names(registry)
-  }
-  bad_ind <- setdiff(indicators, names(registry))
-  if (length(bad_ind) > 0) {
-    cli::cli_abort(c(
-      "Unknown indicator{?s}: {.val {bad_ind}}",
-      "i" = "See {.code available_indicators()} for the catalogue."
-    ))
-  }
+  indicators <- .polio_resolve_indicators(indicators, registry)
   bad_levels <- setdiff(levels, c("adm0", "adm1", "adm2"))
   if (length(bad_levels) > 0) {
     cli::cli_abort("Invalid {.arg levels}: {.val {bad_levels}}")
@@ -272,8 +278,10 @@ calc_polio_indicators <- function(
 
   n_no_year <- sum(is.na(std$cases$year))
   if (n_no_year > 0 && verbose) {
+    n_no_year_fmt <- .polis_big_num(n_no_year)
     cli::cli_alert_warning(
-      "{n_no_year} case(s) have no onset year and are excluded from indicators."
+      "{n_no_year_fmt} {cli::qty(n_no_year)}case{?s} have no onset year and \\
+      are excluded from indicators."
     )
   }
   std$cases <- dplyr::filter(std$cases, !is.na(year))
@@ -302,6 +310,7 @@ calc_polio_indicators <- function(
     reference_date = reference_date,
     ref_year = as.integer(format(reference_date, "%Y")),
     pop = pop_std,
+    pop_by_level = .polio_pop_by_level(pop_std, parent_map),
     admin_units = admin_std,
     parent_map = parent_map
   )
@@ -317,8 +326,10 @@ calc_polio_indicators <- function(
     cli::cli_abort("No indicators left to compute (all skipped).")
   }
   if (verbose) {
+    n_cases_fmt <- .polis_big_num(nrow(std$cases))
     cli::cli_alert_info(
-      "Computing {length(plan$run)} indicator(s) for {nrow(std$cases)} case(s) at level(s) {.val {levels}}."
+      "Computing {length(plan$run)} indicator{?s} for {n_cases_fmt} \\
+      {cli::qty(nrow(std$cases))}case{?s} at level(s) {.val {levels}}."
     )
   }
 
@@ -334,9 +345,13 @@ calc_polio_indicators <- function(
     src <- std[[spec$source]]
     for (lv in intersect(levels, spec$levels)) {
       lf <- .polio_level_frame(src, lv)
-      if (nrow(lf) == 0) next
+      if (nrow(lf) == 0) {
+        next
+      }
       res <- spec$compute(lf, cfg, lv)
-      if (is.null(res) || nrow(res) == 0) next
+      if (is.null(res) || nrow(res) == 0) {
+        next
+      }
       long_rows[[paste(ind, lv, sep = "@")]] <- .polio_finalise_rows(
         res,
         spec,
@@ -354,7 +369,9 @@ calc_polio_indicators <- function(
     spec <- registry[[ind]]
     for (lv in intersect(levels, spec$levels)) {
       res <- spec$compute(long_base, cfg, lv)
-      if (is.null(res) || nrow(res) == 0) next
+      if (is.null(res) || nrow(res) == 0) {
+        next
+      }
       long_rows[[paste(ind, lv, sep = "@")]] <- .polio_finalise_rows(
         res,
         spec,
@@ -407,7 +424,12 @@ calc_polio_indicators <- function(
     include_pending = include_pending
   )
 
-  if (verbose) .polio_print_summary(out, plan, cfg, registry)
+  # always sense-check the result; the summary rides along on `out$validation`
+  out$validation <- .polio_validate_indicators(out, verbose)
+
+  if (verbose && summary) {
+    .polio_print_summary(out, plan, cfg, registry)
+  }
   out
 }
 
@@ -616,8 +638,11 @@ calc_polio_indicators <- function(
 .polio_admin_frame <- function(df, m) {
   pull_chr <- function(key) {
     nm <- m[[key]]
-    if (!is.null(nm) && nm %in% names(df)) as.character(df[[nm]]) else
+    if (!is.null(nm) && nm %in% names(df)) {
+      as.character(df[[nm]])
+    } else {
       NA_character_
+    }
   }
   tibble::tibble(
     g0 = pull_chr("adm0_guid"),
@@ -899,12 +924,73 @@ calc_polio_indicators <- function(
     dplyr::distinct(guid, year, .keep_all = TRUE)
 }
 
+#' Roll the district (adm2) population up to each admin level.
+#'
+#' Population denominators arrive keyed on `adm2_guid` only, so the parent
+#' levels have no matching row and their population rates would be all `NA`.
+#' Using the `adm2 -> adm1/adm0` GUID links from the case frame, this sums the
+#' district populations into a per-level lookup (`adm0`/`adm1`/`adm2`), each a
+#' `guid`/`year`/`pop` tibble the rate indicators can join on by `guid` for the
+#' level they compute. Returns `NULL` when no population is supplied.
+#' @keywords internal
+#' @noRd
+.polio_pop_by_level <- function(pop_std, parent_map) {
+  if (is.null(pop_std)) {
+    return(NULL)
+  }
+  link <- dplyr::distinct(parent_map, g2, g1, g0)
+  joined <- dplyr::left_join(
+    pop_std,
+    link,
+    by = dplyr::join_by(guid == g2)
+  )
+  roll_up <- function(parent_col) {
+    joined |>
+      dplyr::filter(!is.na(.data[[parent_col]])) |>
+      dplyr::group_by(guid = .data[[parent_col]], year) |>
+      dplyr::summarise(pop = sum(pop, na.rm = TRUE), .groups = "drop")
+  }
+  list(adm0 = roll_up("g0"), adm1 = roll_up("g1"), adm2 = pop_std)
+}
+
+#' Build the expected-district universe from a district shape.
+#'
+#' The distinct `adm0_guid`/`adm1_guid`/`adm2_guid` rows of a shape are exactly
+#' the universe the silent-district indicator needs. Works on a polygon layer
+#' (`sf`)
+#' or an already-long attribute table; returns `NULL` when `shape` is absent or
+#' lacks the guid columns, so callers can pass it through unconditionally.
+#' @keywords internal
+#' @noRd
+.polio_admin_units_from_shape <- function(shape) {
+  if (is.null(shape) || !is.data.frame(shape)) {
+    return(NULL)
+  }
+  flat <- if (inherits(shape, "sf")) sf::st_drop_geometry(shape) else shape
+  need <- c("adm0_guid", "adm1_guid", "adm2_guid")
+  if (!all(need %in% names(flat))) {
+    return(NULL)
+  }
+  flat |>
+    dplyr::distinct(dplyr::across(dplyr::all_of(need))) |>
+    dplyr::filter(!is.na(.data[["adm2_guid"]]))
+}
+
 #' Standardise the expected-districts universe for silent-district detection.
 #' @keywords internal
 #' @noRd
 .polio_std_admin_units <- function(admin_units, m) {
   if (is.null(admin_units)) {
     return(NULL)
+  }
+  if (!is.data.frame(admin_units)) {
+    cli::cli_abort(c(
+      "{.arg admin_units} must be a data frame of expected districts, not a \\
+      {.cls {class(admin_units)}}.",
+      "i" = "Supply the universe of districts that should report -- e.g. a \\
+      district lookup or population table -- with an {.field adm2_guid} column \\
+      (plus {.field adm0_guid}/{.field adm1_guid} for the parent roll-up)."
+    ))
   }
   g2 <- m$adm2_guid
   g1 <- m$adm1_guid
@@ -966,7 +1052,9 @@ calc_polio_indicators <- function(
       .grp_year = .data[[yr]],
       .hit = predicate(dplyr::pick(dplyr::everything()), cfg)
     )
-    if (basis == "ytd") lf <- dplyr::filter(lf, .grp_year == cfg$ref_year)
+    if (basis == "ytd") {
+      lf <- dplyr::filter(lf, .grp_year == cfg$ref_year)
+    }
     lf <- dplyr::filter(lf, !is.na(.grp_year))
     summ <- if (is.null(value_col)) {
       dplyr::summarise(
@@ -1032,6 +1120,10 @@ calc_polio_indicators <- function(
 .make_rate_indicator <- function(numer) {
   force(numer)
   function(lf, cfg, level) {
+    # Population is supplied per district (adm2); the parent levels read their
+    # rolled-up denominator from `pop_by_level`, falling back to the raw adm2
+    # table so a single-level caller still resolves.
+    pop <- cfg$pop_by_level[[level]] %||% cfg$pop
     universe <- dplyr::distinct(lf, guid, name, year)
     num <- lf |>
       dplyr::mutate(.hit = numer(dplyr::pick(dplyr::everything()), cfg)) |>
@@ -1040,7 +1132,7 @@ calc_polio_indicators <- function(
     universe |>
       dplyr::left_join(num, by = dplyr::join_by(guid, name, year)) |>
       dplyr::mutate(numerator = dplyr::coalesce(numerator, 0L)) |>
-      dplyr::left_join(cfg$pop, by = dplyr::join_by(guid, year)) |>
+      dplyr::left_join(pop, by = dplyr::join_by(guid, year)) |>
       dplyr::mutate(
         ann_factor = .polio_annualise_factor(year, cfg$reference_date),
         denominator = pop,
@@ -1109,8 +1201,9 @@ calc_polio_indicators <- function(
     numer <- local({
       lo <- b$lo
       hi <- b$hi
-      function(d, cfg)
+      function(d, cfg) {
         !is.na(d$dose_total) & d$dose_total >= lo & d$dose_total <= hi
+      }
     })
     out[[paste0(prefix, "_", b$suffix)]] <- .make_percent_indicator(
       numer,
@@ -1287,7 +1380,7 @@ calc_polio_indicators <- function(
   years <- sort(unique(lf$year[!is.na(lf$year)]))
   universe <- cfg$admin_units |>
     dplyr::filter(!is.na(.data[[parent_col]])) |>
-    dplyr::transmute(g2, parent = .data[[parent_col]])
+    dplyr::distinct(g2, parent = .data[[parent_col]])
   if (nrow(universe) == 0 || length(years) == 0) {
     return(NULL)
   }
@@ -1495,7 +1588,9 @@ calc_polio_indicators <- function(
   include_pending
 ) {
   keep <- toupper(trimws(npafp_classes))
-  if (include_pending) keep <- union(keep, toupper(trimws(pending_classes)))
+  if (include_pending) {
+    keep <- union(keep, toupper(trimws(pending_classes)))
+  }
   !is.na(age) & age >= 0 & age < 180 & class %in% keep
 }
 
@@ -1556,6 +1651,184 @@ calc_polio_indicators <- function(
     dplyr::arrange(name, year)
 }
 
+# ---- validation / sense checks ----------------------------------------------
+
+#' Sense-check the computed indicators
+#'
+#' Runs a battery of registry-driven sanity checks over the long indicator table
+#' to surface preprocessing and calculation problems: out-of-range values,
+#' numerator/denominator integrity, value-vs-formula recompute, no-data-code
+#' consistency, duplicate keys, blank admin keys, and a level-conservation check
+#' (the total numerator at adm0 should equal the total at adm2). Returns a
+#' one-row-per-check summary tibble and, when `verbose`, reports failures.
+#' @keywords internal
+#' @noRd
+.polio_validate_indicators <- function(out, verbose = TRUE) {
+  long <- out$long
+  empty <- dplyr::tibble(
+    check = character(),
+    severity = character(),
+    n_flagged = integer(),
+    description = character()
+  )
+  if (is.null(long) || nrow(long) == 0L) {
+    return(empty)
+  }
+
+  kind_by_code <- stats::setNames(
+    available_indicators()$kind,
+    available_indicators()$code
+  )
+  kind <- unname(kind_by_code[long$indicator])
+  num <- suppressWarnings(as.numeric(long$numerator))
+  den <- suppressWarnings(as.numeric(long$denominator))
+  val <- suppressWarnings(as.numeric(long$value))
+  is_pct <- kind == "percent"
+  is_rate <- kind == "rate"
+  code <- trimws(as.character(long$text_code))
+  code[code == ""] <- NA_character_
+
+  # value recomputed from its own numerator/denominator. Only percentages are an
+  # exact `100 * num / den`; rates are annualised (scaled by elapsed time), so a
+  # naive recompute would not match -- they are checked for sign/magnitude only.
+  expect <- dplyr::if_else(is_pct & den > 0, 100 * num / den, NA_real_)
+  tol <- 1e-6 * pmax(1, abs(expect))
+
+  # level-conservation: per indicator-year, the summed numerator at adm0 should
+  # equal the summed numerator at adm2 (cases are partitioned across districts);
+  # a gap means rows were dropped/duplicated/orphaned in the roll-up.
+  lvl <- long[!is.na(num) & long$level %in% c("adm0", "adm2"), , drop = FALSE]
+  lvl$.num <- num[!is.na(num) & long$level %in% c("adm0", "adm2")]
+  conserve_bad <- 0L
+  if (nrow(lvl) > 0L) {
+    agg <- dplyr::summarise(
+      dplyr::group_by(lvl, .data$indicator, .data$year, .data$level),
+      tot = sum(.data$.num),
+      .groups = "drop"
+    )
+    a0 <- agg[agg$level == "adm0", c("indicator", "year", "tot")]
+    a2 <- agg[agg$level == "adm2", c("indicator", "year", "tot")]
+    paired <- merge(
+      a0,
+      a2,
+      by = c("indicator", "year"),
+      suffixes = c("_adm0", "_adm2")
+    )
+    if (nrow(paired) > 0L) {
+      conserve_bad <- sum(
+        abs(paired$tot_adm0 - paired$tot_adm2) >
+          1e-6 * pmax(1, abs(paired$tot_adm0)),
+        na.rm = TRUE
+      )
+    }
+  }
+
+  dup_key <- paste(long$level, long$indicator, long$guid, long$year, sep = "\r")
+
+  specs <- list(
+    list(
+      "negative_value",
+      "error",
+      "Indicator value is negative",
+      sum(!is.na(val) & val < 0)
+    ),
+    list(
+      "percent_out_of_range",
+      "error",
+      "Percentage indicator outside 0-100",
+      sum(is_pct & !is.na(val) & (val < 0 | val > 100))
+    ),
+    list(
+      "numerator_gt_denominator",
+      "error",
+      "Numerator exceeds denominator (percentage)",
+      sum(is_pct & !is.na(num) & !is.na(den) & num > den)
+    ),
+    list(
+      "value_formula_mismatch",
+      "error",
+      "Stored value disagrees with numerator / denominator",
+      sum(!is.na(expect) & !is.na(val) & abs(val - expect) > tol)
+    ),
+    list(
+      "level_numerator_conservation",
+      "error",
+      "adm0 numerator total differs from adm2 total (indicator-year)",
+      conserve_bad
+    ),
+    list(
+      "duplicate_keys",
+      "error",
+      "Duplicate (level, indicator, guid, year) rows",
+      sum(duplicated(dup_key) | duplicated(dup_key, fromLast = TRUE))
+    ),
+    list(
+      "value_with_nodata_code",
+      "warning",
+      "Non-NA value carries a no-data code (NOCASE / NOPOP)",
+      sum(!is.na(val) & code %in% c("NOCASE", "NOPOP"))
+    ),
+    list(
+      "blank_admin_key",
+      "warning",
+      "Value-bearing row with a blank guid or year",
+      sum(!is.na(val) & (is.na(long$guid) | long$guid == "" | is.na(long$year)))
+    ),
+    list(
+      "rate_implausibly_high",
+      "info",
+      "Rate value above a sanity ceiling (> 10000)",
+      sum(is_rate & !is.na(val) & val > 1e4)
+    )
+  )
+
+  summary <- dplyr::bind_rows(lapply(specs, function(s) {
+    dplyr::tibble(
+      check = s[[1]],
+      severity = s[[2]],
+      description = s[[3]],
+      n_flagged = as.integer(s[[4]])
+    )
+  }))
+  summary <- summary[
+    order(
+      match(summary$severity, c("error", "warning", "info")),
+      -summary$n_flagged
+    ),
+    c("check", "severity", "n_flagged", "description")
+  ]
+
+  if (isTRUE(verbose)) {
+    .polio_report_validation(summary)
+  }
+  summary
+}
+
+#' Emit a concise cli report of the validation summary.
+#' @keywords internal
+#' @noRd
+.polio_report_validation <- function(summary) {
+  bad <- summary[summary$n_flagged > 0L, , drop = FALSE]
+  if (nrow(bad) == 0L) {
+    cli::cli_alert_success(
+      "Indicator validation: all {nrow(summary)} check{?s} passed."
+    )
+    return(invisible(summary))
+  }
+  for (i in seq_len(nrow(bad))) {
+    n_fmt <- .polis_big_num(bad$n_flagged[i])
+    msg <- "{bad$check[i]}: {n_fmt} flagged -- {bad$description[i]}."
+    if (identical(bad$severity[i], "error")) {
+      cli::cli_alert_danger(msg)
+    } else if (identical(bad$severity[i], "warning")) {
+      cli::cli_alert_warning(msg)
+    } else {
+      cli::cli_alert_info(msg)
+    }
+  }
+  invisible(summary)
+}
+
 # ---- CLI summary ------------------------------------------------------------
 
 #' @keywords internal
@@ -1573,7 +1846,7 @@ calc_polio_indicators <- function(
     dplyr::summarise(
       units = dplyr::n(),
       valued = sum(!is.na(value)),
-      low_conf = sum(confidence == 0, na.rm = TRUE),
+      low_conf = sum(confidence == 0 & !is.na(value), na.rm = TRUE),
       .groups = "drop"
     )
   for (fam in unique(cov$family)) {
@@ -1611,12 +1884,15 @@ calc_polio_indicators <- function(
 #' @noRd
 .polio_indicator_registry <- function() {
   all_lv <- c("adm0", "adm1", "adm2")
-  conf_rate <- function(num, den, cfg)
+  conf_rate <- function(num, den, cfg) {
     dplyr::if_else(!is.na(den) & den >= cfg$min_pop, 1, 0)
-  conf_pct <- function(num, den, cfg)
+  }
+  conf_pct <- function(num, den, cfg) {
     dplyr::if_else(!is.na(den) & den >= cfg$min_cases, 1, 0)
-  conf_d10 <- function(num, den, cfg)
+  }
+  conf_d10 <- function(num, den, cfg) {
     dplyr::if_else(!is.na(den) & den >= 10, 1, 0)
+  }
   conf_one <- function(num, den, cfg) rep(1, length(num))
   cat_none <- function(value, cfg) rep(NA_character_, length(value))
   cat_higher <- function(target_key, warn_key) {
@@ -1643,21 +1919,25 @@ calc_polio_indicators <- function(
       d$notify_to_invest <= cfg$invest_timely_days
   }
   p_adequate_timing <- function(d, cfg) d$adequate %in% TRUE
-  p_adq_cond <- function(d, cfg)
+  p_adq_cond <- function(d, cfg) {
     d$is_afp & !is.na(d$adq_code) & d$adq_code == 1L
-  p_adq_assessable <- function(d, cfg)
+  }
+  p_adq_assessable <- function(d, cfg) {
     d$is_afp & !is.na(d$adq_code) & d$adq_code %in% c(0L, 1L)
+  }
   p_es_all <- function(d, cfg) rep(TRUE, nrow(d))
   p_es_wpv <- function(d, cfg) d$is_wpv
   p_es_cvdpv <- function(d, cfg) d$is_cvdpv
   p_ev_pos <- function(d, cfg) d$ev_pos %in% TRUE
-  p_es35 <- function(d, cfg)
+  p_es35 <- function(d, cfg) {
     !is.na(d$collect_to_result) & d$collect_to_result <= 35
+  }
   p_vir_wpv <- function(d, cfg) d$is_wpv
   p_vir_cvdpv <- function(d, cfg) d$is_cvdpv
   p_vir_vdpv <- function(d, cfg) d$is_vdpv
-  p_lab_cellc <- function(d, cfg)
+  p_lab_cellc <- function(d, cfg) {
     !is.na(d$lab_to_culture) & d$lab_to_culture <= 14
+  }
   p_lab_denom <- function(d, cfg) !is.na(d$lab_to_culture)
   p_dose_all <- function(d, cfg) rep(TRUE, nrow(d))
   p_dose_unknown <- function(d, cfg) {
@@ -1689,7 +1969,8 @@ calc_polio_indicators <- function(
     warn = NA_real_,
     unit = "",
     polis_fn = "",
-    notes = ""
+    notes = "",
+    core = FALSE
   ) {
     # force all args: specs are built in loops, so unforced promises would
     # otherwise collapse to the final loop iteration's value (lazy eval).
@@ -1714,6 +1995,7 @@ calc_polio_indicators <- function(
     force(unit)
     force(polis_fn)
     force(notes)
+    force(core)
     list(
       label = label,
       family = family,
@@ -1735,7 +2017,8 @@ calc_polio_indicators <- function(
       warn = warn,
       unit = unit,
       polis_fn = polis_fn,
-      notes = notes
+      notes = notes,
+      core = core
     )
   }
 
@@ -1796,7 +2079,8 @@ calc_polio_indicators <- function(
       warn = 2,
       unit = "per 100,000",
       polis_fn = "ufn_Indicator_NPAFP_RATE",
-      notes = "Annualised via 365/(1+days), end capped at reference_date."
+      notes = "Annualised via 365/(1+days), end capped at reference_date.",
+      core = TRUE
     )
   )
   add(
@@ -1863,7 +2147,8 @@ calc_polio_indicators <- function(
       warn = 60,
       unit = "%",
       polis_fn = "ufn_Indicator_NPAFP_SA_WithStoolCond",
-      notes = "Condition-aware adequacy used by survindcat."
+      notes = "Condition-aware adequacy used by survindcat.",
+      core = TRUE
     )
   )
   add(
@@ -1905,7 +2190,7 @@ calc_polio_indicators <- function(
     "is_npafp_strict",
     c(dose_bands_3, list(list(suffix = "0_2", lo = 0, hi = 2)))
   )
-  dose_meta <- function(code, lab, num)
+  dose_meta <- function(code, lab, num) {
     spec(
       lab,
       "Dose",
@@ -1921,6 +2206,7 @@ calc_polio_indicators <- function(
       unit = "%",
       polis_fn = "ufn_Indicator_*_DOSE_*"
     )
+  }
   add(
     "afp_dose_0",
     dose_meta("afp_dose_0", "AFP zero-dose (%)", "AFP cases with 0 doses")
@@ -2252,7 +2538,8 @@ calc_polio_indicators <- function(
       target = 50,
       warn = 50,
       unit = "%",
-      polis_fn = "ufn_Indicator_SITES_WITH_ENTERO_PERCENT"
+      polis_fn = "ufn_Indicator_SITES_WITH_ENTERO_PERCENT",
+      core = TRUE
     )
   )
   add(
@@ -2422,7 +2709,7 @@ calc_polio_indicators <- function(
   )
 
   # ---- Family E: SIA ------------------------------------------------------
-  sia_meta <- function(code, lab, regex, polis)
+  sia_meta <- function(code, lab, regex, polis) {
     spec(
       lab,
       "SIA",
@@ -2438,6 +2725,7 @@ calc_polio_indicators <- function(
       unit = "rounds",
       polis_fn = polis
     )
+  }
   add(
     "sia_opvtot",
     sia_meta(
@@ -2606,6 +2894,34 @@ calc_polio_indicators <- function(
 
 # ---- indicator dictionary ---------------------------------------------------
 
+#' Resolve the `indicators` argument to a vector of registry codes
+#'
+#' Accepts the keyword `"core"` (the core KPI set, also the default and what
+#' `NULL` resolves to), `"all"` (the full catalogue), or an explicit character
+#' vector of indicator codes. Unknown codes abort with a cli message.
+#' @keywords internal
+#' @noRd
+.polio_resolve_indicators <- function(indicators, registry) {
+  if (is.null(indicators) || identical(indicators, "core")) {
+    core <- names(registry)[
+      vapply(registry, function(s) isTRUE(s$core), logical(1))
+    ]
+    return(core)
+  }
+  if (identical(indicators, "all")) {
+    return(names(registry))
+  }
+  bad <- setdiff(indicators, names(registry))
+  if (length(bad) > 0) {
+    cli::cli_abort(c(
+      "Unknown indicator{?s}: {.val {bad}}",
+      "i" = "See {.code available_indicators()}, or pass {.val core} / \\
+      {.val all}."
+    ))
+  }
+  indicators
+}
+
 #' Dictionary of available polio surveillance indicators
 #'
 #' Returns a tidy description of every indicator [calc_polio_indicators()] knows
@@ -2619,21 +2935,31 @@ calc_polio_indicators <- function(
 #'   underlying named list of registry specs.
 #' @param family Optional family filter (e.g. `"AFP"`, `"ES"`, `"Virus"`,
 #'   `"SIA"`, `"Composite"`, `"Timeliness"`, `"Stool"`, `"Dose"`, `"Lab"`).
+#' @param core_only If `TRUE`, return only the core KPI indicators (the set
+#'   `calc_polio_indicators(indicators = "core")` computes). Default `FALSE`.
 #'
 #' @return A tibble (one row per indicator) with columns `code`, `label`,
-#'   `family`, `kind`, `formula`, `numerator`, `denominator`, `source`,
+#'   `family`, `kind`, `core`, `formula`, `numerator`, `denominator`, `source`,
 #'   `period_basis`, `levels`, `requires_pop`, `target`, `warn`, `unit`,
 #'   `polis_fn`, `notes`.
 #'
 #' @examples
 #' available_indicators()
 #' available_indicators(family = "ES")[, c("code", "label", "formula")]
+#' available_indicators(core_only = TRUE)$code
 #' @export
-available_indicators <- function(as_tibble = TRUE, family = NULL) {
+available_indicators <- function(
+  as_tibble = TRUE,
+  family = NULL,
+  core_only = FALSE
+) {
   reg <- .polio_indicator_registry()
   if (!is.null(family)) {
     keep <- vapply(reg, function(s) s$family %in% family, logical(1))
     reg <- reg[keep]
+  }
+  if (isTRUE(core_only)) {
+    reg <- reg[vapply(reg, function(s) isTRUE(s$core), logical(1))]
   }
   if (!as_tibble) {
     return(reg)
@@ -2645,6 +2971,7 @@ available_indicators <- function(as_tibble = TRUE, family = NULL) {
       label = s$label,
       family = s$family,
       kind = s$kind,
+      core = isTRUE(s$core),
       formula = s$formula,
       numerator = s$numerator,
       denominator = s$denominator,

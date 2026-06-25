@@ -4,7 +4,7 @@
 \alias{available_indicators}
 \title{Dictionary of available polio surveillance indicators}
 \usage{
-available_indicators(as_tibble = TRUE, family = NULL)
+available_indicators(as_tibble = TRUE, family = NULL, core_only = FALSE)
 }
 \arguments{
 \item{as_tibble}{If \code{TRUE} (default) return a tibble; if \code{FALSE} return the
@@ -12,10 +12,13 @@ underlying named list of registry specs.}
 
 \item{family}{Optional family filter (e.g. \code{"AFP"}, \code{"ES"}, \code{"Virus"},
 \code{"SIA"}, \code{"Composite"}, \code{"Timeliness"}, \code{"Stool"}, \code{"Dose"}, \code{"Lab"}).}
+
+\item{core_only}{If \code{TRUE}, return only the core KPI indicators (the set
+\code{calc_polio_indicators(indicators = "core")} computes). Default \code{FALSE}.}
 }
 \value{
 A tibble (one row per indicator) with columns \code{code}, \code{label},
-\code{family}, \code{kind}, \code{formula}, \code{numerator}, \code{denominator}, \code{source},
+\code{family}, \code{kind}, \code{core}, \code{formula}, \code{numerator}, \code{denominator}, \code{source},
 \code{period_basis}, \code{levels}, \code{requires_pop}, \code{target}, \code{warn}, \code{unit},
 \code{polis_fn}, \code{notes}.
 }
@@ -30,4 +33,5 @@ drift.
 \examples{
 available_indicators()
 available_indicators(family = "ES")[, c("code", "label", "formula")]
+available_indicators(core_only = TRUE)$code
 }

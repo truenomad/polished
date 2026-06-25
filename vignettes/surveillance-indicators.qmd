@@ -75,22 +75,24 @@ cases <- tibble::tibble(
 )
 ```
 
-The under-15 population denominator is an external table keyed by admin `guid`,
-`year` and `pop` (one row per admin unit per year):
+The under-15 population denominator is an external table keyed by `adm2_guid`,
+`year` and `u15_pop` (one row per admin unit per year):
 
 ```{r}
 #| label: pop
 population <- tibble::tibble(
-  guid = c("G0", "P1", "P2", "D1", "D2", "D3", "D4"),
+  adm2_guid = c("G0", "P1", "P2", "D1", "D2", "D3", "D4"),
   year = 2024L,
-  pop = c(2e6, 1e6, 1e6, 5e5, 5e5, 5e5, 5e5)
+  u15_pop = c(2e6, 1e6, 1e6, 5e5, 5e5, 5e5, 5e5)
 )
 ```
 
 ## Compute
 
 Ask for the admin levels you want; each is aggregated independently from the
-case GUIDs:
+case GUIDs. `indicators` selects what to compute: `"core"` (the default — the
+core KPI set), `"all"` (the full registered catalogue), or an explicit vector of
+codes. This article walks the broader catalogue, so it asks for `"all"`:
 
 ```{r}
 #| label: calc
@@ -98,6 +100,7 @@ ind <- calc_polio_indicators(
   cases = cases,
   population = population,
   levels = c("adm0", "adm1", "adm2"),
+  indicators = "all",
   verbose = FALSE
 )
 names(ind)
@@ -134,7 +137,12 @@ indicator (counts, percentages, timeliness) still computes:
 
 ```{r}
 #| label: no-pop
-no_pop <- calc_polio_indicators(cases = cases, levels = "adm0", verbose = FALSE)
+no_pop <- calc_polio_indicators(
+  cases = cases,
+  levels = "adm0",
+  indicators = "all",
+  verbose = FALSE
+)
 no_pop$long[no_pop$long$indicator %in% c("npafp_count", "npafp_rate"), c("indicator", "value")]
 ```
 
