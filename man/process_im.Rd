@@ -4,7 +4,13 @@
 \alias{process_im}
 \title{Process raw Independent Monitoring (IM) data into missed-children rates}
 \usage{
-process_im(im, cfg = polis_config(), shape = NULL, verbose = TRUE)
+process_im(
+  im,
+  cfg = polis_active_config(),
+  shape = NULL,
+  verbose = TRUE,
+  summary = TRUE
+)
 }
 \arguments{
 \item{im}{Raw IM table (data.frame/tibble).}
@@ -16,7 +22,11 @@ process_im(im, cfg = polis_config(), shape = NULL, verbose = TRUE)
 attribute table) for admin GUID reconciliation via
 \code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}} (keyed on \code{year}). Default \code{NULL}.}
 
-\item{verbose}{Emit cli progress + a summary (default \code{TRUE}).}
+\item{verbose}{Emit cli progress + the one-line roll-up result (default
+\code{TRUE}).}
+
+\item{summary}{Emit the full cli summary panel (per-setting missed-children).
+Default \code{TRUE}; \code{\link[=run_pipeline]{run_pipeline()}} passes \code{FALSE} to keep the pipeline terse.}
 }
 \value{
 A list with \code{district} (per-district-year, carrying both

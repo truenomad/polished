@@ -27,6 +27,7 @@
 # =============================================================================
 
 utils::globalVariables(c(
+  ".district",
   "adm0",
   "adm1",
   "adm2",
@@ -85,7 +86,11 @@ utils::globalVariables(c(
 #'   attribute table) used to reconcile admin names/GUIDs via
 #'   [reconcile_admin_guids()], exactly as the other cleaners use it. Default
 #'   `NULL` (no shape-based reconciliation).
-#' @param verbose Emit cli progress / summaries (default `TRUE`).
+#' @param verbose Emit cli progress + one-line roll-up results (default `TRUE`).
+#' @param summary Emit the full cli summary panel per stream (rules, class
+#'   breakdown, mean missed-children). Default `TRUE` for standalone use;
+#'   [run_pipeline()] passes `FALSE` so the pipeline stays terse and only the
+#'   key steps and roll-up counts are reported.
 #' @param ... Extra analytic arguments forwarded to [process_lqas()] (e.g.
 #'   `pass_threshold`). Each processor keeps only the arguments it accepts.
 #'
@@ -106,37 +111,50 @@ utils::globalVariables(c(
 process_sia_quality <- function(
   lqas = NULL,
   im = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   verbose = TRUE,
+  summary = TRUE,
   ...
 ) {
   if (is.null(lqas) && is.null(im)) {
     cli::cli_abort("Supply at least one of {.arg lqas} or {.arg im}.")
   }
   lqas_out <- if (!is.null(lqas)) {
-    .lqasim_quality_call(process_lqas, lqas, cfg, shape, verbose, ...)
+    .lqasim_quality_call(process_lqas, lqas, cfg, shape, verbose, summary, ...)
   } else {
     NULL
   }
   im_out <- if (!is.null(im)) {
-    .lqasim_quality_call(process_im, im, cfg, shape, verbose, ...)
+    .lqasim_quality_call(process_im, im, cfg, shape, verbose, summary, ...)
   } else {
     NULL
   }
   list(lqas = lqas_out, im = im_out)
 }
 
-#' Call `fn(data, cfg =, shape =, verbose =, ...)` keeping only the dots `fn`
-#' accepts.
+#' Call `fn(data, cfg =, shape =, verbose =, summary =, ...)` keeping only the
+#' dots `fn` accepts.
 #'
 #' Lets [process_sia_quality()] forward a shared `...` (e.g. `pass_threshold`)
 #' without passing an LQAS-only argument to the IM processor.
 #' @noRd
-.lqasim_quality_call <- function(fn, data, cfg, shape, verbose, ...) {
+.lqasim_quality_call <- function(fn, data, cfg, shape, verbose, summary, ...) {
   dots <- list(...)
   keep <- dots[names(dots) %in% names(formals(fn))]
-  do.call(fn, c(list(data, cfg = cfg, shape = shape, verbose = verbose), keep))
+  do.call(
+    fn,
+    c(
+      list(
+        data,
+        cfg = cfg,
+        shape = shape,
+        verbose = verbose,
+        summary = summary
+      ),
+      keep
+    )
+  )
 }
 
 # ---- LQAS -------------------------------------------------------------------
@@ -177,7 +195,10 @@ process_sia_quality <- function(
 #'   class (default `0.80`). Lots in `[warn_threshold, pass_threshold)` are
 #'   Intermediate (3-level) / Fail (2-level). Set to `NULL` to disable the
 #'   Intermediate band, collapsing the derived classes to strict Pass/Fail.
-#' @param verbose Emit cli progress + a summary (default `TRUE`).
+#' @param verbose Emit cli progress + the one-line roll-up result (default
+#'   `TRUE`).
+#' @param summary Emit the full cli summary panel (rules + class breakdown).
+#'   Default `TRUE`; [run_pipeline()] passes `FALSE` to keep the pipeline terse.
 #'
 #' @return A list with `lots` (the cleaned lot-level grain carrying both
 #'   `lqas2_polis` / `lqas3_polis` and the derived `coverage` / `invalid` /
@@ -198,14 +219,15 @@ process_sia_quality <- function(
 #' @export
 process_lqas <- function(
   lqas,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   default_checked = 60,
   multiple_of = 60,
   enforce_since = 2019,
   pass_threshold = 0.90,
   warn_threshold = 0.80,
-  verbose = TRUE
+  verbose = TRUE,
+  summary = TRUE
 ) {
   step <- .lqasim_stepper(verbose)
   .polis_check_input(lqas, "lqas")
@@ -250,7 +272,15 @@ process_lqas <- function(
 
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
-    .lqas_print_summary(lots, district, meta)
+    if (isTRUE(summary)) {
+      .lqas_print_summary(lots, district, meta)
+    }
+    n_lots_fmt <- .polis_big_num(meta$n_lots)
+    n_dist_fmt <- .polis_big_num(nrow(district))
+    cli::cli_alert_success(
+      "Rolled up {n_lots_fmt} {cli::qty(meta$n_lots)}lot{?s} to \\
+      {n_dist_fmt} {cli::qty(nrow(district))}district-year{?s}."
+    )
   }
   list(lots = lots, district = district, meta = meta)
 }
@@ -417,11 +447,9 @@ process_lqas <- function(
   cli::cli_h3("Lots by POLIS 2-level class")
   for (i in seq_len(nrow(tab))) {
     label <- dplyr::coalesce(tab$lqas2_polis[i], "NA")
-    cli::cli_text("{label}: {tab$n[i]} ({tab$pct[i]}%)")
+    n_fmt <- .polis_big_num(tab$n[i])
+    cli::cli_text("{label}: {n_fmt} ({tab$pct[i]}%)")
   }
-  cli::cli_alert_success(
-    "Rolled up {meta$n_lots} lot(s) to {nrow(district)} district-year(s)."
-  )
   cli::cli_rule()
 }
 
@@ -444,7 +472,10 @@ process_lqas <- function(
 #' @param shape Optional district shape (an `sf` polygon layer or a long ADM2
 #'   attribute table) for admin GUID reconciliation via
 #'   [reconcile_admin_guids()] (keyed on `year`). Default `NULL`.
-#' @param verbose Emit cli progress + a summary (default `TRUE`).
+#' @param verbose Emit cli progress + the one-line roll-up result (default
+#'   `TRUE`).
+#' @param summary Emit the full cli summary panel (per-setting missed-children).
+#'   Default `TRUE`; [run_pipeline()] passes `FALSE` to keep the pipeline terse.
 #'
 #' @return A list with `district` (per-district-year, carrying both
 #'   `missed_frac_inhouse` / `im_status_inhouse` and `missed_frac_outhouse` /
@@ -462,7 +493,13 @@ process_lqas <- function(
 #' process_im(im, verbose = FALSE)$district
 #'
 #' @export
-process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
+process_im <- function(
+  im,
+  cfg = polis_active_config(),
+  shape = NULL,
+  verbose = TRUE,
+  summary = TRUE
+) {
   step <- .lqasim_stepper(verbose)
   .polis_check_input(im, "im")
 
@@ -503,7 +540,13 @@ process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
 
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
-    .im_print_summary(district, meta)
+    if (isTRUE(summary)) {
+      .im_print_summary(district, meta)
+    }
+    n_dist_fmt <- .polis_big_num(meta$n_district)
+    cli::cli_alert_success(
+      "Rolled up to {n_dist_fmt} {cli::qty(meta$n_district)}district-year{?s}."
+    )
   }
   list(district = district, meta = meta)
 }
@@ -593,7 +636,11 @@ process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
     n_valid <- sum(status == "Valid", na.rm = TRUE)
     n_invalid <- sum(status == "Invalid", na.rm = TRUE)
     cli::cli_h3(if (setting == "inhouse") "In-house" else "Out-of-house")
-    cli::cli_text("{n_valid} Valid, {n_invalid} Invalid district-year(s).")
+    n_valid_fmt <- .polis_big_num(n_valid)
+    n_invalid_fmt <- .polis_big_num(n_invalid)
+    cli::cli_text(
+      "{n_valid_fmt} Valid, {n_invalid_fmt} Invalid district-year(s)."
+    )
     if (n_valid > 0) {
       mean_missed <- round(
         100 * mean(frac[status == "Valid"], na.rm = TRUE),
@@ -602,7 +649,6 @@ process_im <- function(im, cfg = polis_config(), shape = NULL, verbose = TRUE) {
       cli::cli_text("Mean missed-children (valid): {mean_missed}%")
     }
   }
-  cli::cli_alert_success("Rolled up to {meta$n_district} district-year(s).")
   cli::cli_rule()
 }
 

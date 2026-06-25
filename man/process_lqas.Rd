@@ -6,14 +6,15 @@
 \usage{
 process_lqas(
   lqas,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   default_checked = 60,
   multiple_of = 60,
   enforce_since = 2019,
   pass_threshold = 0.9,
   warn_threshold = 0.8,
-  verbose = TRUE
+  verbose = TRUE,
+  summary = TRUE
 )
 }
 \arguments{
@@ -43,7 +44,11 @@ class (default \code{0.80}). Lots in \verb{[warn_threshold, pass_threshold)} are
 Intermediate (3-level) / Fail (2-level). Set to \code{NULL} to disable the
 Intermediate band, collapsing the derived classes to strict Pass/Fail.}
 
-\item{verbose}{Emit cli progress + a summary (default \code{TRUE}).}
+\item{verbose}{Emit cli progress + the one-line roll-up result (default
+\code{TRUE}).}
+
+\item{summary}{Emit the full cli summary panel (rules + class breakdown).
+Default \code{TRUE}; \code{\link[=run_pipeline]{run_pipeline()}} passes \code{FALSE} to keep the pipeline terse.}
 }
 \value{
 A list with \code{lots} (the cleaned lot-level grain carrying both
