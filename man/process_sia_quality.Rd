@@ -7,9 +7,10 @@
 process_sia_quality(
   lqas = NULL,
   im = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   verbose = TRUE,
+  summary = TRUE,
   ...
 )
 }
@@ -27,7 +28,12 @@ attribute table) used to reconcile admin names/GUIDs via
 \code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}}, exactly as the other cleaners use it. Default
 \code{NULL} (no shape-based reconciliation).}
 
-\item{verbose}{Emit cli progress / summaries (default \code{TRUE}).}
+\item{verbose}{Emit cli progress + one-line roll-up results (default \code{TRUE}).}
+
+\item{summary}{Emit the full cli summary panel per stream (rules, class
+breakdown, mean missed-children). Default \code{TRUE} for standalone use;
+\code{\link[=run_pipeline]{run_pipeline()}} passes \code{FALSE} so the pipeline stays terse and only the
+key steps and roll-up counts are reported.}
 
 \item{...}{Extra analytic arguments forwarded to \code{\link[=process_lqas]{process_lqas()}} (e.g.
 \code{pass_threshold}). Each processor keeps only the arguments it accepts.}
