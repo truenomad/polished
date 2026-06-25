@@ -90,7 +90,7 @@
 #' @export
 clean_afp <- function(
   data,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   impute_geo = TRUE,
   verbose = TRUE
@@ -318,12 +318,13 @@ clean_afp <- function(
     dplyr::across(
       dplyr::all_of(cols),
       # as_date tolerates both ISO date and datetime strings
-      \(x)
+      \(x) {
         .afp_sensible_date(
           suppressWarnings(lubridate::as_date(x)),
           floor_date,
           reference_date
         )
+      }
     )
   )
 }
@@ -499,9 +500,15 @@ clean_afp <- function(
   }
   s1 <- stool_missing("stool1collection_date", "stool1condition")
   s2 <- stool_missing("stool2collection_date", "stool2condition")
-  if (!is.null(s1)) data$stool1_missing <- s1
-  if (!is.null(s2)) data$stool2_missing <- s2
-  if (!is.null(s1) && !is.null(s2)) data$stool_missing <- s1 & s2
+  if (!is.null(s1)) {
+    data$stool1_missing <- s1
+  }
+  if (!is.null(s2)) {
+    data$stool2_missing <- s2
+  }
+  if (!is.null(s1) && !is.null(s2)) {
+    data$stool_missing <- s1 & s2
+  }
   data
 }
 

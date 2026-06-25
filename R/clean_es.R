@@ -100,7 +100,7 @@
 #' @export
 clean_es <- function(
   data,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   impute_geo = TRUE,
   sites = NULL,

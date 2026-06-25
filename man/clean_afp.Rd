@@ -6,7 +6,7 @@
 \usage{
 clean_afp(
   data,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   impute_geo = TRUE,
   verbose = TRUE

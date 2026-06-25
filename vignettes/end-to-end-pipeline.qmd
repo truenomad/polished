@@ -114,26 +114,33 @@ proj <- init_polis_project(file.path(tempdir(), "demo_project"), quiet = TRUE)
 names(proj)
 ```
 
-Point `get_polis_data(polis_folder = proj$raw, ...)` at the `raw/` zone (or drop
-`raw_*` files there yourself), then stream the cleaning pipeline into the
-partitioned `processed/` zone with `run_pipeline_project()`:
+Point the config at the project zones — `inputs` at `raw/`, `output_dir` at
+`processed/`, `cache_dir` at `cache/` — and the whole run is one call. Drop your
+`raw_*` files in `proj$raw` (or have `get_polis_data(polis_folder = proj$raw)`
+write them there):
 
 ```{r}
 #| label: project-run
 saveRDS(afp_raw, file.path(proj$raw, "raw_afp.rds"))
-written <- run_pipeline_project(proj, quiet = TRUE)
-written$tables[, c("dataset", "rows")]
+
+cfg <- polis_config(
+  inputs = proj$raw,
+  output_dir = proj$processed,
+  cache_dir = proj$cache
+)
+out <- run_pipeline(cfg = cfg)
+names(out)
 ```
 
-Read a slice back — by dataset, and (when present) filtered by year/country —
-with `load_polis()`:
+Read a country/period slice of the `polished_*` outputs back with
+`load_polished()` — it defaults `output_dir` to the active config, so no
+arguments are needed beyond the filter:
 
 ```{r}
 #| label: project-load
-back <- load_polis(proj, datasets = "afp")
+back <- load_polished(datasets = "afp")
 nrow(back$afp)
 ```
 
 `clear_cache()` empties the project's cache zone, and `project_path()` resolves
-any zone path. See `?init_polis_project` for the full layout and the partitioned
-parquet output `run_pipeline_project()` writes.
+any zone path. See `?init_polis_project` for the full layout.

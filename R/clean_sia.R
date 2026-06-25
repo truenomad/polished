@@ -90,7 +90,7 @@
 clean_sia <- function(
   activity,
   subactivity = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   round_gap_days = 21L,
   cache_dir = NULL,
