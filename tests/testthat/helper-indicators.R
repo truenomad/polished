@@ -94,9 +94,9 @@ make_indicator_cases <- function() {
 
 make_indicator_population <- function() {
   tibble::tibble(
-    guid = c("G0", "P1", "P2", "D1", "D2", "D3", "D4"),
+    adm2_guid = c("G0", "P1", "P2", "D1", "D2", "D3", "D4"),
     year = 2023L,
-    pop = c(2e6, 1e6, 1e6, 5e5, 5e5, 5e5, 5e5)
+    u15_pop = c(2e6, 1e6, 1e6, 5e5, 5e5, 5e5, 5e5)
   )
 }
 
