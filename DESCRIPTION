@@ -38,6 +38,7 @@ Imports:
     utils
 Suggests:
     arrow,
+    covr,
     data.table,
     digest,
     dtplyr,

@@ -18,4 +18,5 @@
 ^CLAUDE\.md$
 ^dev$
 ^vignettes/[.]quarto$
+^vignettes/.*_files$
 ^example_script\.R$
