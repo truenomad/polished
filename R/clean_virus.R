@@ -22,13 +22,16 @@
 #'     Contact -- or `"Environmental"`);
 #'   \item `measurement` and `classification_all`: the analytic virus label in
 #'     the shared `WPV`/`cVDPV`/`aVDPV`/`iVDPV` vocabulary both cleaners emit;
-#'   \item the case/sample geography (`adm0`/`adm1`/`adm2` + GUIDs),
+#'   \item the case/sample geography (`country_iso3code`, `adm0`/`adm1`/`adm2`
+#'     + GUIDs),
 #'     `latitude`/`longitude`, the event `virus_date` (paralysis onset for cases,
 #'     collection for ES) with `year_onset`/`month_onset`, and `notification_date`;
 #'   \item `report_date`: the VDPV classification-change date for VDPV records,
 #'     the notification date for WPV records;
-#'   \item `emergence_group`, `nt_changes`, `virus_cluster`, and -- when a
-#'     `nopv_emergence` reference is supplied -- the novel-OPV2 flag `nopv2`.
+#'   \item `emergence_group`, `nt_changes`, `virus_cluster`, `virus_is_orphan`
+#'     (the orphan-isolate flag, `NA` for ES rows since POLIS carries it only on
+#'     cases), and -- when a `nopv_emergence` reference is supplied -- the
+#'     novel-OPV2 flag `nopv2`.
 #' }
 #'
 #' @param cases Optional cleaned AFP table (from [clean_afp()]). Its
@@ -64,7 +67,7 @@
 clean_virus <- function(
   cases = NULL,
   es = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   nopv_emergence = NULL,
   separate_rows = FALSE,
   verbose = TRUE
@@ -139,6 +142,7 @@ clean_virus <- function(
 #' Common harmonised schema columns shared by both streams
 #' @noRd
 .virus_shared_cols <- c(
+  "country_iso3code" = "country_iso3code",
   "adm0" = "adm0",
   "adm1" = "adm1",
   "adm2" = "adm2",
@@ -150,6 +154,7 @@ clean_virus <- function(
   "emergence_group" = "vdpv_emergence_group_names",
   "nt_changes" = "nt_changes",
   "virus_cluster" = "virus_clusters",
+  "virus_is_orphan" = "virus_is_orphan",
   "vdpv_classification_change_date" = "vdpv_classification_change_date"
 )
 

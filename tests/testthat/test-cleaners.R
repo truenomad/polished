@@ -558,6 +558,8 @@ testthat::test_that("clean_virus builds positives from cleaned cases and ES", {
       PolioVirusTypes = c("WILD1", NA),
       Classification = c("Confirmed (wild)", "Discarded"),
       Admin0Name = c("NIGERIA", "NIGERIA"),
+      CountryISO3Code = c("NGA", "NGA"),
+      VirusIsOrphan = c(TRUE, FALSE),
       check.names = FALSE
     ),
     verbose = FALSE
@@ -572,6 +574,7 @@ testthat::test_that("clean_virus builds positives from cleaned cases and ES", {
       VdpvClassifications = c("Circulating", NA),
       VdpvClassificationChangeDate = c("2024-02-01", NA),
       Admin0Name = c("NIGERIA", "CHAD"),
+      CountryISO3Code = c("NGA", "TCD"),
       check.names = FALSE
     ),
     verbose = FALSE
@@ -593,6 +596,16 @@ testthat::test_that("clean_virus builds positives from cleaned cases and ES", {
   testthat::expect_equal(vdpv$report_date, as.Date("2024-02-01"))
   # ES epid is the sample id; human epid is the case epid
   testthat::expect_true("E-1" %in% out$epid && "A-1" %in% out$epid)
+  # the orphan flag survives from clean_afp into the positives table; ES rows
+  # have no orphan source column, so they carry NA
+  testthat::expect_true("virus_is_orphan" %in% names(out))
+  testthat::expect_equal(wpv$virus_is_orphan, TRUE)
+  testthat::expect_true(is.na(vdpv$virus_is_orphan))
+  # country_iso3code carries through so the positives slice by country like the
+  # other streams (both surviving positives are Nigerian)
+  testthat::expect_true("country_iso3code" %in% names(out))
+  testthat::expect_equal(wpv$country_iso3code, "NGA")
+  testthat::expect_equal(vdpv$country_iso3code, "NGA")
 })
 
 testthat::test_that("clean_virus separate_rows splits co-detections per serotype", {
