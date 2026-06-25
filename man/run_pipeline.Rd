@@ -4,27 +4,53 @@
 \alias{run_pipeline}
 \title{Run the POLIS cleaning pipeline in memory}
 \usage{
-run_pipeline(inputs, cfg = polis_config(), reconcile_with = NULL)
+run_pipeline(
+  inputs = cfg$inputs,
+  cfg = polis_active_config(),
+  reconcile_with = NULL,
+  output_dir = cfg$output_dir,
+  formats = list(),
+  refresh = FALSE
+)
 }
 \arguments{
-\item{inputs}{Named list of raw POLIS data frames. Recognised names:
-\code{afp}, \code{es}, \code{hum_spec}, \code{activity}, \code{subactivity}, \code{lqas}, \code{im}. (A raw
-\code{virus} table is not used -- positives are derived from the cleaned
-\code{afp}/\code{es} outputs. \code{lqas}/\code{im} are campaign-quality tables turned into
-district-year roll-ups via \code{\link[=process_sia_quality]{process_sia_quality()}}.)}
+\item{inputs}{The raw POLIS tables to clean; defaults to \code{cfg$inputs} so a
+fully-specified config can be run as \code{run_pipeline(cfg = cfg)}. Either a
+\strong{named list} of raw data frames (recognised names \code{afp}, \code{es}, \code{hum_spec},
+\code{activity}, \code{subactivity}, \code{lqas}, \code{im}) or a \strong{path} to a directory of
+\verb{raw_*} files (read on demand, each output then inheriting its source
+format). A raw \code{virus} table is not used -- positives are derived from the
+cleaned \code{afp}/\code{es} outputs; \code{lqas}/\code{im} become district-year roll-ups via
+\code{\link[=process_sia_quality]{process_sia_quality()}}.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Its
-\code{shape} and \code{population} handles drive admin reconciliation and the
-indicators step respectively.}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object; defaults to the session-active config
+(\code{\link[=polis_active_config]{polis_active_config()}}). Its \code{shape} and \code{population} handles drive admin
+reconciliation and the indicators step respectively.}
 
 \item{reconcile_with}{Optional named list of full-pull data frames (same keys
 as \code{inputs}) used to prune deleted/merged \code{id}s via \code{\link[=reconcile]{reconcile()}}.}
+
+\item{output_dir}{Directory to persist outputs to; defaults to
+\code{cfg$output_dir} (set it once on the config). When non-\code{NULL} the
+\verb{polished_*} data files are written to its \verb{data/} sub-directory and a
+\verb{checks_<dataset>.xlsx} workbook per dataset to its \verb{checks/} sub-directory.
+\code{NULL} returns the cleaned set without writing anything.}
+
+\item{formats}{Optional named list mapping output keys (\code{afp}, \code{es},
+\code{hum_spec}, \code{sia}, \code{lqas}, \code{im}) to a file extension, so an output inherits
+the format of the raw file it derives from. Unmapped/derived outputs fall
+back to \code{qs2}. Only consulted when \code{output_dir} is set.}
+
+\item{refresh}{If \code{TRUE}, ignore any existing cache and re-run every step from
+scratch, overwriting the cache and the output files (the fresh results are
+still cached for next time). Default \code{FALSE} (reuse caches where valid).}
 }
 \value{
 A named list holding any of the cleaned tibbles \code{afp}, \code{es},
 \code{hum_spec}, \code{sia}, \code{virus}, the SIA-quality roll-ups \code{lqas} / \code{im} (each a
 list of \code{lots}/\code{district}/\code{meta}), plus \code{indicators} (the
-\code{\link[=calc_polio_indicators]{calc_polio_indicators()}} result list) when AFP cases are present.
+\code{\link[=calc_polio_indicators]{calc_polio_indicators()}} result list) when AFP cases are present. Returned
+invisibly when \code{output_dir} is set.
 }
 \description{
 Cleans the raw POLIS tables supplied in \code{inputs} and returns the canonical
@@ -37,6 +63,12 @@ Each cleaner receives \code{cfg$shape} (an already-processed district shape) for
 admin reconciliation, and -- when AFP cases are present -- the surveillance
 indicators are computed via \code{\link[=calc_polio_indicators]{calc_polio_indicators()}} using \code{cfg$population}
 as the under-15 denominator.
+
+Missing admin GUIDs are always backfilled across the cleaned streams from
+their pooled consensus: a district whose \code{adm1_guid} / \code{adm2_guid} is blank in
+one stream inherits it from another that carries it, matched on admin name
+first and \verb{admin\{1,2\}shape_id} as a fallback. Only blanks are filled; existing
+GUIDs are never changed.
 }
 \examples{
 afp <- data.frame(

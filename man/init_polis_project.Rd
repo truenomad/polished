@@ -23,12 +23,13 @@ A \code{polis_project}: a list with \code{root} and one absolute path per zone
 Sets up the standard project layout under \code{root} and returns a \code{polis_project}
 describing it. The layout has four role-named zones plus logs:
 \describe{
-\item{\code{raw}}{downloaded source tables and a snapshot \code{manifest.json}
-(precious -- never written by cleaning).}
-\item{\code{processed}}{cleaned analytic tables, one partitioned parquet dataset
-per table (derived).}
+\item{\code{raw}}{downloaded source tables (precious -- never written by
+cleaning).}
+\item{\code{processed}}{cleaned analytic outputs (derived); a natural value for
+\code{polis_config(output_dir = )}.}
 \item{\code{validation}}{data-quality reports and checks.}
-\item{\code{cache}}{regenerable process caches (e.g. campaign-round clustering).}
+\item{\code{cache}}{regenerable process caches; a natural value for
+\code{polis_config(cache_dir = )}.}
 \item{\code{logs}}{run logs.}
 }
 Creation is idempotent and never deletes: calling it again on an existing

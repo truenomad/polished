@@ -250,13 +250,19 @@
     n_rows = if (is.data.frame(df)) as.integer(nrow(df)) else 0L,
     min_id = if (has_id) {
       suppressWarnings(min(df$Id, na.rm = TRUE))
-    } else NA_real_,
+    } else {
+      NA_real_
+    },
     max_id = if (has_id) {
       suppressWarnings(max(df$Id, na.rm = TRUE))
-    } else NA_real_,
+    } else {
+      NA_real_
+    },
     max_date = if (has_dt) {
       suppressWarnings(max(as.Date(df[[date_field]]), na.rm = TRUE))
-    } else as.Date(NA),
+    } else {
+      as.Date(NA)
+    },
     saved_at = Sys.time()
   )
 }
@@ -342,7 +348,9 @@
   }
   # Lazy backfill: read once, write sidecar.
   df <- tryCatch(.polis_io_read(part_file, ext), error = function(e) NULL)
-  if (is.null(df)) return(.polis_empty_meta())
+  if (is.null(df)) {
+    return(.polis_empty_meta())
+  }
   meta <- .polis_compute_part_meta(df, date_field)
   tryCatch(saveRDS(meta, meta_file), error = function(e) invisible())
   meta
@@ -359,7 +367,9 @@
     }
   })
   ranges <- ranges[!vapply(ranges, is.null, logical(1))]
-  if (length(ranges) < 2L) return(FALSE)
+  if (length(ranges) < 2L) {
+    return(FALSE)
+  }
   starts <- vapply(ranges, `[`, numeric(1), 1L)
   ends <- vapply(ranges, `[`, numeric(1), 2L)
   ord <- order(starts)
@@ -385,7 +395,9 @@
 # rows land between the count query and the fetch), and cli's bar
 # crashes with "invalid 'times' argument" when set > total.
 .polis_pb_set <- function(value, total) {
-  if (is.null(total) || is.na(total)) return(value)
+  if (is.null(total) || is.na(total)) {
+    return(value)
+  }
   min(as.integer(value), as.integer(total))
 }
 
@@ -577,7 +589,9 @@
   )
   body <- .polis_get_body(url, polis_api_key)
   raw <- body[["@odata.count"]]
-  if (is.null(raw) || length(raw) == 0L) return(NA_real_)
+  if (is.null(raw) || length(raw) == 0L) {
+    return(NA_real_)
+  }
   suppressWarnings(as.numeric(raw))
 }
 
@@ -661,7 +675,9 @@
       }
       break
     }
-    if (!"Id" %in% names(page)) break
+    if (!"Id" %in% names(page)) {
+      break
+    }
     ids[[length(ids) + 1L]] <- page$Id
     new_last_id <- max(page$Id, na.rm = TRUE)
     # stall guard (mirrors the year worker): a non-advancing cursor would loop
@@ -828,12 +844,16 @@
       page_size = page_size
     )
 
-    if (!is.data.frame(new_data) || nrow(new_data) == 0L) break
+    if (!is.data.frame(new_data) || nrow(new_data) == 0L) {
+      break
+    }
 
     # POLIS occasionally returns a page with no Id column for very old
     # records (or after a server-side error). Without Id we can't
     # advance the cursor, so treat it as end-of-data.
-    if (!"Id" %in% names(new_data)) break
+    if (!"Id" %in% names(new_data)) {
+      break
+    }
     new_last_id <- suppressWarnings(
       max(as.numeric(new_data$Id), na.rm = TRUE)
     )
@@ -947,8 +967,12 @@
 }
 
 .polis_migrate_to_parts <- function(out_file, parts_dir, ext, date_field) {
-  if (dir.exists(parts_dir)) return(invisible())
-  if (!file.exists(out_file)) return(invisible())
+  if (dir.exists(parts_dir)) {
+    return(invisible())
+  }
+  if (!file.exists(out_file)) {
+    return(invisible())
+  }
 
   df <- tryCatch(
     .polis_io_read(out_file, ext),
@@ -974,11 +998,15 @@
   if (is.null(df) || !is.data.frame(df) || nrow(df) == 0L) {
     return(invisible())
   }
-  if (!date_field %in% names(df)) return(invisible())
+  if (!date_field %in% names(df)) {
+    return(invisible())
+  }
 
   yrs <- as.integer(format(as.Date(df[[date_field]]), "%Y"))
   keep <- !is.na(yrs)
-  if (!any(keep)) return(invisible())
+  if (!any(keep)) {
+    return(invisible())
+  }
   df <- df[keep, , drop = FALSE]
   yrs <- yrs[keep]
 
@@ -1105,7 +1133,9 @@
     },
     logical(1)
   )]
-  if (length(alive) == 0L) return(invisible(NULL))
+  if (length(alive) == 0L) {
+    return(invisible(NULL))
+  }
   cli::cli_alert_warning(paste0(
     length(alive),
     " worker process(es) still alive after stopCluster; ",
@@ -1182,7 +1212,9 @@
 
   n_new <- "0"
   n_cum <- .polis_pretty_num(current_rows)
-  pb_tot <- if (is.na(declared_total)) "?" else {
+  pb_tot <- if (is.na(declared_total)) {
+    "?"
+  } else {
     .polis_pretty_num(declared_total)
   }
   pb_cur <- n_cum
@@ -1222,7 +1254,9 @@
     changed <- FALSE
     for (i in seq_len(n_specs)) {
       pf <- pf_paths[i]
-      if (!file.exists(pf)) next
+      if (!file.exists(pf)) {
+        next
+      }
       cur_mtime <- as.numeric(file.info(pf)$mtime)
       if (cur_mtime != file_mtimes[i]) {
         file_mtimes[i] <<- cur_mtime
@@ -1336,7 +1370,9 @@
 
   while (completed < n_specs) {
     for (n in which(node_spec == 0L)) {
-      if (length(remaining) == 0L) break
+      if (length(remaining) == 0L) {
+        break
+      }
       idx <- remaining[1L]
       remaining <- remaining[-1L]
       parallel_sendCall(
@@ -1349,7 +1385,9 @@
     }
 
     busy <- which(node_spec != 0L)
-    if (length(busy) == 0L) break
+    if (length(busy) == 0L) {
+      break
+    }
     cons <- lapply(busy, function(n) cl[[n]]$con)
     ready <- tryCatch(
       socketSelect(cons, timeout = 0.5),
@@ -1746,80 +1784,75 @@
   .polis_write_excel_formatted(.polis_prepare_for_excel(x), path)
 }
 
-# Read the raw POLIS tables present in a directory (most recent match wins).
-# Read the raw_* tables get_polis_data() writes, keyed by pipeline name. Each
-# stem is matched against the supported extensions in `exts` order (first hit
-# wins), so the on-disk format is whatever the download produced. The matched
-# extension per key is recorded on the returned list as the "formats" attribute
-# so the writer can mirror each output's format to its source.
-.polis_read_inputs <- function(
-  dir,
-  stems = c(
-    afp = "raw_afp",
-    es = "raw_es",
-    hum_spec = "raw_hum_spec",
-    activity = "raw_activity",
-    subactivity = "raw_sub_activity",
-    lqas = "raw_lqas",
-    im = "raw_im"
-  ),
-  exts = c("qs2", "parquet", "rds", "csv")
-) {
-  if (!dir.exists(dir)) {
-    cli::cli_abort("Input directory {.file {dir}} does not exist.")
-  }
-  inputs <- list()
-  formats <- list()
-  for (key in names(stems)) {
-    cand <- file.path(dir, paste0(stems[[key]], ".", exts))
-    hit <- cand[file.exists(cand)]
-    if (length(hit) > 0L) {
-      inputs[[key]] <- .polis_read(hit[[1L]])
-      formats[[key]] <- tolower(tools::file_ext(hit[[1L]]))
-      cli::cli_alert_info(
-        "Read {.val {key}} from {.file {basename(hit[[1L]])}}."
-      )
-    }
-  }
-  attr(inputs, "formats") <- formats
-  inputs
-}
-
 # Write the pipeline outputs to a directory as polished_<key> files. Each
 # output's format follows its source raw file (via `formats`, a key -> ext
 # list); derived outputs with no source fall back to `default_format`. A list
 # value (e.g. the indicators result) is written one file per data-frame
 # component (polished_<key>_<component>); non-frame components (metadata) are
-# skipped. Returns `dir` invisibly.
+# skipped.
+#
+# A file whose content is byte-for-byte unchanged is NOT rewritten: each write
+# stamps the content hash into a `.polished_stamps.rds` manifest, and a later
+# run with a matching stamp (and the file still present) skips the write. So a
+# fully-cached pipeline re-run leaves the output files untouched. Returns `dir`
+# invisibly.
 .polis_write_outputs <- function(
   cleaned,
   dir,
   formats = list(),
-  default_format = "qs2"
+  default_format = "qs2",
+  refresh = FALSE
 ) {
+  manifest_path <- file.path(dir, ".polished_stamps.rds")
+  manifest <- if (file.exists(manifest_path)) readRDS(manifest_path) else list()
   written <- 0L
+  skipped <- 0L
+
+  write_df <- function(value, path) {
+    stamp <- .polis_hash(value)
+    name <- basename(path)
+    if (
+      !isTRUE(refresh) &&
+        file.exists(path) &&
+        identical(manifest[[name]], stamp)
+    ) {
+      skipped <<- skipped + 1L
+      return(invisible())
+    }
+    .polis_write(value, path)
+    manifest[[name]] <<- stamp
+    written <<- written + 1L
+  }
+
   for (key in names(cleaned)) {
     value <- cleaned[[key]]
     ext <- formats[[key]] %||% default_format
     if (is.data.frame(value)) {
-      .polis_write(value, file.path(dir, paste0("polished_", key, ".", ext)))
-      written <- written + 1L
+      write_df(value, file.path(dir, paste0("polished_", key, ".", ext)))
     } else if (is.list(value)) {
       for (comp in names(value)) {
         part <- value[[comp]]
         if (is.data.frame(part)) {
-          .polis_write(
+          write_df(
             part,
             file.path(dir, paste0("polished_", key, "_", comp, ".", ext))
           )
-          written <- written + 1L
         }
       }
     }
   }
-  cli::cli_alert_success(
-    "Wrote {written} polished file{?s} to {.file {dir}}."
-  )
+  saveRDS(manifest, manifest_path)
+
+  if (skipped > 0L) {
+    cli::cli_alert_success(
+      "Wrote {written} polished file{?s} to {.file {dir}} \\
+      ({skipped} unchanged, skipped)."
+    )
+  } else {
+    cli::cli_alert_success(
+      "Wrote {written} polished file{?s} to {.file {dir}}."
+    )
+  }
   invisible(dir)
 }
 
@@ -1844,22 +1877,6 @@
     cli::cli_abort("{.arg data} for {.val {dataset}} is empty.")
   }
   invisible(data)
-}
-
-# ---------------------------------------------------------------------
-# Config
-# ---------------------------------------------------------------------
-
-# Read every CSV under inst/extdata/rules into a named list keyed by file stem.
-.polis_load_rules <- function() {
-  rules_dir <- system.file("extdata", "rules", package = "polished")
-  if (!nzchar(rules_dir) || !dir.exists(rules_dir)) {
-    return(list())
-  }
-  files <- list.files(rules_dir, pattern = "\\.csv$", full.names = TRUE)
-  rules <- lapply(files, readr::read_csv, show_col_types = FALSE)
-  names(rules) <- tools::file_path_sans_ext(basename(files))
-  rules
 }
 
 # =============================================================================
@@ -2562,13 +2579,17 @@ detect_factors <- function(
 #' @noRd
 .has_leading_zeros <- function(x) {
   x <- x[!is.na(x) & nzchar(x)]
-  if (length(x) == 0L) return(FALSE)
+  if (length(x) == 0L) {
+    return(FALSE)
+  }
   # a leading-zero value is all digits, length > 1, starting with "0" (e.g.
   # "007"). Short-circuit on startsWith() and test only those candidates with a
   # non-backtracking char class -- the equivalent "^0+\\d+$" regex backtracks
   # catastrophically on long all-zero/digit strings across millions of rows.
   starts_zero <- startsWith(x, "0")
-  if (!any(starts_zero)) return(FALSE)
+  if (!any(starts_zero)) {
+    return(FALSE)
+  }
   # cap the all-digit test at the first few thousand zero-starting values: enough
   # to spot a leading-zero code, bounded so a column of many such values cannot
   # dominate the scan over millions of rows.

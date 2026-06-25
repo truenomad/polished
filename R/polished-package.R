@@ -26,6 +26,7 @@
 # the names actually referenced in R/ -- unused entries are pruned.
 utils::globalVariables(c(
   ".crow",
+  ".guid_key",
   ".n",
   ".year_ok",
   ".yr",
@@ -47,9 +48,11 @@ utils::globalVariables(c(
   "cluster",
   "collection_date",
   "count",
+  "country_iso3code",
   "date_from",
   "emergence_group",
   "epid",
+  "guid",
   "id",
   "im.loaded",
   "is_char",

@@ -210,8 +210,11 @@ testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batc
   testthat::local_mocked_bindings(
     .polis_fetch_id_page = function(...) {
       n <<- n + 1L
-      if (n == 1L) data.frame(Id = 3:4, PublishDate = rep("2024-06-15", 2)) else
+      if (n == 1L) {
+        data.frame(Id = 3:4, PublishDate = rep("2024-06-15", 2))
+      } else {
         data.frame()
+      }
     },
     .package = "polished"
   )
@@ -304,13 +307,15 @@ testthat::test_that("io dispatch + readers reject unsupported types and missing 
     "needed"
   )
   testthat::expect_error(
-    polished:::.polis_read_inputs(file.path(withr::local_tempdir(), "missing")),
+    polished:::.polis_input_handles(
+      file.path(withr::local_tempdir(), "missing")
+    ),
     "does not exist"
   )
-  # empty dir -> empty list
-  testthat::expect_length(
-    polished:::.polis_read_inputs(withr::local_tempdir()),
-    0L
+  # empty dir -> error (no recognised raw_* tables to clean)
+  testthat::expect_error(
+    polished:::.polis_input_handles(withr::local_tempdir()),
+    "No recognised raw"
   )
 })
 

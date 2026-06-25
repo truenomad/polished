@@ -657,8 +657,9 @@ write_checks_excel <- function(checks, path) {
 }
 
 # Run every applicable dataset's checks and write a checks_<key>.xlsx workbook
-# to `dir`. Returns the basenames written. Degrades to a no-op (with a warning)
-# when the optional openxlsx package is absent, so it never aborts the pipeline.
+# directly into `dir` (the caller resolves the checks sub-directory). Returns the
+# basenames written. Degrades to a no-op (with a warning) when the optional
+# openxlsx package is absent, so it never aborts the pipeline.
 .polis_write_check_workbooks <- function(cleaned, dir, reference_date) {
   if (!requireNamespace("openxlsx", quietly = TRUE)) {
     cli::cli_alert_warning(
@@ -666,6 +667,7 @@ write_checks_excel <- function(checks, path) {
     )
     return(invisible(character(0)))
   }
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   fns <- list(
     afp = checks_afp,
     es = checks_es,
@@ -683,11 +685,6 @@ write_checks_excel <- function(checks, path) {
     path <- file.path(dir, paste0("checks_", key, ".xlsx"))
     write_checks_excel(result, path)
     written <- c(written, basename(path))
-  }
-  if (length(written) > 0L) {
-    cli::cli_alert_success(
-      "Wrote {length(written)} check workbook{?s}: {.val {written}}."
-    )
   }
   invisible(written)
 }

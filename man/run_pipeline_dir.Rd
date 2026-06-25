@@ -4,16 +4,26 @@
 \alias{run_pipeline_dir}
 \title{Run the cleaning pipeline from a directory of raw files}
 \usage{
-run_pipeline_dir(source_dir, output_dir = NULL, cfg = polis_config())
+run_pipeline_dir(
+  source_dir,
+  output_dir = NULL,
+  cfg = polis_active_config(),
+  refresh = FALSE
+)
 }
 \arguments{
 \item{source_dir}{Directory holding the \verb{raw_*} POLIS tables.}
 
-\item{output_dir}{Optional directory to write \verb{polished_*} outputs to. If
-\code{NULL} the output set is only returned.}
+\item{output_dir}{Optional directory to write \verb{polished_*} outputs to;
+overrides \code{cfg$output_dir} when supplied. If both are \code{NULL} the output set
+is only returned.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}); its
-\code{shape} and \code{population} handles drive reconciliation and indicators.}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object; defaults to the session-active config
+(\code{\link[=polis_active_config]{polis_active_config()}}). Its \code{shape} and \code{population} handles drive
+reconciliation and indicators.}
+
+\item{refresh}{If \code{TRUE}, ignore any existing cache and re-run every step from
+scratch, overwriting the cache and output files. Default \code{FALSE}.}
 }
 \value{
 A named list of pipeline outputs (invisibly when writing).
@@ -26,8 +36,10 @@ pipeline, and (optionally) writes the outputs to \code{output_dir} as
 derived outputs (virus, indicators) default to \code{qs2}.
 }
 \details{
-When \code{output_dir} is supplied a data-quality workbook (\verb{checks_<dataset>.xlsx})
-is also written per cleaned dataset via the \verb{checks_*()} functions -- a
-\code{Summary} tab plus one tab of flagged rows per failing check. Requires the
-optional \code{openxlsx} package.
+A thin wrapper over \code{\link[=run_pipeline]{run_pipeline()}} with \code{inputs = source_dir}: the directory
+is read into the input list (each output inheriting its source file's format)
+and writing follows the same rules as \code{\link[=run_pipeline]{run_pipeline()}} -- \verb{polished_*} data in
+the \verb{data/} sub-directory of \code{output_dir} and a \verb{checks_<dataset>.xlsx}
+workbook per dataset in the \verb{checks/} sub-directory. The check workbooks
+require the optional \code{openxlsx} package.
 }

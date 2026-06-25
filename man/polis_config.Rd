@@ -7,13 +7,14 @@
 polis_config(
   start_year = 2020,
   regions = c("AFRO", "AMRO", "EMRO", "EURO", "SEARO", "WPRO"),
-  folders = NULL,
   column_roles = NULL,
-  seed = 1234L,
   synonyms = NULL,
   qa = NULL,
   population = NULL,
   shape = NULL,
+  inputs = NULL,
+  output_dir = NULL,
+  cache_dir = NULL,
   parse_types = TRUE,
   drop_empty_cols = TRUE
 )
@@ -21,20 +22,16 @@ polis_config(
 \arguments{
 \item{start_year}{Earliest onset/collection year to retain (default \code{2020}).}
 
-\item{regions}{Valid WHO region codes used for optional region-scoped output
-folders (default the six WHO regions).}
-
-\item{folders}{Named list of pipeline folder names (not full paths). Override
-individual entries to relocate outputs; unspecified entries keep defaults.}
+\item{regions}{WHO region codes the pipeline is scoped to. Cleaned rows are
+filtered to these regions (on the \code{who_region} column) by \code{\link[=run_pipeline]{run_pipeline()}};
+rows with no region value are kept. The default (all six WHO regions) is a
+no-op that retains every row.}
 
 \item{column_roles}{Ordered named list of regex patterns that classify output
 columns into ordering groups. Columns are emitted group-by-group in this
 order; anything matching no pattern is treated as \code{other} and placed last.
 This is how \code{\link[=order_columns]{order_columns()}} enforces id -> location -> time -> other
 without hardcoding column names.}
-
-\item{seed}{Integer seed for any clustering/sampling step, for reproducible
-runs (default \code{1234}).}
 
 \item{synonyms}{Optional EPID/geoplace synonym table for \code{\link[=remap_synonyms]{remap_synonyms()}}.
 \code{NULL} (default) makes synonym remapping a no-op.}
@@ -52,6 +49,28 @@ cleaner as \verb{shape =} for admin reconciliation (an \code{sf} polygon layer o
 long ADM2 attribute table, or a path to one). \code{NULL} (default) disables
 shape-based admin recovery.}
 
+\item{inputs}{The raw POLIS tables to clean, attached to the config so
+\code{\link[=run_pipeline]{run_pipeline()}} can be called as \code{run_pipeline(cfg = cfg)} with no separate
+\code{inputs} argument. One of: a \strong{directory path} to \verb{raw_*} files; a \strong{named
+list of file paths} (recognised names \code{afp}, \code{es}, \code{hum_spec}, \code{activity},
+\code{subactivity}, \code{lqas}, \code{im}); or a \strong{named list of data frames}. Paths are
+read on demand at run time -- prefer them so the config stays a lightweight,
+serialisable manifest (\code{cfg$inputs$afp} is then the file path).
+\code{NULL} (default) means inputs are passed to \code{\link[=run_pipeline]{run_pipeline()}} directly.}
+
+\item{output_dir}{Optional directory to persist outputs to. When set,
+\code{\link[=run_pipeline]{run_pipeline()}} writes the \verb{polished_*} data files to its \verb{data/}
+sub-directory and a \verb{checks_*} workbook per dataset to its \verb{checks/}
+sub-directory. \code{NULL} (default) returns the cleaned set without writing.}
+
+\item{cache_dir}{Optional directory for the opt-in, content-addressed clean
+cache. When set, \code{\link[=run_pipeline]{run_pipeline()}} caches each cleaned stream (\code{afp}, \code{es},
+\code{hum_spec}, \code{sia}) keyed on a fingerprint of its source file (path + size +
+mtime), the relevant config, and a per-cleaner logic version. On a later run
+with an unchanged source, the cleaned table is read straight from the cache
+-- skipping both the raw read and the clean. Delete the directory (or its
+\verb{clean_*} files) to force a rebuild. \code{NULL} (default) disables caching.}
+
 \item{parse_types}{If \code{TRUE} (default) each cleaner finishes by inferring
 column base types (character -> numeric/integer/date/datetime/logical) via
 \code{\link[=auto_parse_types]{auto_parse_types()}} (no factor conversion). Set \code{FALSE} to keep the raw
@@ -62,7 +81,8 @@ entirely \code{NA} after cleaning. Note this makes the output schema depend on
 the data; set \code{FALSE} for a fixed column set across runs.}
 }
 \value{
-An object of class \code{polis_config} (a named list).
+An object of class \code{polis_config} (a named list). Also registered as
+the session-active config (see \code{\link[=polis_active_config]{polis_active_config()}}).
 }
 \description{
 Creates the settings object shared by the cleaners (\code{\link[=clean_afp]{clean_afp()}},
