@@ -1978,7 +1978,8 @@ polis_country_lookup <- function() {
 #' canonical `Snake_Name` used across cleaned datasets.
 #'
 #' @return A tibble with columns `Table`, `API_Name`, `Snake_Name`, `Web_Name`,
-#'   `Label`.
+#'   `Label`, `note`. Rows with a blank `API_Name` document columns the cleaners
+#'   *derive* (no raw POLIS source); `note` records how each is derived.
 #'
 #' @examples
 #' head(polis_crosswalk())

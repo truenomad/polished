@@ -8,7 +8,8 @@ polis_crosswalk()
 }
 \value{
 A tibble with columns \code{Table}, \code{API_Name}, \code{Snake_Name}, \code{Web_Name},
-\code{Label}.
+\code{Label}, \code{note}. Rows with a blank \code{API_Name} document columns the cleaners
+\emph{derive} (no raw POLIS source); \code{note} records how each is derived.
 }
 \description{
 Returns the packaged crosswalk that maps raw POLIS API column names to the
