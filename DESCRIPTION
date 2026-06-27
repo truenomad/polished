@@ -7,11 +7,13 @@ Authors@R:
            role = c("aut", "cre"),
            email = "mohamedayusuf87@gmail.com",
            comment = c(ORCID = "0000-0002-9339-4613"))
-Description: Downloads data from the WHO POLIS OData API and cleans it
-    for analysis. Handles POLIS's Id-range pagination and year-aligned
-    date filters, supports incremental updates with per-batch
-    checkpointing and parallel year-fetching, and provides per-stream
-    cleaners that produce analysis-ready tables.
+Description: Retrieves and cleans poliovirus surveillance data from the
+    World Health Organization Polio Information System ('POLIS') API.
+    Pulls POLIS tables into a local cache as 'raw_*' files, working around
+    the API's Id-range pagination and year-aligned date filters with
+    checkpointed, parallel, resumable fetching. An end-to-end pipeline then
+    cleans those inputs into analysis-ready 'polished_*' tables, with
+    optional surveillance indicators and data-quality checks.
 License: MIT + file LICENSE
 URL: https://github.com/truenomad/polished, https://truenomad.github.io/polished/
 BugReports: https://github.com/truenomad/polished/issues
