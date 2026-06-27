@@ -1,5 +1,5 @@
 Package: polished
-Title: Streamlined Downloader and Preprocessor for WHO POLIS Data
+Title: Download and Clean WHO POLIS Data
 Version: 0.1.0
 Authors@R:
     person(given = "Mohamed A.",
@@ -7,12 +7,11 @@ Authors@R:
            role = c("aut", "cre"),
            email = "mohamedayusuf87@gmail.com",
            comment = c(ORCID = "0000-0002-9339-4613"))
-Description: One-function interface to the WHO POLIS OData API. Works
-    around POLIS's non-standard pagination (Id-range walks instead of
-    OData '$skip'), year-aligned date filters, and per-endpoint
-    quirks. Supports incremental updates with per-batch checkpointing,
-    parallel year-fetching via a PSOCK cluster, and post-download
-    completeness verification.
+Description: Downloads data from the WHO POLIS OData API and cleans it
+    for analysis. Handles POLIS's Id-range pagination and year-aligned
+    date filters, supports incremental updates with per-batch
+    checkpointing and parallel year-fetching, and provides per-stream
+    cleaners that produce analysis-ready tables.
 License: MIT + file LICENSE
 URL: https://github.com/truenomad/polished, https://truenomad.github.io/polished/
 BugReports: https://github.com/truenomad/polished/issues

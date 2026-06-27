@@ -4,13 +4,14 @@
 \name{polished-package}
 \alias{polished}
 \alias{polished-package}
-\title{polished: streamlined downloader and cleaner for WHO POLIS data}
+\title{polished: download and clean WHO POLIS data}
 \description{
-Provides \code{\link[=get_polis_data]{get_polis_data()}} for incremental, parallel-friendly downloads
-from the POLIS OData API, a set of standalone cleaners
-(\code{\link[=clean_afp]{clean_afp()}}, \code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_sia]{clean_sia()}}, \code{\link[=clean_virus]{clean_virus()}}) wired
-together by \code{\link[=run_pipeline]{run_pipeline()}}, and EPID-driven recovery of missing
-administrative geography via \code{\link[=impute_geo_from_epid]{impute_geo_from_epid()}}.
+Downloads data from the WHO POLIS OData API and cleans it for analysis.
+\code{\link[=get_polis_data]{get_polis_data()}} handles the downloads (incremental, parallel-friendly),
+a set of standalone cleaners (\code{\link[=clean_afp]{clean_afp()}}, \code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_sia]{clean_sia()}},
+\code{\link[=clean_virus]{clean_virus()}}) wired together by \code{\link[=run_pipeline]{run_pipeline()}} produce the cleaned
+tables, and \code{\link[=impute_geo_from_epid]{impute_geo_from_epid()}} recovers missing administrative
+geography from the EPID.
 }
 \section{NAMESPACE imports}{
 
