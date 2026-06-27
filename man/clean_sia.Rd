@@ -10,6 +10,7 @@ clean_sia(
   cfg = polis_active_config(),
   shape = NULL,
   round_gap_days = 21L,
+  reference_date = Sys.Date(),
   cache_dir = NULL,
   cache_key = NULL,
   verbose = TRUE
@@ -36,12 +37,18 @@ its long form here). Default \code{NULL} (no shape-based recovery).}
 the same district and \code{vaccine_type} for them to count as one round; a
 larger gap starts a new round. Default \code{21}.}
 
+\item{reference_date}{Date treated as "today" when sanitising campaign dates:
+any parsed date after it is nulled as a data-entry error (default
+\code{\link[=Sys.Date]{Sys.Date()}}). It is part of the cache key, so a run on a later day does not
+return a stale cached table in which then-future dates are still \code{NA}. Pin
+it for reproducible output.}
+
 \item{cache_dir}{Optional directory for an opt-in, content-addressed cache.
 When set, the cleaned table is written to (and on a later identical call
 read back from) a \code{qs2} file whose name hashes every input that affects the
-output (\code{activity}, \code{subactivity}, \code{cfg}, \code{shape}, \code{round_gap_days}); any
-change to an input recomputes and writes a new entry. Default \code{NULL} (no
-caching).}
+output (\code{activity}, \code{subactivity}, \code{cfg}, \code{shape}, \code{round_gap_days},
+\code{reference_date}); any change to an input recomputes and writes a new entry.
+Default \code{NULL} (no caching).}
 
 \item{cache_key}{Optional cheap stand-in for the raw tables in the cache key
 (e.g. a download snapshot id). When supplied, the key is built from it

@@ -346,16 +346,17 @@
     list(
       # clean_virus() emits no POLIS `id` (positives are constructed from the
       # cleaned case/ES streams), so a duplicate is keyed on the analytic
-      # identity: the same EPID/sample reporting the same virus label on the
-      # same event date.
+      # identity: the same EPID/sample reporting the same virus label
+      # (classification_all, the always-present canonical label) on the same
+      # event date.
       check = "virus_duplicates",
       domain = "Virus",
       severity = "warning",
       description = "Duplicate positives (same EPID + virus label + date)",
-      needs = c("epid", "measurement"),
-      cols = c("measurement", "virus_date"),
+      needs = c("epid", "classification_all"),
+      cols = c("classification_all", "virus_date"),
       fn = function(d, ref) {
-        .polis_dup_rows(d, c("epid", "measurement", "virus_date"))
+        .polis_dup_rows(d, c("epid", "classification_all", "virus_date"))
       }
     ),
     list(

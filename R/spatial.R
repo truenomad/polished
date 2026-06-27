@@ -1164,15 +1164,14 @@ impute_geo_from_coords <- function(
   )
   coord_filled <- logical(nrow(data))
   for (col in chain_cols) {
+    # Write the resolved shape values as-is, including GUIDs in the shape's
+    # native form -- the same thing get_admin_info_from_coords() does. The
+    # earlier canonical-case transform here emitted GUIDs in a different form
+    # from that sibling and from the data's own GUIDs, so imputing into a
+    # display-form column left a non-joinable mix of "{ABC}" and "abc". Cleaners
+    # normalise every GUID to the output form once, at the end, via
+    # .geo_guid_display_cols().
     vals <- resolved[[col]]
-    if (stringr::str_detect(col, "_guid$")) {
-      # Write the package's GUID output form ({UPPER}), the same form
-      # get_admin_info_from_coords() and the cleaners' final
-      # .geo_guid_display_cols() emit. Using the lower-case, brace-free canonical
-      # form here would leave a column mixing "{ABC}" and "abc" that fails an
-      # exact-string join when imputing into already display-form data.
-      vals <- .geo_guid_display(vals)
-    }
     cur <- data[[col]][crow]
     take <- (adm2_was_na | is.na(cur)) & !is.na(vals)
     data[[col]][crow[take]] <- vals[take]

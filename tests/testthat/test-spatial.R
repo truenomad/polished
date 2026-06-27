@@ -324,7 +324,10 @@ testthat::test_that("impute_geo_from_coords fills missing admin, stamps source, 
   )
   out <- polished::impute_geo_from_coords(cases, shp, verbose = TRUE)
   testthat::expect_identical(out$adm2[1], "WEST")
-  testthat::expect_identical(out$adm2_guid[1], "a2w") # GUIDs canonicalised
+  # imputed GUIDs are written in the shape's native form (here "{A2W}"), the
+  # same as get_admin_info_from_coords() -- not re-cased -- so they stay
+  # consistent with the data's existing GUIDs ("{A0}") and the shape.
+  testthat::expect_identical(out$adm2_guid[1], "{A2W}")
   testthat::expect_identical(out$geo_source[1], "coord_match")
   testthat::expect_true(is.na(out$adm2[2]))
   testthat::expect_identical(out$geo_source[2], "unresolved")

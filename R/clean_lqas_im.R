@@ -28,6 +28,10 @@
 
 utils::globalVariables(c(
   ".district",
+  ".name_key",
+  ".group_guid",
+  ".row_guid",
+  ".use_guid",
   "adm0",
   "adm1",
   "adm2",
@@ -651,7 +655,7 @@ process_im <- function(
 #' Missed-children fraction for one group from its reconciled totals:
 #' `1 - total_marked / total_checked`, falling back to `mean(result)` when no
 #' children were checked. `total_checked` / `total_marked` are summed over the
-#' same both-present records (see [.im_both()]), so the fraction is consistent
+#' same both-present records (see `.im_both()`), so the fraction is consistent
 #' with the published totals and the denominator is never zero while the
 #' numerator is positive. A non-finite result (`NaN`/`Inf`, e.g. an empty group)
 #' collapses to `NA`.
