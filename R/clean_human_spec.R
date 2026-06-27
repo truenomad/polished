@@ -52,8 +52,10 @@
 #' violations are flagged to QA, never dropped.
 #'
 #' @param data A raw POLIS lab-specimen data frame.
-#' @param cfg A [polis_config()] object (default `polis_config()`). Supply
-#'   `cfg$qa` to route ambiguity flags.
+#' @param cfg A [polis_config()] object. Defaults to [polis_active_config()] --
+#'   the config most recently built by [polis_config()] this session -- so a
+#'   no-`cfg` call inherits the active session settings rather than fresh
+#'   defaults. Supply `cfg$qa` to route ambiguity flags.
 #' @param shape Optional district shape used to reconcile admin names/GUIDs via
 #'   [reconcile_admin_guids()] (keyed on `year_collection`), exactly as
 #'   [clean_afp()] uses it -- a long ADM2 attribute table or the polygon layer

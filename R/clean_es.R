@@ -51,8 +51,10 @@
 #' detections, so this key is not collapsed.)
 #'
 #' @param data A raw POLIS environmental-samples data frame.
-#' @param cfg A [polis_config()] object (default `polis_config()`). Supply
-#'   `cfg$qa` to route ambiguity flags.
+#' @param cfg A [polis_config()] object. Defaults to [polis_active_config()] --
+#'   the config most recently built by [polis_config()] this session -- so a
+#'   no-`cfg` call inherits the active session settings rather than fresh
+#'   defaults. Supply `cfg$qa` to route ambiguity flags.
 #' @param shape Optional district shape used to reconcile admin names/GUIDs via
 #'   [reconcile_admin_guids()] (keyed on `year_collection`), exactly as
 #'   [clean_afp()] uses it. Either a long ADM2 attribute table
@@ -485,7 +487,14 @@ clean_es_classification <- function(data) {
   # move the kind prefix off the wild stem onto the VDPV component of a
   # co-detection (cWPV1andVDPV 2 -> WPV1andcVDPV 2), for any wild serotype
   vtype <- stringr::str_replace(vtype, "^([cai])(WPV.*?and)(VDPV)", "\\2\\1\\3")
-  vtype <- dplyr::if_else(vtype == "cVDPV2andVDPV3", "cVDPV2andcVDPV3", vtype)
+  # a VDPV + VDPV co-detection only carries the kind prefix on its first
+  # serotype; copy it onto the second so splitting keeps both kinds typed
+  # (cVDPV1andVDPV2 -> cVDPV1andcVDPV2), for any kind (c/a/i) and serotype pair.
+  vtype <- stringr::str_replace(
+    vtype,
+    "^([cai])(VDPV[0-9]+and)(VDPV[0-9]+)$",
+    "\\1\\2\\1\\3"
+  )
   data$vtype <- vtype
 
   # ---- per-serotype Sabin flags (exactly as clean_afp) ---------------------

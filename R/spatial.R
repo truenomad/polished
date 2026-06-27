@@ -992,11 +992,15 @@ get_admin_info_from_coords <- function(
         adm2_guid
       )
     ) |>
-    # drop points matching >1 distinct district before discarding NA-guid matches
+    # Discard NA-guid matches FIRST, then drop genuinely ambiguous points. An
+    # NA-guid match is not a district; because n_distinct() counts NA as its own
+    # value, testing ambiguity before removing NAs would treat one real match
+    # plus one NA match as two distinct districts and wrongly drop a resolvable
+    # point.
+    dplyr::filter(!is.na(adm2_guid)) |>
     dplyr::group_by(dplyr::across(dplyr::all_of(".point_id"))) |>
     dplyr::filter(dplyr::n_distinct(.geo_guid_key(adm2_guid)) == 1L) |>
     dplyr::ungroup() |>
-    dplyr::filter(!is.na(adm2_guid)) |>
     dplyr::distinct(
       dplyr::across(dplyr::all_of(".point_id")),
       .keep_all = TRUE
@@ -1162,7 +1166,12 @@ impute_geo_from_coords <- function(
   for (col in chain_cols) {
     vals <- resolved[[col]]
     if (stringr::str_detect(col, "_guid$")) {
-      vals <- .geo_guid_canon(vals)
+      # Write the package's GUID output form ({UPPER}), the same form
+      # get_admin_info_from_coords() and the cleaners' final
+      # .geo_guid_display_cols() emit. Using the lower-case, brace-free canonical
+      # form here would leave a column mixing "{ABC}" and "abc" that fails an
+      # exact-string join when imputing into already display-form data.
+      vals <- .geo_guid_display(vals)
     }
     cur <- data[[col]][crow]
     take <- (adm2_was_na | is.na(cur)) & !is.na(vals)
@@ -2175,8 +2184,11 @@ impute_geo_from_epid <- function(
     if (is.null(names(guid_vars)) || length(bad_levels) > 0L) {
       cli::cli_abort(c(
         "{.arg guid_vars} must be named with {.val adm0}/{.val adm1}/{.val adm2}.",
-        "x" = if (length(bad_levels) > 0L)
-          "Bad name{?s}: {.val {bad_levels}}." else NULL
+        "x" = if (length(bad_levels) > 0L) {
+          "Bad name{?s}: {.val {bad_levels}}."
+        } else {
+          NULL
+        }
       ))
     }
   }
@@ -2933,12 +2945,17 @@ impute_missing_coords <- function(
         poly,
         of_largest_polygon = TRUE
       ))
-      # buffer is in metres: project longlat first, then sample back to shape CRS
-      longlat <- !is.na(sf::st_crs(poly)) && sf::st_is_longlat(poly)
-      cent_m <- if (longlat) sf::st_transform(centroid, 6933) else centroid
+      # the buffer radius is in metres: whenever the shape has a known CRS,
+      # project the centroid to an equal-area metric CRS (EPSG:6933) before
+      # buffering so fallback_buffer is honoured as metres regardless of the
+      # source CRS. Buffering directly in a projected CRS with non-metre (or
+      # latitude-distorted) units would size the sampling region wrongly. Sample
+      # there, then map back to the shape CRS.
+      has_crs <- !is.na(sf::st_crs(poly))
+      cent_m <- if (has_crs) sf::st_transform(centroid, 6933) else centroid
       buffered <- sf::st_buffer(cent_m, dist = fallback_buffer)
       samp <- suppressWarnings(suppressMessages(sf::st_sample(buffered, n)))
-      pts <- if (longlat) sf::st_transform(samp, sf::st_crs(shp)) else samp
+      pts <- if (has_crs) sf::st_transform(samp, sf::st_crs(shp)) else samp
     }
     coords <- sf::st_coordinates(sf::st_transform(
       sf::st_sfc(

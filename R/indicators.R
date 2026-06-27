@@ -444,64 +444,84 @@ calc_polio_indicators <- function(
   skip <- function(code, reason) {
     skipped[[length(skipped) + 1]] <<- list(code = code, reason = reason)
   }
-  for (ind in indicators) {
-    spec <- registry[[ind]]
+
+  # The level / source / column / population / admin gates a spec must clear on
+  # its own. Returns NULL when the spec is admissible on these grounds, else the
+  # skip reason. Deliberately does NOT check a derived spec's `requires_ind`:
+  # that depends on which *other* indicators actually ran, resolved below.
+  admit_reason <- function(spec) {
     if (length(intersect(levels, spec$levels)) == 0) {
-      skip(
-        ind,
-        paste0("not reported at level(s) ", paste(levels, collapse = "/"))
-      )
-      next
+      return(paste0("not reported at level(s) ", paste(levels, collapse = "/")))
     }
-    if (spec$source == "derived") {
-      if (!all(spec$requires_ind %in% indicators)) {
-        skip(
-          ind,
-          paste0(
-            "needs indicator(s) ",
-            paste(spec$requires_ind, collapse = ", ")
-          )
-        )
-        next
+    if (spec$source != "derived") {
+      src <- std[[spec$source]]
+      if (is.null(src)) {
+        return(paste0("no {", spec$source, "} table supplied"))
       }
-      if (isTRUE(spec$requires_pop) && is.null(cfg$pop)) {
-        skip(ind, "no population supplied")
-        next
-      }
-      if (isTRUE(spec$requires_admin) && is.null(cfg$admin_units)) {
-        skip(ind, "no admin_units universe supplied")
-        next
-      }
-      run <- c(run, ind)
-      next
-    }
-    src <- std[[spec$source]]
-    if (is.null(src)) {
-      skip(ind, paste0("no {", spec$source, "} table supplied"))
-      next
-    }
-    miss <- setdiff(spec$requires, names(src))
-    if (length(miss) > 0) {
-      skip(
-        ind,
-        paste0(
+      miss <- setdiff(spec$requires, names(src))
+      if (length(miss) > 0) {
+        return(paste0(
           spec$source,
           " missing column(s): ",
           paste(miss, collapse = ", ")
-        )
-      )
-      next
+        ))
+      }
     }
     if (isTRUE(spec$requires_pop) && is.null(cfg$pop)) {
-      skip(ind, "no population supplied")
-      next
+      return("no population supplied")
     }
     if (isTRUE(spec$requires_admin) && is.null(cfg$admin_units)) {
-      skip(ind, "no admin_units universe supplied")
-      next
+      return("no admin_units universe supplied")
     }
-    run <- c(run, ind)
+    NULL
   }
+
+  is_derived <- vapply(
+    indicators,
+    function(ind) identical(registry[[ind]]$source, "derived"),
+    logical(1)
+  )
+
+  # Pass 1: every non-derived indicator, judged on its own gates.
+  for (ind in indicators[!is_derived]) {
+    reason <- admit_reason(registry[[ind]])
+    if (is.null(reason)) run <- c(run, ind) else skip(ind, reason)
+  }
+
+  # Pass 2: derived indicators, admitted only once every indicator they depend
+  # on has actually been admitted to `run` -- not merely requested. Iterate to a
+  # fixpoint so a derived indicator may itself depend on another derived one.
+  pending <- indicators[is_derived]
+  repeat {
+    progressed <- FALSE
+    still <- character(0)
+    for (ind in pending) {
+      reason <- admit_reason(registry[[ind]])
+      if (!is.null(reason)) {
+        skip(ind, reason)
+      } else if (all(registry[[ind]]$requires_ind %in% run)) {
+        run <- c(run, ind)
+        progressed <- TRUE
+      } else {
+        still <- c(still, ind)
+      }
+    }
+    pending <- still
+    if (!progressed) {
+      break
+    }
+  }
+  # Whatever is still pending depends on an indicator that did not run.
+  for (ind in pending) {
+    skip(
+      ind,
+      paste0(
+        "needs indicator(s) ",
+        paste(registry[[ind]]$requires_ind, collapse = ", ")
+      )
+    )
+  }
+
   list(run = run, skipped = skipped)
 }
 
@@ -858,6 +878,10 @@ calc_polio_indicators <- function(
 .std_virus <- function(df, m) {
   out <- .polio_admin_frame(df, m)
   out$year <- .as_int(df[[m$year]])
+  # default the reporting year to the event year so a positive with a missing
+  # report date is still counted on the reporting basis (mirrors .std_es); the
+  # report-date override below only refines it when a parseable date exists.
+  out$report_year <- out$year
   out$class <- .as_upper(df[[m$class]])
   out <- .polio_add(
     out,
@@ -867,7 +891,8 @@ calc_polio_indicators <- function(
     function(x) trimws(as.character(x))
   )
   if (!is.null(m$report_date) && m$report_date %in% names(df)) {
-    out$report_year <- .as_int(format(.as_date(df[[m$report_date]]), "%Y"))
+    report_year <- .as_int(format(.as_date(df[[m$report_date]]), "%Y"))
+    out$report_year <- dplyr::coalesce(report_year, out$year)
   }
   out$is_wpv <- grepl("^WPV", out$class)
   out$is_cvdpv <- grepl("CVDPV", out$class)
@@ -1539,9 +1564,16 @@ calc_polio_indicators <- function(
 #' @noRd
 .afp_dose_total <- function(mat) {
   mat <- as.matrix(mat)
+  n_col <- ncol(mat)
   total <- rowSums(mat * (mat < 99), na.rm = TRUE)
-  total[rowSums(mat == 99, na.rm = TRUE) == ncol(mat)] <- 999
-  total[rowSums(is.na(mat)) == ncol(mat)] <- NA_real_
+  n_na <- rowSums(is.na(mat))
+  n_unknown <- rowSums(mat == 99, na.rm = TRUE)
+  # a row with no assessable dose -- every component either missing or coded 99
+  # (unknown) -- is unknown, not zero-dose. all-NA stays NA; any other
+  # NA/99-only mix (e.g. one 99 and the rest NA) becomes 999, so it is never
+  # miscounted as a genuine zero-dose case.
+  total[n_unknown + n_na == n_col & n_na < n_col] <- 999
+  total[n_na == n_col] <- NA_real_
   total
 }
 
@@ -1555,7 +1587,32 @@ calc_polio_indicators <- function(
   nv <- switch(level, adm0 = "n0", adm1 = "n1", adm2 = "n2")
   std |>
     dplyr::mutate(guid = .data[[gv]], name = .data[[nv]]) |>
-    dplyr::filter(!is.na(guid))
+    dplyr::filter(!is.na(guid)) |>
+    # Collapse `name` to one canonical value per GUID. The GUID is the true admin
+    # identity; the name is descriptive and can vary in spelling/case (or be NA)
+    # across rows of the same unit. Without this, every downstream
+    # group_by(guid, name) would split one admin-year into several partial rows,
+    # fragmenting numerators and denominators.
+    dplyr::group_by(guid) |>
+    dplyr::mutate(name = .polio_consensus_name(name)) |>
+    dplyr::ungroup()
+}
+
+#' The single representative name for a GUID: the most frequent non-blank value.
+#'
+#' Returns a vector the same length as `name`, every element set to the modal
+#' non-blank name (ties broken by first appearance). When every value is blank
+#' the input is returned unchanged, so an all-missing GUID keeps its `NA` name.
+#' @keywords internal
+#' @noRd
+.polio_consensus_name <- function(name) {
+  valid <- name[!is.na(name) & nzchar(trimws(name))]
+  if (length(valid) == 0L) {
+    return(name)
+  }
+  counts <- table(valid)
+  modal <- names(counts)[which.max(counts)]
+  rep(modal, length(name))
 }
 
 #' Annualisation factor reproducing `ufn_AnnualizeIndicatorValues`.
@@ -2340,7 +2397,9 @@ calc_polio_indicators <- function(
       target = 80,
       warn = 60,
       unit = "%",
-      polis_fn = "ufn_Indicator_ST_NOTIF_INVEST"
+      polis_fn = "ufn_Indicator_ST_NOTIF_INVEST",
+      # the "timely detection" member of the documented core KPI set
+      core = TRUE
     )
   )
   bands_2_10 <- list(

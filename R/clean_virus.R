@@ -38,7 +38,10 @@
 #'   poliovirus-positive rows become the human positives.
 #' @param es Optional cleaned ES table (from [clean_es()]). Its
 #'   poliovirus-positive rows become the environmental positives.
-#' @param cfg A [polis_config()] object (default `polis_config()`).
+#' @param cfg A [polis_config()] object. Defaults to [polis_active_config()] --
+#'   the config most recently built by [polis_config()] this session -- so a
+#'   no-`cfg` call inherits the active session settings rather than fresh
+#'   defaults.
 #' @param nopv_emergence Optional reference of novel-OPV2 (nOPV2) emergence-group
 #'   names: a character vector, or a data frame with an `emergence_group` column.
 #'   When supplied, records whose `emergence_group` matches are flagged `nopv2`.
@@ -239,8 +242,14 @@ clean_virus <- function(
 
 #' Derive the positives reporting date
 #'
-#' VDPV records report on the VDPV classification-change date; WPV records on the
-#' notification date. NA-safe: a missing source date simply yields `NA`.
+#' WPV records (including a wild + VDPV co-detection, which carries a wild
+#' component) report on the notification date; pure VDPV records report on the
+#' VDPV classification-change date. WPV is tested first so an unsplit co-detection
+#' label such as `WPV1andcVDPV 2` -- which also contains "VDPV" -- is anchored on
+#' the wild notification date rather than the VDPV date. Each branch falls back to
+#' the other date when its preferred source is missing, so a present date is
+#' never discarded for an `NA`. NA-safe: with neither date present the result is
+#' `NA`.
 #' @noRd
 .virus_add_report_date <- function(data) {
   if (!"measurement" %in% names(data)) {
@@ -257,8 +266,10 @@ clean_virus <- function(
     rep(lubridate::NA_Date_, nrow(data))
   }
   data$report_date <- dplyr::case_when(
-    stringr::str_detect(data$measurement, "VDPV") ~ vdpv_date,
-    stringr::str_detect(data$measurement, "WPV") ~ notify_date,
+    stringr::str_detect(data$measurement, "WPV") ~
+      dplyr::coalesce(notify_date, vdpv_date),
+    stringr::str_detect(data$measurement, "VDPV") ~
+      dplyr::coalesce(vdpv_date, notify_date),
     TRUE ~ lubridate::NA_Date_
   )
   data

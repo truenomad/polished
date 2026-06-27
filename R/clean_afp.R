@@ -39,14 +39,20 @@
 #' }
 #' The raw POLIS `classification`, `polio_virus_types`, `vdpv_classifications`,
 #' `adequate_stool` and `paralysis_hot_case` fields are kept as-is alongside the
-#' derived columns. Records sharing the business key `epid` + `adm0` (the same
-#' case re-entered under a new POLIS Id) are collapsed to the latest by
-#' `last_update_date`; a tripwire then flags any key still spanning multiple Ids
-#' to QA, never dropping it.
+#' derived columns. Records sharing the business key
+#' `epid` + `paralysis_onset_date` + `adm0` (the same case re-entered under a new
+#' POLIS Id) are collapsed to the latest by `last_update_date`; cases that share
+#' an EPID and country but differ in onset date are treated as distinct and kept.
+#' A tripwire then flags any `epid` + `adm0` still spanning multiple Ids to QA,
+#' never dropping it -- so a genuine reclassification or a same-EPID onset
+#' conflict surfaces for review rather than vanishing.
 #'
 #' @param data A raw POLIS case data frame.
-#' @param cfg A [polis_config()] object (default `polis_config()`). Supply
-#'   `cfg$synonyms` to remap merged EPIDs and `cfg$qa` to route ambiguity flags.
+#' @param cfg A [polis_config()] object. Defaults to [polis_active_config()] --
+#'   the config most recently built by [polis_config()] this session -- so a
+#'   no-`cfg` call inherits the active session settings rather than fresh
+#'   defaults. Supply `cfg$synonyms` to remap merged EPIDs and `cfg$qa` to route
+#'   ambiguity flags.
 #' @param shape Optional district shape that drives admin recovery. Either form
 #'   works and a single input does everything:
 #'   \itemize{
@@ -67,7 +73,8 @@
 #' @param verbose Emit cli progress messages for each phase. Default `TRUE`.
 #'
 #' @return A tibble of cleaned AFP records, one row per POLIS `id` (and at most
-#'   one per `epid` + `adm0` business key after the duplicate collapse), with
+#'   one per `epid` + `paralysis_onset_date` + `adm0` business key after the
+#'   duplicate collapse), with
 #'   columns ordered id -> location -> time -> other. The canonical and derived
 #'   columns
 #'   (`year_onset`, `month_onset`, `age_months`, the `*_to_*` intervals,
@@ -202,14 +209,20 @@ clean_afp <- function(
   step("Deduplicating by id and finalising", "Deduplicated by id and finalised")
   out <- data |>
     polis_upsert(id = "id", date = "last_update_date") |>
+    # an AFP case is identified by epid + onset date + country: same EPID and
+    # country but different onset dates are distinct cases, so onset is part of
+    # the collapse key and they are kept rather than dropped.
     collapse_business_key(
-      key = c("epid", "adm0"),
+      key = c("epid", "paralysis_onset_date", "adm0"),
       date = "last_update_date",
       verbose = verbose
     ) |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
     .geo_guid_display_cols() |>
+    # tripwire on the coarser epid + adm0: surfaces (never drops) any EPID that
+    # still spans multiple Ids in a country -- e.g. the distinct-onset cases the
+    # collapse above deliberately kept -- for analyst review.
     flag_ambiguous(key = c("epid", "adm0"), sink = cfg$qa) |>
     order_columns(cfg$column_roles)
   if (isTRUE(verbose)) {

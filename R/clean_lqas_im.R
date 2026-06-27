@@ -348,24 +348,50 @@ process_lqas <- function(
   data
 }
 
-#' Per-district key: GUID when present (so name spelling variants don't split a
-#' district), else the admin-name composite (so GUID-less districts don't merge).
+#' Add the per-district roll-up key (`.district`).
+#'
+#' A district is identified by its `adm2_guid`. The GUID can be present on some
+#' records of a district and missing on others; resolving it row-by-row would
+#' split one physical district into a GUID group and a name group. Instead the
+#' key is resolved per physical district (same `adm0`/`adm1`/`adm2` composite):
+#' every record adopts the group's GUID when the group has exactly one, so
+#' GUID-less records are not split off. When a group carries no GUID it falls
+#' back to the name composite (joined with a separator so distinct districts
+#' whose concatenated names would otherwise collide stay separate); when a group
+#' carries several distinct GUIDs each record keeps its own, so genuinely
+#' different districts are never merged.
 #' @noRd
-.lqasim_district_key <- function(adm2_guid, adm0, adm1, adm2) {
-  dplyr::if_else(
-    !is.na(adm2_guid) & adm2_guid != "",
-    adm2_guid,
-    paste(adm0, adm1, adm2, sep = "")
-  )
+.lqasim_add_district_key <- function(data) {
+  data |>
+    dplyr::mutate(.name_key = paste(adm0, adm1, adm2, sep = "\r")) |>
+    dplyr::group_by(.name_key) |>
+    dplyr::mutate(
+      .group_guid = .lqasim_consensus_guid(adm2_guid),
+      .row_guid = dplyr::if_else(
+        !is.na(adm2_guid) & adm2_guid != "",
+        adm2_guid,
+        NA_character_
+      ),
+      .use_guid = dplyr::coalesce(.group_guid, .row_guid),
+      .district = dplyr::if_else(!is.na(.use_guid), .use_guid, .name_key)
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(-.name_key, -.group_guid, -.row_guid, -.use_guid)
+}
+
+#' The single GUID shared by a name-composite group, or `NA` when the group has
+#' zero or several distinct GUIDs (so distinct districts are never merged).
+#' @noRd
+.lqasim_consensus_guid <- function(guid) {
+  valid <- unique(guid[!is.na(guid) & guid != ""])
+  if (length(valid) == 1L) valid else NA_character_
 }
 
 #' Roll the cleaned lots up to a per-district-year pass-rate table.
 #' @noRd
 .lqas_rollup <- function(lots) {
   lots |>
-    dplyr::mutate(
-      .district = .lqasim_district_key(adm2_guid, adm0, adm1, adm2)
-    ) |>
+    .lqasim_add_district_key() |>
     dplyr::group_by(.district, year) |>
     dplyr::summarise(
       adm2_guid = dplyr::first(adm2_guid),
@@ -408,13 +434,20 @@ process_lqas <- function(
 #' Derived LQAS classifier (transparent stand-in for REF_LQASThresholds).
 #' @noRd
 .lqas_classify <- function(coverage, invalid, pass_threshold, warn_threshold) {
-  # hoist the scalar NULL guard out of the vectorised case_when
-  has_warn <- !is.null(warn_threshold)
+  # Build the Intermediate-band mask up front. `&` is not short-circuiting, so a
+  # NULL warn_threshold (band disabled) must not reach `coverage >= NULL`, which
+  # is length-0 and would make case_when abort on a length mismatch. With the
+  # band disabled the mask is an all-FALSE vector of the right length.
+  warn_hit <- if (is.null(warn_threshold)) {
+    rep(FALSE, length(coverage))
+  } else {
+    !is.na(coverage) & coverage >= warn_threshold
+  }
   dplyr::case_when(
     invalid ~ "INVALID",
     is.na(coverage) ~ NA_character_,
     coverage >= pass_threshold ~ "Pass",
-    has_warn & coverage >= warn_threshold ~ "Intermediate",
+    warn_hit ~ "Intermediate",
     TRUE ~ "Fail"
   )
 }
@@ -574,21 +607,30 @@ process_im <- function(
   )
 
   std |>
-    dplyr::mutate(
-      .district = .lqasim_district_key(adm2_guid, adm0, adm1, adm2)
-    ) |>
+    .lqasim_add_district_key() |>
     dplyr::group_by(.district, year) |>
     dplyr::summarise(
       adm2_guid = dplyr::first(adm2_guid),
       adm0 = dplyr::first(adm0),
       adm1 = dplyr::first(adm1),
       adm2 = dplyr::first(adm2),
-      n_checked_inhouse = sum(checked_in, na.rm = TRUE),
-      n_marked_inhouse = sum(marked_in, na.rm = TRUE),
-      missed_frac_inhouse = .im_missed(checked_in, marked_in, result_in),
-      n_checked_outhouse = sum(checked_out, na.rm = TRUE),
-      n_marked_outhouse = sum(marked_out, na.rm = TRUE),
-      missed_frac_outhouse = .im_missed(checked_out, marked_out, result_out),
+      # totals are summed only over records carrying BOTH a checked and a marked
+      # count, so the published n_checked / n_marked reconcile exactly with the
+      # pooled missed_frac (1 - n_marked / n_checked) derived from them.
+      n_checked_inhouse = sum(checked_in[.im_both(checked_in, marked_in)]),
+      n_marked_inhouse = sum(marked_in[.im_both(checked_in, marked_in)]),
+      missed_frac_inhouse = .im_missed(
+        n_checked_inhouse,
+        n_marked_inhouse,
+        result_in
+      ),
+      n_checked_outhouse = sum(checked_out[.im_both(checked_out, marked_out)]),
+      n_marked_outhouse = sum(marked_out[.im_both(checked_out, marked_out)]),
+      missed_frac_outhouse = .im_missed(
+        n_checked_outhouse,
+        n_marked_outhouse,
+        result_out
+      ),
       .groups = "drop"
     ) |>
     dplyr::select(-.district) |>
@@ -599,18 +641,28 @@ process_im <- function(
     dplyr::arrange(adm0, adm1, adm2, year)
 }
 
-#' Missed-children fraction for one group: `1 - sum(marked)/sum(checked)`,
-#' falling back to `mean(result)` when no children were checked; `NaN` -> `NA`.
+#' Records carrying both a checked and a marked count (the assessable basis for
+#' the missed-children fraction and its reconciling totals).
 #' @noRd
-.im_missed <- function(checked, marked, result) {
-  total_checked <- sum(checked, na.rm = TRUE)
+.im_both <- function(checked, marked) {
+  !is.na(checked) & !is.na(marked)
+}
+
+#' Missed-children fraction for one group from its reconciled totals:
+#' `1 - total_marked / total_checked`, falling back to `mean(result)` when no
+#' children were checked. `total_checked` / `total_marked` are summed over the
+#' same both-present records (see [.im_both()]), so the fraction is consistent
+#' with the published totals and the denominator is never zero while the
+#' numerator is positive. A non-finite result (`NaN`/`Inf`, e.g. an empty group)
+#' collapses to `NA`.
+#' @noRd
+.im_missed <- function(total_checked, total_marked, result) {
   out <- if (total_checked == 0) {
     mean(result, na.rm = TRUE)
   } else {
-    both <- !is.na(checked) & !is.na(marked)
-    1 - sum(marked[both]) / sum(checked[both])
+    1 - total_marked / total_checked
   }
-  dplyr::if_else(is.nan(out), NA_real_, out)
+  dplyr::if_else(is.nan(out) | is.infinite(out), NA_real_, out)
 }
 
 #' Valid/Invalid IM status from a missed-children fraction.

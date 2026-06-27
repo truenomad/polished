@@ -412,7 +412,9 @@ get_polis_data <- function(
       # Sequential: drive a single live progress bar across years.
       n_new <- "0"
       n_cum <- .polis_pretty_num(current_rows)
-      pb_tot <- if (is.na(declared_total)) "?" else {
+      pb_tot <- if (is.na(declared_total)) {
+        "?"
+      } else {
         .polis_pretty_num(declared_total)
       }
       pb_cur <- n_cum
