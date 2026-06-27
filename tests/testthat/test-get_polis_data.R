@@ -400,7 +400,9 @@ testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
         msg,
         ignore.case = TRUE
       )
-      if (transient) testthat::skip(paste("POLIS unreachable:", msg))
+      if (transient) {
+        testthat::skip(paste("POLIS unreachable:", msg))
+      }
       stop(e)
     }
   )
@@ -560,8 +562,11 @@ testthat::test_that("get_polis_data verification passes cleanly when nothing is 
     .polis_get_count = function(...) 3,
     .polis_fetch_id_page = function(...) {
       n <<- n + 1L
-      if (n == 1L) data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3)) else
+      if (n == 1L) {
+        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+      } else {
         data.frame()
+      }
     },
     .polis_fetch_id_list = function(...) 1:3,
     .package = "polished"
@@ -584,8 +589,11 @@ testthat::test_that("get_polis_data warns and skips when the verification id-lis
     .polis_get_count = function(...) 3,
     .polis_fetch_id_page = function(...) {
       n <<- n + 1L
-      if (n == 1L) data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3)) else
+      if (n == 1L) {
+        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+      } else {
         data.frame()
+      }
     },
     .polis_fetch_id_list = function(...) stop("list boom"),
     .package = "polished"
@@ -607,9 +615,11 @@ testthat::test_that("get_polis_data warns when refetch fails, and when ids are s
       n <- 0L
       function(...) {
         n <<- n + 1L
-        if (n == 1L)
-          data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3)) else
+        if (n == 1L) {
+          data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+        } else {
           data.frame()
+        }
       }
     }
   })
@@ -637,8 +647,9 @@ testthat::test_that("get_polis_data warns when refetch fails, and when ids are s
     .polis_get_count = function(...) 3,
     .polis_fetch_id_page = fetch_three(),
     .polis_fetch_id_list = function(...) 1:5,
-    .polis_refetch_missing = function(...)
-      data.frame(Id = 4, PublishDate = "2024-06-15"),
+    .polis_refetch_missing = function(...) {
+      data.frame(Id = 4, PublishDate = "2024-06-15")
+    },
     .package = "polished"
   )
   testthat::expect_null(polished::get_polis_data(
