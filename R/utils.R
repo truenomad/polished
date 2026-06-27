@@ -1187,8 +1187,8 @@
     ))
   }
 
-  parallel_sendCall <- utils::getFromNamespace("sendCall", "parallel")
-  parallel_recvOneResult <- utils::getFromNamespace(
+  parallel_send_call <- utils::getFromNamespace("sendCall", "parallel")
+  parallel_recv_one_result <- utils::getFromNamespace(
     "recvOneResult",
     "parallel"
   )
@@ -1375,7 +1375,7 @@
       }
       idx <- remaining[1L]
       remaining <- remaining[-1L]
-      parallel_sendCall(
+      parallel_send_call(
         cl[[n]],
         worker_wrapper,
         list(specs[[idx]]),
@@ -1395,7 +1395,7 @@
     )
 
     if (any(ready)) {
-      result <- parallel_recvOneResult(cl)
+      result <- parallel_recv_one_result(cl)
       idx <- result$tag
       all_results[[idx]] <- result$value
       completed <- completed + 1L
