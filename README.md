@@ -10,9 +10,11 @@
 
 <!-- badges: end -->
 
-`polished` does two things: it downloads data from the WHO POLIS OData API, and
-it cleans that data for analysis. The downloader writes each table as `raw_*`;
-the pipeline reads those `raw_*` inputs and writes cleaned `polished_*` outputs.
+`polished` retrieves and cleans poliovirus surveillance data from the WHO Polio
+Information System (POLIS). The downloader writes each table to a local cache as
+`raw_*`; an end-to-end pipeline then reads those `raw_*` inputs and writes
+cleaned, analysis-ready `polished_*` tables, with optional surveillance
+indicators and data-quality checks.
 
 ## Installation
 
