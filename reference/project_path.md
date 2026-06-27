@@ -34,5 +34,5 @@ A single file path string.
 ``` r
 proj <- init_polis_project(file.path(tempdir(), "polis_demo"), quiet = TRUE)
 project_path(proj, "processed", "sia")
-#> [1] "/tmp/Rtmp4m0KaX/polis_demo/processed/sia"
+#> [1] "/tmp/RtmpO2VCRc/polis_demo/processed/sia"
 ```
