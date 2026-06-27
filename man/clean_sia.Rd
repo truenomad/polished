@@ -22,7 +22,10 @@ clean_sia(
 is the grain of the output and \code{activity} is joined onto it; when \code{NULL} the
 activity table is cleaned on its own.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object. Defaults to \code{\link[=polis_active_config]{polis_active_config()}} --
+the config most recently built by \code{\link[=polis_config]{polis_config()}} this session -- so a
+no-\code{cfg} call inherits the active session settings rather than fresh
+defaults.}
 
 \item{shape}{Optional district shape used to reconcile admin names/GUIDs via
 \code{\link[=reconcile_admin_guids]{reconcile_admin_guids()}} (keyed on \code{year_start}), exactly as \code{\link[=clean_es]{clean_es()}}

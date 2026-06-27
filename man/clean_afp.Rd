@@ -15,8 +15,11 @@ clean_afp(
 \arguments{
 \item{data}{A raw POLIS case data frame.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}). Supply
-\code{cfg$synonyms} to remap merged EPIDs and \code{cfg$qa} to route ambiguity flags.}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object. Defaults to \code{\link[=polis_active_config]{polis_active_config()}} --
+the config most recently built by \code{\link[=polis_config]{polis_config()}} this session -- so a
+no-\code{cfg} call inherits the active session settings rather than fresh
+defaults. Supply \code{cfg$synonyms} to remap merged EPIDs and \code{cfg$qa} to route
+ambiguity flags.}
 
 \item{shape}{Optional district shape that drives admin recovery. Either form
 works and a single input does everything:
@@ -41,7 +44,8 @@ kept). Adds \verb{*_source} provenance columns.}
 }
 \value{
 A tibble of cleaned AFP records, one row per POLIS \code{id} (and at most
-one per \code{epid} + \code{adm0} business key after the duplicate collapse), with
+one per \code{epid} + \code{paralysis_onset_date} + \code{adm0} business key after the
+duplicate collapse), with
 columns ordered id -> location -> time -> other. The canonical and derived
 columns
 (\code{year_onset}, \code{month_onset}, \code{age_months}, the \verb{*_to_*} intervals,
@@ -78,10 +82,13 @@ building blocks \code{vtype} / \code{vtype_fixed}) plus the Sabin flags
 }
 The raw POLIS \code{classification}, \code{polio_virus_types}, \code{vdpv_classifications},
 \code{adequate_stool} and \code{paralysis_hot_case} fields are kept as-is alongside the
-derived columns. Records sharing the business key \code{epid} + \code{adm0} (the same
-case re-entered under a new POLIS Id) are collapsed to the latest by
-\code{last_update_date}; a tripwire then flags any key still spanning multiple Ids
-to QA, never dropping it.
+derived columns. Records sharing the business key
+\code{epid} + \code{paralysis_onset_date} + \code{adm0} (the same case re-entered under a new
+POLIS Id) are collapsed to the latest by \code{last_update_date}; cases that share
+an EPID and country but differ in onset date are treated as distinct and kept.
+A tripwire then flags any \code{epid} + \code{adm0} still spanning multiple Ids to QA,
+never dropping it -- so a genuine reclassification or a same-EPID onset
+conflict surfaces for review rather than vanishing.
 }
 \examples{
 raw <- data.frame(

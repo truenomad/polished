@@ -20,7 +20,10 @@ poliovirus-positive rows become the human positives.}
 \item{es}{Optional cleaned ES table (from \code{\link[=clean_es]{clean_es()}}). Its
 poliovirus-positive rows become the environmental positives.}
 
-\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object (default \code{polis_config()}).}
+\item{cfg}{A \code{\link[=polis_config]{polis_config()}} object. Defaults to \code{\link[=polis_active_config]{polis_active_config()}} --
+the config most recently built by \code{\link[=polis_config]{polis_config()}} this session -- so a
+no-\code{cfg} call inherits the active session settings rather than fresh
+defaults.}
 
 \item{nopv_emergence}{Optional reference of novel-OPV2 (nOPV2) emergence-group
 names: a character vector, or a data frame with an \code{emergence_group} column.

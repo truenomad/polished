@@ -29,12 +29,15 @@
   is.na(n) | n == 0
 }
 
-# TRUE where a yes/no flag reads as false.
+# TRUE where a yes/no (or adequacy) flag reads as false. The character vocabulary
+# mirrors the FALSE side of .polis_as_logical(), so the POLIS adequacy wording
+# ("Inadequate"/"Poor") on stool/specimen columns is matched, not just yes/no.
 .polis_is_false <- function(x) {
   if (is.logical(x)) {
     !is.na(x) & !x
   } else {
-    tolower(trimws(as.character(x))) %in% c("no", "false", "0", "n")
+    tolower(trimws(as.character(x))) %in%
+      c("no", "false", "f", "0", "n", "inadequate", "poor")
   }
 }
 
@@ -46,17 +49,23 @@
   suppressWarnings(as.Date(x))
 }
 
-# Rows that share a composite key with at least one other row.
+# Rows that share a composite key with at least one other row. A row whose key is
+# missing/blank in any component is not a real business key and is excluded, so
+# unrelated blank-key rows are never paste-collapsed (e.g. "NA\rNA") into a
+# spurious duplicate group.
 .polis_dup_rows <- function(data, keys) {
   keys <- intersect(keys, names(data))
   if (length(keys) == 0L) {
     return(data[0, , drop = FALSE])
   }
+  present <- Reduce(`&`, lapply(keys, function(col) !.polis_blank(data[[col]])))
   row_key <- do.call(
     paste,
     c(lapply(keys, function(col) as.character(data[[col]])), sep = "\r")
   )
-  data[row_key %in% row_key[duplicated(row_key)], , drop = FALSE]
+  present_keys <- row_key[present]
+  dup_keys <- unique(present_keys[duplicated(present_keys)])
+  data[present & row_key %in% dup_keys, , drop = FALSE]
 }
 
 # Rows where any timeliness interval column (`*_to_*`, numeric) is negative -- a
@@ -335,13 +344,30 @@
 .polis_checks_specs_virus <- function() {
   list(
     list(
+      # clean_virus() emits no POLIS `id` (positives are constructed from the
+      # cleaned case/ES streams), so a duplicate is keyed on the analytic
+      # identity: the same EPID/sample reporting the same virus label on the
+      # same event date.
       check = "virus_duplicates",
       domain = "Virus",
       severity = "warning",
-      description = "Duplicate virus records (same POLIS id)",
-      needs = "id",
-      cols = character(0),
-      fn = function(d, ref) .polis_dup_rows(d, "id")
+      description = "Duplicate positives (same EPID + virus label + date)",
+      needs = c("epid", "measurement"),
+      cols = c("measurement", "virus_date"),
+      fn = function(d, ref) {
+        .polis_dup_rows(d, c("epid", "measurement", "virus_date"))
+      }
+    ),
+    list(
+      check = "virus_missing_guid",
+      domain = "Virus",
+      severity = "error",
+      description = "Positives missing an admin1/admin2 GUID after reconciliation",
+      needs = c("adm1_guid", "adm2_guid"),
+      cols = c("adm1_guid", "adm2_guid"),
+      fn = function(d, ref) {
+        d[is.na(d[["adm1_guid"]]) | is.na(d[["adm2_guid"]]), , drop = FALSE]
+      }
     ),
     list(
       check = "virus_large_nt",
@@ -443,10 +469,11 @@
   ),
   sia = c("id", "adm0", "adm1", "adm2", "year_start", "round_num"),
   virus = c(
-    "id",
     "epid",
     "adm0",
-    "virus_type",
+    "adm1",
+    "adm2",
+    "vtype",
     "classification_all",
     "emergence_group"
   ),

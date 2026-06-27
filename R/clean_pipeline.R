@@ -634,9 +634,15 @@ run_pipeline <- function(
   # run_pipeline(cfg = cfg). Each stream is then read + cleaned through the
   # content-addressed cache, so an unchanged source skips both read and clean.
   inputs <- .polis_input_handles(inputs)
-  if (length(formats) == 0L) {
-    formats <- .polis_outputs_formats(attr(inputs, "formats") %||% list())
-  }
+  # Auto-detect each output's format from its source extension, then let any
+  # explicit `formats` entry override per stream. A partial override (e.g.
+  # formats = list(afp = "csv")) therefore changes only that stream; every other
+  # output still inherits its source extension instead of silently falling back
+  # to the default format.
+  formats <- utils::modifyList(
+    .polis_outputs_formats(attr(inputs, "formats") %||% list()),
+    formats
+  )
 
   # Lazy reference loaders: the shape (every cleaner) and population (indicators)
   # are read only when a step that needs them actually runs. On a fully-cached
@@ -786,10 +792,12 @@ run_pipeline <- function(
     cli::cli_h1("Building virus / positives")
     virus_key <- list(
       name = "virus",
-      inputs = lapply(
-        list(afp = inputs$afp, es = inputs$es),
-        .polis_fingerprint
-      ),
+      # Fingerprint EVERY source, not just afp/es: the GUID backfill above pools
+      # consensus GUIDs across all cleaned streams into afp/es, so a change to
+      # any stream (sia/hum_spec/lqas/im) can change the GUIDs the virus table
+      # is built on. Keying on afp/es alone would serve a stale virus table when
+      # only another stream changed.
+      inputs = lapply(inputs, .polis_fingerprint),
       cfg = .polis_clean_cache_fields(cfg),
       scope = .polis_scope_key(cfg),
       version = .polis_clean_versions[["virus"]]
@@ -827,16 +835,10 @@ run_pipeline <- function(
     # and shape files are never read -- population_fn()/shape_fn() run only here.
     ind_key <- list(
       name = "indicators",
-      inputs = lapply(
-        list(
-          afp = inputs$afp,
-          es = inputs$es,
-          activity = inputs$activity,
-          subactivity = inputs$subactivity,
-          hum_spec = inputs$hum_spec
-        ),
-        .polis_fingerprint
-      ),
+      # Fingerprint every source for the same reason as the virus key: the
+      # cross-stream GUID backfill means any stream (incl. lqas/im) can alter the
+      # afp/es GUIDs the indicators are computed from, so all sources are keyed.
+      inputs = lapply(inputs, .polis_fingerprint),
       population = .polis_fingerprint(cfg$population),
       shape = .polis_fingerprint(cfg$shape),
       cfg = .polis_clean_cache_fields(cfg),
@@ -1149,11 +1151,36 @@ load_polished <- function(
     "",
     tools::file_path_sans_ext(basename(all_files))
   )
+  # A format change between runs can leave two files for one key (e.g.
+  # polished_afp.csv from an earlier run and polished_afp.qs2 from a later one);
+  # the writer never prunes the old extension. Keep only the most recently
+  # written file per key so a stale leftover never shadows the fresh output.
+  if (anyDuplicated(all_keys)) {
+    ord <- order(file.mtime(all_files), decreasing = TRUE)
+    all_files <- all_files[ord]
+    all_keys <- all_keys[ord]
+    keep <- !duplicated(all_keys)
+    if (any(!keep)) {
+      cli::cli_warn(
+        "Ignoring {sum(!keep)} stale polished file{?s} shadowed by a newer \\
+        same-key output: {.file {basename(all_files[!keep])}}."
+      )
+    }
+    all_files <- all_files[keep]
+    all_keys <- all_keys[keep]
+  }
   files <- all_files
   keys <- all_keys
   if (!is.null(datasets)) {
-    files <- all_files[all_keys %in% datasets]
-    keys <- all_keys[all_keys %in% datasets]
+    # Match a requested dataset to its output key AND to the component files of a
+    # multi-part output: datasets = "lqas" matches "lqas_lots"/"lqas_district".
+    sel <- vapply(
+      all_keys,
+      function(k) any(k == datasets | startsWith(k, paste0(datasets, "_"))),
+      logical(1)
+    )
+    files <- all_files[sel]
+    keys <- all_keys[sel]
   }
   if (length(files) == 0L) {
     cli::cli_warn("No matching {.file polished_*} files in {.file {data_dir}}.")
@@ -1339,7 +1366,11 @@ load_polished <- function(
   if (!dir.exists(dir)) {
     dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   }
-  tmp <- paste0(path, ".tmp")
+  # Qualify the temp name with the process id so two concurrent runs sharing a
+  # cache_dir and computing the same key cannot write the same temp file and
+  # rename a torn, half-written file into place (which would then read as a
+  # valid cache hit). Mirrors .polis_io_write_atomic().
+  tmp <- paste0(path, ".tmp.", Sys.getpid())
   .polis_io_write(obj, tmp, "qs2")
   if (!file.rename(tmp, path)) {
     unlink(tmp)

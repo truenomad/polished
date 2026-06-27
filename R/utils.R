@@ -1554,11 +1554,15 @@
   if (any(duplicated(nm))) {
     used <- character(0)
     for (i in seq_along(nm)) {
-      stem <- substr(nm[i], 1L, 28L)
       cand <- nm[i]
       j <- 1L
       while (cand %in% used) {
-        cand <- paste0(stem, "_", j %% 100L)
+        # Use an unbounded counter (not j %% 100) so de-duplication always
+        # terminates even past 100 same-stem collisions; shrink the stem to keep
+        # the suffixed name within Excel's 31-char limit.
+        suffix <- paste0("_", j)
+        stem <- substr(nm[i], 1L, 31L - nchar(suffix))
+        cand <- paste0(stem, suffix)
         j <- j + 1L
       }
       nm[i] <- cand
@@ -2261,7 +2265,15 @@ flag_ambiguous <- function(data, key, id = "id", sink = NULL) {
     `&`,
     lapply(key, function(k) {
       v <- data[[k]]
-      !is.na(v) & (!is.character(v) | nzchar(v))
+      # `|` is not short-circuiting, so guard the nzchar() branch by type:
+      # nzchar() errors on a factor, which would abort the dedup on a factor
+      # key column. Coerce character/factor to character for the blank test;
+      # any other type just needs a non-NA check.
+      if (is.character(v) || is.factor(v)) {
+        !is.na(v) & nzchar(as.character(v))
+      } else {
+        !is.na(v)
+      }
     })
   )
 }
@@ -2647,14 +2659,17 @@ detect_factors <- function(
   if (!any(starts_zero)) {
     return(FALSE)
   }
-  # cap the all-digit test at the first few thousand zero-starting values: enough
-  # to spot a leading-zero code, bounded so a column of many such values cannot
-  # dominate the scan over millions of rows.
-  zero_start_candidates <- utils::head(x[starts_zero], 5000L)
-  any(
-    nchar(zero_start_candidates) > 1L &
-      !grepl("[^0-9]", zero_start_candidates, perl = TRUE)
-  )
+  # a single "0" is not a leading-zero code; only multi-char zero-starting values
+  # qualify. Filter to those FIRST, then cap, so a long run of plain "0" entries
+  # cannot crowd genuine codes ("012") out of the bounded scan and let the column
+  # be silently coerced to numeric. The cap then bounds the all-digit test over
+  # millions of rows.
+  candidates <- x[starts_zero & nchar(x) > 1L]
+  if (length(candidates) == 0L) {
+    return(FALSE)
+  }
+  candidates <- utils::head(candidates, 5000L)
+  any(!grepl("[^0-9]", candidates, perl = TRUE))
 }
 
 # Cleaner finishing step: infer base column types when cfg$parse_types is on.
