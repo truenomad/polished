@@ -127,8 +127,8 @@ and the country grouping/risk reference.
 ## Recover & reconcile geography
 
 Fill missing admin names and GUIDs without overwriting present values or
-fabricating on ambiguity — from EPIDs, from a district shape, or from
-coordinates — plus the admin-name fixers.
+fabricating on ambiguity (from EPIDs, from a district shape, or from
+coordinates), plus the admin-name fixers.
 
 - [`impute_geo_from_epid()`](https://truenomad.github.io/polished/reference/impute_geo_from_epid.md)
   : Recover administrative geography from the EPID
@@ -161,7 +161,7 @@ year-expanded long shape, with point-to-admin recovery.
 
 ## EPID building blocks
 
-The exported pieces the EPID-geography cascade is assembled from —
+The exported pieces the EPID-geography cascade is assembled from:
 parsers, the sibling-record lookups, and the country resolver. You
 rarely call these directly.
 

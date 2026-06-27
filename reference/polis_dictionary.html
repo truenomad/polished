@@ -14,7 +14,7 @@ or the cleaned-output schema. Both are views of the same polis_crosswalk()."><me
     if (ls && !userSet) ls.setItem('pkgdown-theme', timeOfDay);
     document.documentElement.dataset.bsTheme = theme;
     // any later change to data-bs-theme (via pkgdown's lightswitch)
-    // is an explicit user choice — remember it for next visit
+    // is an explicit user choice, so remember it for next visit
     new MutationObserver(function() {
       var current = document.documentElement.dataset.bsTheme;
       if (!current || !ls) return;

@@ -12,7 +12,7 @@
     if (ls && !userSet) ls.setItem('pkgdown-theme', timeOfDay);
     document.documentElement.dataset.bsTheme = theme;
     // any later change to data-bs-theme (via pkgdown's lightswitch)
-    // is an explicit user choice — remember it for next visit
+    // is an explicit user choice, so remember it for next visit
     new MutationObserver(function() {
       var current = document.documentElement.dataset.bsTheme;
       if (!current || !ls) return;
@@ -236,7 +236,7 @@
       </dl></div><div class="section level2">
       <h2 id="recover-reconcile-geography">Recover &amp; reconcile geography<a class="anchor" aria-label="anchor" href="#recover-reconcile-geography"></a></h2>
 
-      <div class="section-desc"><p>Fill missing admin names and GUIDs without overwriting present values or fabricating on ambiguity — from EPIDs, from a district shape, or from coordinates — plus the admin-name fixers.</p></div>
+      <div class="section-desc"><p>Fill missing admin names and GUIDs without overwriting present values or fabricating on ambiguity (from EPIDs, from a district shape, or from coordinates), plus the admin-name fixers.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -324,7 +324,7 @@
       </dl></div><div class="section level2">
       <h2 id="epid-building-blocks">EPID building blocks<a class="anchor" aria-label="anchor" href="#epid-building-blocks"></a></h2>
 
-      <div class="section-desc"><p>The exported pieces the EPID-geography cascade is assembled from — parsers, the sibling-record lookups, and the country resolver. You rarely call these directly.</p></div>
+      <div class="section-desc"><p>The exported pieces the EPID-geography cascade is assembled from: parsers, the sibling-record lookups, and the country resolver. You rarely call these directly.</p></div>
 
       <dl></dl></div><div class="section level2">
 
