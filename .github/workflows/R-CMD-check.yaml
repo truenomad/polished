@@ -73,5 +73,9 @@ jobs:
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
-          args: 'c("--no-manual", "--as-cran", "--ignore-vignettes")'
+          # No --as-cran: this is a private, non-CRAN package, and --as-cran's
+          # CRAN-incoming-feasibility checks raise false-positive WARNINGs here
+          # (a name clash with the unrelated CRAN package "polished", and 404s on
+          # private-repo URLs). Plain R CMD check still runs every real check.
+          args: 'c("--no-manual", "--ignore-vignettes")'
           build_args: 'c("--no-manual", "--no-build-vignettes")'
