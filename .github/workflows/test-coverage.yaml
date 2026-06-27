@@ -43,16 +43,18 @@ jobs:
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
-      - uses: codecov/codecov-action@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: truenomad/polished
+          files: ./cobertura.xml
+          plugins: noop
+          disable_search: true
           # Codecov no longer allows tokenless uploads, so only treat an upload
           # error as a CI failure when a CODECOV_TOKEN is configured. Without the
           # token the upload is skipped rather than failing the whole job.
           fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
-          file: ./cobertura.xml
-          plugin: noop
-          disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Show testthat output
         if: always()
