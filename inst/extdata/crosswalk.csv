@@ -1,1072 +1,1072 @@
-Table,API_Name,Snake_Name,Web_Name,Label,note
-Activity,ActivityAdminCoveragePercentage,activity_admin_coverage_percentage,ActivityAdminCoveragePercentage,Activity admin coverage percentage.,
-Activity,ActivityParent_IM_HH_MissedChildrenPercentage,activity_parent_im_hh_missed_children_percentage,ActivityParent_IM_HH_MissedChildrenPercentage,Activity parent independent monitoring house-to-house monitoring missed children percentage.,
-Activity,ActivityParent_IM_OH_MissedChildrenPercentage,activity_parent_im_oh_missed_children_percentage,ActivityParent_IM_OH_MissedChildrenPercentage,Activity parent independent monitoring out-of-house monitoring missed children percentage.,
-Activity,ActivityParent_LqasFailPercentage,activity_parent_lqas_fail_percentage,ActivityParent_LqasFailPercentage,Activity parent lot quality assurance sampling fail percentage.,
-Activity,ActivityParent_LqasPassPercentage,activity_parent_lqas_pass_percentage,ActivityParent_LqasPassPercentage,Activity parent lot quality assurance sampling pass percentage.,
-Activity,Admin0ShapeId,admin0shape_id,Admin0ShapeId,Country (admin level 0) — shape ID.,
-Activity,Admin1ShapeId,admin1shape_id,Admin1ShapeId,Province/state (admin level 1) — shape ID.,
-Activity,Admin2ShapeId,admin2shape_id,Admin2ShapeId,District (admin level 2) — shape ID.,
-Activity,SubActivityId,sub_activity_id,SubActivityId,Internal identifier for sub activity.,
-Activity,ActivityChildrenInaccessible,activity_children_inaccessible,Children inaccessible,Activity children inaccessible.,
-Activity,ActivityParentChildrenInaccessible,activity_parent_children_inaccessible,Activity parent children inaccessible,Activity parent children inaccessible.,
-Activity,ActivityType,activity_type,Activity Type,Activity type.,
-Activity,Admin0Id,admin0id,Admin 0 Id,Admin 0 ID.,
-Activity,AreaPopulationPercent,area_population_percent,Country Population %,Area population percent.,
-Activity,IMDataLoaded,im_data_loaded,IM loaded,Im data loaded.,
-Activity,LastUpdateDate,last_update_date,Last Updated Date,Last update date.,
-Activity,LqasDataLoaded,lqas_data_loaded,LQAS loaded,LQAS data loaded.,
-ActivityParent,ActivityParentRoundNumber,activity_parent_round_number,Round Number,Activity parent round number.,
-ActivityParent,Admin0ShapeId,admin0shape_id,Admin0ShapeId,Country (admin level 0) — shape ID.,
-ActivityParent,Admin0TrendId,admin0trend_id,Admin0TrendId,Country (admin level 0) — trend ID.,
-ActivityParent,Admin1ShapeId,admin1shape_id,Admin1ShapeId,Province/state (admin level 1) — shape ID.,
-ActivityParent,Admin1TrendId,admin1trend_id,Admin1TrendId,Province/state (admin level 1) — trend ID.,
-ActivityParent,Admin2ShapeId,admin2shape_id,Admin2ShapeId,District (admin level 2) — shape ID.,
-ActivityParent,Admin2TrendId,admin2trend_id,Admin2TrendId,District (admin level 2) — trend ID.,
-ActivityParent,ApprovalDate,approval_date,Approval Date,Date of approval.,
-ApiV2ReferenceData,Id,id,Id,Internal identifier for this record.,
-Case,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-Case,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-Case,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-Case,CaseManualEditId,case_manual_edit_id,CaseManualEditId,Internal identifier for case manual edit.,
-Case,CountryISO2Code,country_iso2code,CountryISO2Code,Country ISO country code 2 code.,
-Case,DatasetCodes,dataset_codes,DatasetCodes,Dataset codes.,
-Case,HasEmergenceGroupOrClusterName,has_emergence_group_or_cluster_name,,Whether emergence group or cluster name (yes/no).,
-Case,IsBreakthrough,is_breakthrough,IsBreakthrough,Whether breakthrough (yes/no).,
-Case,LastUpdateBy,last_update_by,,Last update by.,
-Case,Location,location,Location,Location.,
-Case,NPEV,npev,,Non-polio enterovirus.,
-Case,nVACCINE1,n_vaccine1,nVACCINE1,N Sabin vaccine poliovirus 1.,
-Case,nVACCINE2,n_vaccine2,nVACCINE2,N Sabin vaccine poliovirus 2.,
-Case,nVACCINE3,n_vaccine3,nVACCINE3,N Sabin vaccine poliovirus 3.,
-Case,PoNS_AdministrationType,pons_administration_type,PoNS Administration Type,PoNS administration type.,
-Case,PoNS_ClosestMatch,pons_closest_match,PoNS Closest Match,PoNS closest match.,
-Case,PoNS_ClosestMatchDash,pons_closest_match_dash,PoNS Closest Match Dash,PoNS closest match (DASH).,
-Case,PoNS_Comments,pons_comments,PoNS Comments,PoNS comments.,
-Case,PoNS_Country,pons_country,PoNS Country,PoNS country.,
-Case,PoNS_DashId,pons_dash_id,PoNS Dash Id,Internal identifier for PoNS DASH.,
-Case,PoNS_Environment,pons_environment,PoNS Environment,PoNS environment.,
-Case,PoNS_EpiNum,pons_epi_num,PoNS Epid,PoNS EPID number.,
-Case,PoNS_EpiNumPolis,pons_epi_num_polis,Epid in Polis,PoNS EPID number in POLIS.,
-Case,PoNS_EpiNumTransformed,pons_epi_num_transformed,PoNS Epid formated,PoNS EPID number (formatted).,
-Case,PoNS_Expr1005,pons_expr1005,PoNS Expr 1005,PoNS Expr1005.,
-Case,PoNS_FileName,pons_file_name,PoNS FileName,Name of PoNS file.,
-Case,PoNS_Genotype,pons_genotype,PoNS Genotype,PoNS genotype.,
-Case,PoNS_Genotype2,pons_genotype2,PoNS Genotype2,PoNS genotype 2.,
-Case,PoNS_ISO3,pons_iso3,PoNS ISO3,PoNS ISO country code 3.,
-Case,PoNS_Latitude,pons_latitude,PoNS Latitude,PoNS latitude.,
-Case,PoNS_Locality,pons_locality,PoNS Locality,PoNS locality.,
-Case,PoNS_Longitude,pons_longitude,PoNS Longitude,PoNS longitude.,
-Case,PoNS_MapDistEdit,pons_map_dist_edit,PoNS Map Dist Edit,PoNS map distance edit.,
-Case,PoNS_MatchingQuality,pons_matching_quality,PoNS Matching Quality,PoNS matching quality.,
-Case,PoNS_Mismatches,pons_mismatches,PoNS Mismatches,PoNS mismatches.,
-Case,PoNS_NTChanges,pons_nt_changes,PoNS NT Changes,PoNS nucleotide changes.,
-Case,PoNS_OnSetDate,pons_on_set_date,PoNS OnSet Date,Date of PoNS onset.,
-Case,PoNS_Passage,pons_passage,PoNS Passage,PoNS passage.,
-Case,PoNS_Patient,pons_patient,PoNS Patient,PoNS patient.,
-Case,PoNS_ReceiptDate,pons_receipt_date,PoNS Receipt Date,Date of PoNS receipt.,
-Case,PoNS_Reference,pons_reference,PoNS Reference,PoNS reference.,
-Case,PoNS_ReferenceName,pons_reference_name,PoNS Reference Name,Name of PoNS reference.,
-Case,PoNS_RefLabId,pons_ref_lab_id,PoNS Ref Lab Id,Internal identifier for PoNS reference laboratory.,
-Case,PoNS_Region,pons_region,PoNS Region,PoNS region.,
-Case,PoNS_SeqBy,pons_seq_by,PoNS Seq By,PoNS genomic sequencing by.,
-Case,PoNS_SeqDate,pons_seq_date,PoNS Seq Date,Date of PoNS genomic sequencing.,
-Case,PoNS_SeqRegion,pons_seq_region,PoNS Seq Region,PoNS genomic sequencing region.,
-Case,PoNS_Serotype,pons_serotype,PoNS Serotype,PoNS serotype.,
-Case,PoNS_Serotype2,pons_serotype2,PoNS Serotype2,PoNS serotype 2.,
-Case,PoNS_Source,pons_source,PoNS Source,PoNS source.,
-Case,PoNS_SpecDate,pons_spec_date,PoNS Spec Date,Date of PoNS specimen.,
-Case,PoNS_SpecType,pons_spec_type,PoNS Spec Type,PoNS specimen type.,
-Case,PoNS_StateProv,pons_state_prov,PoNS State Province,PoNS state/province.,
-Case,PoNS_WHOCountryCode,pons_who_country_code,PoNS WHO Country Code,PoNS WHO country code.,
-Case,PoNS_WildClusterName,pons_wild_cluster_name,PoNS Wild Cluster Name,Name of PoNS wild poliovirus cluster.,
-Case,PositiveContactCaseManualEditId,positive_contact_case_manual_edit_id,Positive Contact Case Manual Edit Id,Internal identifier for positive contact case manual edit.,
-Case,PositiveContactDateSEQResultstoProgram,positive_contact_date_seq_resultsto_program,PositiveContactDateSEQResultstoProgram,Positive contact date genomic sequencing resultsto program.,
-Case,PositiveContactEPID,positive_contact_epid,PositiveContactEPID,Positive contact epidemiological case ID (EPID number).,
-Case,PositiveContactNtChanges,positive_contact_nt_changes,Positive Contact Nt Changes,Positive contact nucleotide changes.,
-Case,PositiveContactStool1CollectionDate,positive_contact_stool1collection_date,PositiveContactStool1CollectionDate,Date of positive contact stool specimen 1 collection.,
-Case,PositiveContactVaccineOrigin,positive_contact_vaccine_origin,Positive Contact Vaccine Origin,Positive contact Sabin vaccine poliovirus origin.,
-Case,PositiveContactVirusTypeId,positive_contact_virus_type_id,Positive Contact Virus Type Id,Internal identifier for positive contact virus type.,
-Case,PositiveContactVirusTypeName,positive_contact_virus_type_name,Positive Contact Virus Type Name,Name of positive contact virus type.,
-Case,ReportingWeekAndYear,reporting_week_and_year,AFP Reporting Week and Year,Reporting week and year.,
-Case,TotalNumberOfDoses,total_number_of_doses,,Total number of vaccine doses.,
-Case,VaccineOrigins,vaccine_origins,VaccineOrigins,Sabin vaccine poliovirus origins.,
-Case,VirusSourceLinkedto,virus_source_linkedto,Virus source linked to,Virus source linkedto.,
-Case,Id,id,,ID.,
-Case,EPID,epid,EPID,EPID.,
-Case,AnonymousEPID,anonymous_epid,,Anonymous EPID.,
-Case,ClinicalAdmitted,clinical_admitted,Clinical Admitted,Clinical admitted.,
-Case,ClinicalAdmittedDate,clinical_admitted_date,Clinical Admitted Date,Clinical admitted date.,
-Case,EpiDateIsolationResultsReceived,epi_date_isolation_results_received,,Epi date isolation results received.,
-Case,EpiDateITDResultsReceived,epi_date_itd_results_received,,Epi date ITD results received.,
-Case,FollowupDate,followup_date,Followup Date,Followup date.,
-Case,FollowupFindings,followup_findings,Followup Findings,Followup findings.,
-Case,InvestigationDate,investigation_date,Investigation Date,Investigation date.,
-Case,NotificationDate,notification_date,Notification Date,Notification date.,
-Case,Stool1CollectionDate,stool1collection_date,Stool 1 Collection Date,Stool 1 collection date.,
-Case,Stool2CollectionDate,stool2collection_date,Stool 2 Collection Date,Stool 2 collection date.,
-Case,StoolDateSentToICLab,stool_date_sent_to_ic_lab,Stool Date Sent To IC Lab,Stool date sent to ic lab.,
-Case,StoolDateSentToLab,stool_date_sent_to_lab,Stool Date Sent To Lab,Stool date sent to lab.,
-Case,ParalysisOnsetDate,paralysis_onset_date,Date Onset,Paralysis onset date.,
-Case,DatasetAfp,dataset_afp,Dataset AFP,Dataset AFP.,
-Case,DatasetWild,dataset_wild,Dataset WVL,Dataset wild.,
-Case,DatasetLab,dataset_lab,Dataset Lab,Dataset lab.,
-Case,DatasetManual,dataset_manual,Dataset Manual,Dataset manual.,
-Case,Classification,classification,Classification,Classification.,
-Case,DiagnosisFinal,diagnosis_final,Diagnosis Final,Diagnosis final.,
-Case,DiagnosisOther,diagnosis_other,Diagnosis Other,Diagnosis other.,
-Case,DiagnosisOtherSpecified,diagnosis_other_specified,Diagnosis Other Specified,Diagnosis other specified.,
-Case,SourceAdvancedNotification,source_advanced_notification,Source Advanced Notification,Source advanced notification.,
-Case,AdvancedNotification,advanced_notification,Advanced Notification,Advanced notification.,
-Case,DateNotificationtoHQ,date_notificationto_hq,Date Notification To HQ,Date notificationto HQ.,
-Case,Stool1Condition,stool1condition,Stool 1 Condition,Stool 1 condition.,
-Case,Stool2Condition,stool2condition,Stool 2 Condition,Stool 2 condition.,
-Case,SpecDateReceivedByNatLab,spec_date_received_by_nat_lab,Specimen Date,Spec date received by nat lab.,
-Case,ParalysisAsymmetric,paralysis_asymmetric,Paralysis Asymmetric,Paralysis asymmetric.,
-Case,ParalysisConfirmed,paralysis_confirmed,Paralysis Confirmed,Paralysis confirmed.,
-Case,ParalysisHotCase,paralysis_hot_case,Paralysis Hot Case,Paralysis hot case.,
-Case,ParalysisLeftArm,paralysis_left_arm,Paralysis Left Arm,Paralysis left arm.,
-Case,ParalysisLeftLeg,paralysis_left_leg,Paralysis Left Leg,Paralysis left leg.,
-Case,ParalysisOnsetFever,paralysis_onset_fever,Paralysis Onset Fever,Paralysis onset fever.,
-Case,ParalysisRapidProgress,paralysis_rapid_progress,Paralysis Rapid Progress,Paralysis rapid progress.,
-Case,ParalysisRightArm,paralysis_right_arm,Paralysis Right Arm,Paralysis right arm.,
-Case,ParalysisRightLeg,paralysis_right_leg,Paralysis Right Leg,Paralysis right leg.,
-Case,ParalysisSite,paralysis_site,Paralysis Site,Paralysis site.,
-Case,ParalysisSudden,paralysis_sudden,Paralysis Sudden,Paralysis sudden.,
-Case,PersonAgeInMonths,person_age_in_months,Person Age In Months,Person age in months.,
-Case,PersonAgeInYears,person_age_in_years,Person Age In Years,Person age in years.,
-Case,PersonSex,person_sex,Person Sex,Person sex.,
-Case,PlaceAdmin3,place_admin3,Place Admin 3,Place admin 3.,
-Case,PlaceEURAdmin0CodeISO3,place_eur_admin0code_iso3,Place Admin 0 ISO3,Place eur admin 0 code ISO 3.,
-Case,PlaceEURAdmin1Code,place_eur_admin1code,Place EUR Admin 1 Code,Place eur admin 1 code.,
-Case,PlaceEURProvDistrCode,place_eur_prov_distr_code,Place EUR Prov Distr Code,Place eur prov distr code.,
-Case,Admin0Id,admin0id,,Admin 0 ID.,
-Case,Admin0Name,adm0,Place Admin 0,Admin 0 name.,
-Case,Admin1Id,admin1id,,Admin 1 ID.,
-Case,Admin1Name,adm1,Place Admin 1,Admin 1 name.,
-Case,Admin2Id,admin2id,,Admin 2 ID.,
-Case,Admin2Name,adm2,Place Admin 2,Admin 2 name.,
-Case,Admin0GUID,adm0_guid,Admin 0 Guid,Admin 0 guid.,
-Case,Admin1GUID,adm1_guid,Admin 1 Guid,Admin 1 guid.,
-Case,Admin2GUID,adm2_guid,Admin 2 Guid,Admin 2 guid.,
-Case,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,
-Case,Admin0OfficialName,admin0official_name,,Admin 0 official name.,
-Case,Admin1OfficialName,admin1official_name,,Admin 1 official name.,
-Case,Admin2OfficialName,admin2official_name,,Admin 2 official name.,
-Case,WHORegion,who_region,WHO Region,WHO region.,
-Case,ISTName,ist_name,IST,Ist name.,
-Case,DosesDateOf1st,doses_date_of1st,Doses Date Of 1st,Doses date of 1 st.,
-Case,DosesDateOf2nd,doses_date_of2nd,Doses Date Of 2nd,Doses date of 2 nd.,
-Case,DosesDateOf3rd,doses_date_of3rd,Doses Date Of 3rd,Doses date of 3 rd.,
-Case,DosesDateOf4th,doses_date_of4th,Doses Date Of 4th,Doses date of 4 th.,
-Case,DosesIPVNumber,doses_ipv_number,Doses IPV Number,Doses IPV number.,
-Case,DosesIPVDateofLast,doses_ipv_dateof_last,Doses IPV Date of Last,Doses IPV date of last.,
-Case,DosesIPVRoutine,doses_ipv_routine,Doses IPV Routine,Doses IPV routine.,
-Case,DosesIPVSIA,doses_ipvsia,Doses IPV SIA,Doses IPV SIA.,
-Case,DosesOPVDateofLast,doses_opv_dateof_last,Doses OPV Date of Last,Doses OPV date of last.,
-Case,DosesOPVRoutine,doses_opv_routine,Doses OPV Routine,Doses OPV routine.,
-Case,DosesOPVSIA,doses_opvsia,Doses OPV SIA,Doses OPV SIA.,
-Case,DosesTotal,doses_total,Doses,Doses total.,
-Case,CalcDosesRISI,calc_doses_risi,CalcDosesRISI,Calc doses risi.,
-Case,SourceRIVaccinationInfoCode,source_ri_vaccination_info_code,Source RI Vaccination Information,Source ri vaccination info code.,
-Case,DateSEQResultstoProgram,date_seq_resultsto_program,Results Seq Date to program,Date seq resultsto program.,
-Case,DateLastOpvSIA,date_last_opv_sia,Last Opv SIA Date,Date last OPV SIA.,
-Case,DateLastIpvSIA,date_last_ipv_sia,Last Ipv SIA Date,Date last IPV SIA.,
-Case,VirusIsOrphan,virus_is_orphan,Virus Is Orphan,Virus is orphan.,
-Case,VirusOrigin,virus_origin,Virus Origin,Virus origin.,
-Case,EventComment,event_comment,Event Comments,Event comment.,
-Case,EventDirectImportation,event_direct_importation,Event Direct Importation,Event direct importation.,
-Case,EventName,event_name,Event Name,Event name.,
-Case,VirusSequenced,virus_sequenced,Virus Sequenced,Virus sequenced.,
-Case,CreatedDate,created_date,Created Date,Created date.,
-Case,LastUpdateDate,last_update_date,Last Updated Date,Last update date.,
-Case,VACCINE1,vaccine1,Vaccine 1,Vaccine 1.,
-Case,VACCINE2,vaccine2,Vaccine 2,Vaccine 2.,
-Case,VACCINE3,vaccine3,Vaccine 3,Vaccine 3.,
-Case,VDPV1,vdpv1,Vdpv 1,VDPV1.,
-Case,VDPV2,vdpv2,Vdpv 2,VDPV2.,
-Case,VDPV3,vdpv3,Vdpv 3,VDPV3.,
-Case,WILD1,wild1,Wild 1,Wild 1.,
-Case,WILD2,wild2,Wild 2,Wild 2.,
-Case,WILD3,wild3,Wild 3,Wild 3.,
-Case,nVDPV2,n_vdpv2,nVDPV 2,nVDPV2.,
-Case,PV1,pv1,PV 1,PV1.,
-Case,PV2,pv2,PV 2,PV2.,
-Case,PV3,pv3,PV 3,PV3.,
-Case,PlaceNearestFacility,place_nearest_facility,Place Nearest Facility,Place nearest facility.,
-Case,EventImmediateSource,event_immediate_source,Event Immediate Source,Event immediate source.,
-Case,CalculatedAgeInMonth,calculated_age_in_month,Calculated Age (months),Calculated age in month.,
-Case,ExactLatitude,exact_latitude,Exact Latitude,Exact latitude.,
-Case,ExactLongitude,exact_longitude,Exact Longitude,Exact longitude.,
-Case,Latitude,latitude,X,Latitude.,
-Case,Longitude,longitude,Y,Longitude.,
-Case,FollowupFindingsCode,followup_findings_code,,Followup findings code.,
-Case,Stool1ConditionCode,stool1condition_code,,Stool 1 condition code.,
-Case,Stool2ConditionCode,stool2condition_code,,Stool 2 condition code.,
-Case,PublishDate,publish_date,,Publish date.,
-Case,SurveillanceTypeName,surveillance_type_name,Surveillance Type,Surveillance type name.,
-Case,SurveillanceTypeCode,surveillance_type_code,,Surveillance type code.,
-Case,CaseDate,case_date,Case Date,Case date.,
-Case,ProvisionalDiagnosis,provisional_diagnosis,Provisional Diagnosis,Provisional diagnosis.,
-Case,AdequateStool,adequate_stool,Stool Adequacy,Adequate stool.,
-Case,AdequateStoolWithCondition,adequate_stool_with_condition,Stool Adequacy with Condition,Adequate stool with condition.,
-Case,VirusHomologyPercent,virus_homology_percent,Virus Homology Percent,Virus homology percent.,
-Case,FinalCultureResult,final_culture_result,Final Cell Culture Result,Final culture result.,
-Case,PolioVirusTypes,polio_virus_types,Virus Type(s),Polio virus types.,
-Case,VirusTypeIds,virus_type_ids,,Virus type IDs.,
-Case,VirusClusters,virus_clusters,Virus Cluster(s),Virus clusters.,
-Case,VirusGenoTypes,virus_geno_types,Virus Genotypes,Virus geno types.,
-Case,VdpvEmergenceGroupNames,vdpv_emergence_group_names,Emergence Group(s),VDPV emergence group names.,
-Case,NtChanges,nt_changes,Nt Changes,NT changes.,
-Case,VdpvClassifications,vdpv_classifications,VDPV Classification(s),VDPV classifications.,
-Case,VdpvClassificationIds,vdpv_classification_ids,VDPV Classification Id(s),VDPV classification IDs.,
-Case,PoNS_Id,pons_id,,PoNS ID.,
-Case,,total_number_of_ipv_opv_doses,total.number.of.ipv./.opv.doses,Total number of IPV OPV doses.,
-EnvSample,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-EnvSample,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-EnvSample,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-EnvSample,CountryISO2Code,country_iso2code,CountryISO2Code,Country ISO country code 2 code.,
-EnvSample,DateF7RefITD,date_f7ref_itd,DateF7RefITD,Date f 7 reference laboratory intratypic differentiation (ITD) lab test.,
-EnvSample,DateF8RefITD,date_f8ref_itd,DateF8RefITD,Date f 8 reference laboratory intratypic differentiation (ITD) lab test.,
-EnvSample,DateIsolrecSeq7,date_isolrec_seq7,DateIsolrecSeq7,Date isolrec genomic sequencing 7.,
-EnvSample,DateIsolrecSeq8,date_isolrec_seq8,DateIsolrecSeq8,Date isolrec genomic sequencing 8.,
-EnvSample,DateIsolSentSeq7,date_isol_sent_seq7,DateIsolSentSeq7,Date isol sent genomic sequencing 7.,
-EnvSample,DateIsolSentSeq8,date_isol_sent_seq8,DateIsolSentSeq8,Date isol sent genomic sequencing 8.,
-EnvSample,DateRecF7RefITD,date_rec_f7ref_itd,DateRecF7RefITD,Date rec f 7 reference laboratory intratypic differentiation (ITD) lab test.,
-EnvSample,DateRecF8RefITD,date_rec_f8ref_itd,DateRecF8RefITD,Date rec f 8 reference laboratory intratypic differentiation (ITD) lab test.,
-EnvSample,HasEmergenceGroupOrClusterName,has_emergence_group_or_cluster_name,HasEmergenceGroupOrClusterName,Whether emergence group or cluster name (yes/no).,
-EnvSample,IsBreakthrough,is_breakthrough,IsBreakthrough,Whether breakthrough (yes/no).,
-EnvSample,Location,location,Location,Location.,
-EnvSample,Mixture,mixture,Mixture,Mixture.,
-EnvSample,PoNS_AdministrationType,pons_administration_type,PoNS Administration Type,PoNS administration type.,
-EnvSample,PoNS_ClosestMatch,pons_closest_match,PoNS Closest Match,PoNS closest match.,
-EnvSample,PoNS_ClosestMatchDash,pons_closest_match_dash,PoNS Closest Match Dash,PoNS closest match (DASH).,
-EnvSample,PoNS_Comments,pons_comments,PoNS Comments,PoNS comments.,
-EnvSample,PoNS_Country,pons_country,PoNS Country,PoNS country.,
-EnvSample,PoNS_DashId,pons_dash_id,PoNS Dash Id,Internal identifier for PoNS DASH.,
-EnvSample,PoNS_Environment,pons_environment,PoNS Environment,PoNS environment.,
-EnvSample,PoNS_EpiNum,pons_epi_num,PoNS Epid,PoNS EPID number.,
-EnvSample,PoNS_EpiNumPolis,pons_epi_num_polis,Epid in Polis,PoNS EPID number in POLIS.,
-EnvSample,PoNS_EpiNumTransformed,pons_epi_num_transformed,PoNS Epid formated,PoNS EPID number (formatted).,
-EnvSample,PoNS_Expr1005,pons_expr1005,PoNS Expr 1005,PoNS Expr1005.,
-EnvSample,PoNS_FileName,pons_file_name,PoNS FileName,Name of PoNS file.,
-EnvSample,PoNS_Genotype,pons_genotype,PoNS Genotype,PoNS genotype.,
-EnvSample,PoNS_Genotype2,pons_genotype2,PoNS Genotype2,PoNS genotype 2.,
-EnvSample,PoNS_ISO3,pons_iso3,PoNS ISO3,PoNS ISO country code 3.,
-EnvSample,PoNS_Latitude,pons_latitude,PoNS Latitude,PoNS latitude.,
-EnvSample,PoNS_Locality,pons_locality,PoNS Locality,PoNS locality.,
-EnvSample,PoNS_Longitude,pons_longitude,PoNS Longitude,PoNS longitude.,
-EnvSample,PoNS_MapDistEdit,pons_map_dist_edit,PoNS Map Dist Edit,PoNS map distance edit.,
-EnvSample,PoNS_MatchingQuality,pons_matching_quality,PoNS Matching Quality,PoNS matching quality.,
-EnvSample,PoNS_Mismatches,pons_mismatches,PoNS Mismatches,PoNS mismatches.,
-EnvSample,PoNS_NTChanges,pons_nt_changes,PoNS NT Changes,PoNS nucleotide changes.,
-EnvSample,PoNS_OnSetDate,pons_on_set_date,PoNS OnSet Date,Date of PoNS onset.,
-EnvSample,PoNS_Passage,pons_passage,PoNS Passage,PoNS passage.,
-EnvSample,PoNS_Patient,pons_patient,PoNS Patient,PoNS patient.,
-EnvSample,PoNS_ReceiptDate,pons_receipt_date,PoNS Receipt Date,Date of PoNS receipt.,
-EnvSample,PoNS_Reference,pons_reference,PoNS Reference,PoNS reference.,
-EnvSample,PoNS_ReferenceName,pons_reference_name,PoNS Reference Name,Name of PoNS reference.,
-EnvSample,PoNS_RefLabId,pons_ref_lab_id,PoNS Ref Lab Id,Internal identifier for PoNS reference laboratory.,
-EnvSample,PoNS_Region,pons_region,PoNS Region,PoNS region.,
-EnvSample,PoNS_SeqBy,pons_seq_by,PoNS Seq By,PoNS genomic sequencing by.,
-EnvSample,PoNS_SeqDate,pons_seq_date,PoNS Seq Date,Date of PoNS genomic sequencing.,
-EnvSample,PoNS_SeqRegion,pons_seq_region,PoNS Seq Region,PoNS genomic sequencing region.,
-EnvSample,PoNS_Serotype,pons_serotype,PoNS Serotype,PoNS serotype.,
-EnvSample,PoNS_Serotype2,pons_serotype2,PoNS Serotype2,PoNS serotype 2.,
-EnvSample,PoNS_Source,pons_source,PoNS Source,PoNS source.,
-EnvSample,PoNS_SpecDate,pons_spec_date,PoNS Spec Date,Date of PoNS specimen.,
-EnvSample,PoNS_SpecType,pons_spec_type,PoNS Spec Type,PoNS specimen type.,
-EnvSample,PoNS_StateProv,pons_state_prov,PoNS State Province,PoNS state/province.,
-EnvSample,PoNS_WHOCountryCode,pons_who_country_code,PoNS WHO Country Code,PoNS WHO country code.,
-EnvSample,PoNS_WildClusterName,pons_wild_cluster_name,PoNS Wild Cluster Name,Name of PoNS wild poliovirus cluster.,
-EnvSample,ReportingWeekAndYear,reporting_week_and_year,Reporting Week and Year,Reporting week and year.,
-EnvSample,SiteFullName,site_full_name,Environmental Site,Name of site full.,
-EnvSample,SourceAdvancedNotification,source_advanced_notification,SourceAdvancedNotification,Source advanced notification.,
-EnvSample,SQSL1homologyClosestMatch,sqsl1homology_closest_match,SQSL1homologyClosestMatch,Sqsl 1 homology closest match.,
-EnvSample,SQSL1NtdiffSabin1,sqsl1ntdiff_sabin1,SQSL1NtdiffSabin1,Sqsl 1 ntdiff sabin 1.,
-EnvSample,SQSL2homologyClosestMatch,sqsl2homology_closest_match,SQSL2homologyClosestMatch,Sqsl 2 homology closest match.,
-EnvSample,SQSL2NtdiffSabin2,sqsl2ntdiff_sabin2,SQSL2NtdiffSabin2,Sqsl 2 ntdiff sabin 2.,
-EnvSample,SQSL3homologyClosestMatch,sqsl3homology_closest_match,SQSL3homologyClosestMatch,Sqsl 3 homology closest match.,
-EnvSample,SQSL3NtdiffSabin3,sqsl3ntdiff_sabin3,SQSL3NtdiffSabin3,Sqsl 3 ntdiff sabin 3.,
-EnvSample,SQSLhomologyClosestMatch,sqs_lhomology_closest_match,SQVDPVNtdiffhomologSabin,Sqs lhomology closest match.,
-EnvSample,SQSLNtdiffhomologSabin,sqsl_ntdiffhomolog_sabin,SQSLNtdiffhomologSabin,Sqsl ntdiffhomolog sabin.,
-EnvSample,SQVDPV1homologyClosestMatch,sqvdpv1homology_closest_match,SQVDPV1homologyClosestMatch,Sqvdpv 1 homology closest match.,
-EnvSample,SQVDPV1NtdiffSabin1,sqvdpv1ntdiff_sabin1,SQVDPV1NtdiffSabin1,Sqvdpv 1 ntdiff sabin 1.,
-EnvSample,SQVDPV2homologyClosestMatch,sqvdpv2homology_closest_match,SQVDPV2homologyClosestMatch,Sqvdpv 2 homology closest match.,
-EnvSample,SQVDPV2NtdiffSabin2,sqvdpv2ntdiff_sabin2,SQVDPV2NtdiffSabin2,Sqvdpv 2 ntdiff sabin 2.,
-EnvSample,SQVDPV3homologyClosestMatch,sqvdpv3homology_closest_match,SQVDPV3homologyClosestMatch,Sqvdpv 3 homology closest match.,
-EnvSample,SQVDPV3NtdiffSabin3,sqvdpv3ntdiff_sabin3,SQVDPV3NtdiffSabin3,Sqvdpv 3 ntdiff sabin 3.,
-EnvSample,SQVDPVhomologyClosestMatch,sqvdp_vhomology_closest_match,SQVDPVhomologyClosestMatch,Sqvdp vhomology closest match.,
-EnvSample,SQVDPVNtdiffhomologSabin,sqvdpv_ntdiffhomolog_sabin,SQVDPVNtdiffhomologSabin,Sqvdpv ntdiffhomolog sabin.,
-EnvSample,SQW1homologyClosestMatch,sqw1homology_closest_match,SQW1homologyClosestMatch,Sqw 1 homology closest match.,
-EnvSample,SQW2homologyClosestMatch,sqw2homology_closest_match,SQW2homologyClosestMatch,Sqw 2 homology closest match.,
-EnvSample,SQWCluster4,sqw_cluster4,SQWCluster4,Sqw cluster 4.,
-EnvSample,SQWhomologyClosestMatch,sq_whomology_closest_match,SQWhomologyClosestMatch,Sq whomology closest match.,
-EnvSample,VaccineOrigins,vaccine_origins,VaccineOrigins,Sabin vaccine poliovirus origins.,
-EnvSample,WHORegion,who_region,WHORegion,WHO region.,
-EnvSample,Id,id,,ID.,
-EnvSample,EnviroSampleManualEditId,enviro_sample_manual_edit_id,Env Sample Manual Edit Id,Enviro sample manual edit ID.,
-EnvSample,EnviroSampleId,enviro_sample_id,Sample Id,Enviro sample ID.,
-EnvSample,WorksheetName,worksheet_name,Worksheet Name,Worksheet name.,
-EnvSample,LabID,lab_id,,Lab ID.,
-EnvSample,SiteId,site_id,Site Id,Site ID.,
-EnvSample,SiteCode,site_code,Site Code,Site code.,
-EnvSample,SiteName,site_name,Site Name,Site name.,
-EnvSample,SiteStatus,site_status,Site Status,Site status.,
-EnvSample,SiteGuid,site_guid,Site Guid,Site guid.,
-EnvSample,SiteComment,site_comment,Site Comment,Site comment.,
-EnvSample,SiteXCoordinate,site_x_coordinate,x,Site x coordinate.,
-EnvSample,SiteYCoordinate,site_y_coordinate,y,Site y coordinate.,
-EnvSample,SampleId,sample_id,Env Sample ID,Sample ID.,
-EnvSample,CollectionDate,collection_date,Collection Date,Collection date.,
-EnvSample,IsNPEV,is_npev,NPEV,Is NPEV.,
-EnvSample,IsNegative,is_negative,,Is negative.,
-EnvSample,IsUnderProcess,is_under_process,Under Process,Is under process.,
-EnvSample,IsSuspected,is_suspected,Is Suspected,Is suspected.,
-EnvSample,DateShippedToRefLab,date_shipped_to_ref_lab,Date Shipped To Ref Lab,Date shipped to ref lab.,
-EnvSample,DateReceivedInLab,date_received_in_lab,Date received in lab,Date received in lab.,
-EnvSample,Admin0Id,admin0id,Admin 0 Id,Admin 0 ID.,
-EnvSample,Admin0Name,adm0,Admin 0,Admin 0 name.,
-EnvSample,Admin1Id,admin1id,Admin 1 Id,Admin 1 ID.,
-EnvSample,Admin1Name,adm1,Admin 1,Admin 1 name.,
-EnvSample,Admin2Id,admin2id,Admin 2 Id,Admin 2 ID.,
-EnvSample,Admin2Name,adm2,Admin 2,Admin 2 name.,
-EnvSample,Admin0GUID,adm0_guid,Admin 0 Guid,Admin 0 guid.,
-EnvSample,Admin1GUID,adm1_guid,Admin 1 Guid,Admin 1 guid.,
-EnvSample,Admin2GUID,adm2_guid,Admin 2 Guid,Admin 2 guid.,
-EnvSample,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,
-EnvSample,Admin0OfficialName,admin0official_name,Admin 0 OfficialName,Admin 0 official name.,
-EnvSample,Admin1OfficialName,admin1official_name,Admin 1 OfficialName,Admin 1 official name.,
-EnvSample,Admin2OfficialName,admin2official_name,Admin 2 OfficialName,Admin 2 official name.,
-EnvSample,Admin0Vizname,admin0vizname,Admin 0 Vizname,Admin 0 vizname.,
-EnvSample,Admin1Vizname,admin1vizname,Admin 1 Vizname,Admin 1 vizname.,
-EnvSample,Admin2Vizname,admin2vizname,Admin 2 Vizname,Admin 2 vizname.,
-EnvSample,Admin0WhoCode,admin0who_code,Admin 0 WHO Region,Admin 0 WHO code.,
-EnvSample,ISTName,ist_name,IST,Ist name.,
-EnvSample,RegionId,region_id,Region ID,Region ID.,
-EnvSample,RegionGUID,region_guid,Region Guid,Region guid.,
-EnvSample,RegionName,region_name,Region Name,Region name.,
-EnvSample,RegionOfficialName,region_official_name,Region Official Name,Region official name.,
-EnvSample,RegionWhoCode,region_who_code,Region Who Code,Region WHO code.,
-EnvSample,VACCINE1,vaccine1,Vaccine 1,Vaccine 1.,
-EnvSample,VACCINE2,vaccine2,Vaccine 2,Vaccine 2.,
-EnvSample,VACCINE3,vaccine3,Vaccine 3,Vaccine 3.,
-EnvSample,VDPV1,vdpv1,Vdpv 1,VDPV1.,
-EnvSample,VDPV2,vdpv2,Vdpv 2,VDPV2.,
-EnvSample,VDPV3,vdpv3,Vdpv 3,VDPV3.,
-EnvSample,WILD1,wild1,Wild 1,Wild 1.,
-EnvSample,WILD2,wild2,Wild 2,Wild 2.,
-EnvSample,WILD3,wild3,Wild 3,Wild 3.,
-EnvSample,nVACCINE2,n_vaccine2,nVaccine 2,N vaccine 2.,
-EnvSample,nVDPV2,n_vdpv2,nVDPV 2,nVDPV2.,
-EnvSample,PV1,pv1,PV 1,PV1.,
-EnvSample,PV2,pv2,PV 2,PV2.,
-EnvSample,PV3,pv3,PV 3,PV3.,
-EnvSample,CreatedDate,created_date,Created Date,Created date.,
-EnvSample,LastUpdateDate,last_update_date,Updated Date,Last update date.,
-EnvSample,PublishDate,publish_date,Publish Date,Publish date.,
-EnvSample,UploadedDate,uploaded_date,Uploaded Date,Uploaded date.,
-EnvSample,UploadedBy,uploaded_by,Uploaded by,Uploaded by.,
-EnvSample,ReportingWeek,reporting_week,Reporting Week,Reporting week.,
-EnvSample,ReportingYear,reporting_year,Reporting Year,Reporting year.,
-EnvSample,IsAdvancedNotification,is_advanced_notification,Advanced Notification,Is advanced notification.,
-EnvSample,DateNotificationToHQ,date_notification_to_hq,Date Notification To HQ,Date notification to HQ.,
-EnvSample,Methodologies,methodologies,Methodologies,Methodologies.,
-EnvSample,SampleCondition,sample_condition,Sample condition,Sample condition.,
-EnvSample,Source,source,Source,Source.,
-EnvSample,LabName,lab_name,Laboratory Name,Lab name.,
-EnvSample,FinalCellCultureResult,final_cell_culture_result,Final Cell Culture Result,Final cell culture result.,
-EnvSample,DateFinalCultureResult,date_final_culture_result,Date Final Culture Result,Date final culture result.,
-EnvSample,DateResultToLab,date_result_to_lab,Date Result to Lab,Date result to lab.,
-EnvSample,LabSentIsolateforITD,lab_sent_isolatefor_itd,Lab sent Isolate for ITD,Lab sent isolatefor ITD.,
-EnvSample,DateF1RefITD,date_f1ref_itd,Date F1 ref ITD,Date f 1 ref ITD.,
-EnvSample,DateF2RefITD,date_f2ref_itd,Date F2 ref ITD,Date f 2 ref ITD.,
-EnvSample,DateF3RefITD,date_f3ref_itd,Date F3 ref ITD,Date f 3 ref ITD.,
-EnvSample,DateF4RefITD,date_f4ref_itd,Date F4 ref ITD,Date f 4 ref ITD.,
-EnvSample,DateF5RefITD,date_f5ref_itd,Date F5 ref ITD,Date f 5 ref ITD.,
-EnvSample,DateF6RefITD,date_f6ref_itd,Date F6 ref ITD,Date f 6 ref ITD.,
-EnvSample,DateRecF1RefITD,date_rec_f1ref_itd,Date Rec F1 ref ITD,Date rec f 1 ref ITD.,
-EnvSample,DateRecF2RefITD,date_rec_f2ref_itd,Date Rec F2 ref ITD,Date rec f 2 ref ITD.,
-EnvSample,DateRecF3RefITD,date_rec_f3ref_itd,Date Rec F3 ref ITD,Date rec f 3 ref ITD.,
-EnvSample,DateRecF4RefITD,date_rec_f4ref_itd,Date Rec F4 ref ITD,Date rec f 4 ref ITD.,
-EnvSample,DateRecF5RefITD,date_rec_f5ref_itd,Date Rec F5 ref ITD,Date rec f 5 ref ITD.,
-EnvSample,DateRecF6RefITD,date_rec_f6ref_itd,Date Rec F6 ref ITD,Date rec f 6 ref ITD.,
-EnvSample,FTACardSent,fta_card_sent,FTA Card Sent,Fta card sent.,
-EnvSample,DateFinalResultsReported,date_final_results_reported,Date Final Results Reported,Date final results reported.,
-EnvSample,FinalCombinedrRTPCRresults,final_combinedr_rtpc_rresults,Final Combined RTPCR Results,Final combinedr rtpc rresults.,
-EnvSample,DateFinalCombinedResult,date_final_combined_result,Date Final Combined Result,Date final combined result.,
-EnvSample,NameSeqLab,name_seq_lab,Name Seq Lab,Name seq lab.,
-EnvSample,DateIsolSentSeq1,date_isol_sent_seq1,Date Isol Sent Seq1,Date isol sent seq 1.,
-EnvSample,DateIsolSentSeq2,date_isol_sent_seq2,Date Isol Sent Seq2,Date isol sent seq 2.,
-EnvSample,DateIsolSentSeq3,date_isol_sent_seq3,Date Isol Sent Seq3,Date isol sent seq 3.,
-EnvSample,DateIsolSentSeq4,date_isol_sent_seq4,Date Isol Sent Seq4,Date isol sent seq 4.,
-EnvSample,DateIsolSentSeq5,date_isol_sent_seq5,Date Isol Sent Seq5,Date isol sent seq 5.,
-EnvSample,DateIsolSentSeq6,date_isol_sent_seq6,Date Isol Sent Seq6,Date isol sent seq 6.,
-EnvSample,DateIsolrecSeq1,date_isolrec_seq1,Date Isol Rec Seq1,Date isolrec seq 1.,
-EnvSample,DateIsolrecSeq2,date_isolrec_seq2,Date Isol Rec Seq2,Date isolrec seq 2.,
-EnvSample,DateIsolrecSeq3,date_isolrec_seq3,Date Isol Rec Seq3,Date isolrec seq 3.,
-EnvSample,DateIsolrecSeq4,date_isolrec_seq4,Date Isol Rec Seq4,Date isolrec seq 4.,
-EnvSample,DateIsolrecSeq5,date_isolrec_seq5,Date Isol Rec Seq5,Date isolrec seq 5.,
-EnvSample,DateIsolrecSeq6,date_isolrec_seq6,Date Isol Rec Seq6,Date isolrec seq 6.,
-EnvSample,DateFinalSeqResult,date_final_seq_result,Date Final Seq Result,Date final seq result.,
-EnvSample,DateResSentOutW1,date_res_sent_out_w1,Date Res Sent Out W1,Date res sent out w 1.,
-EnvSample,DateResSentOutW2,date_res_sent_out_w2,Date Res Sent Out W2,Date res sent out w 2.,
-EnvSample,DateResSentOutW3,date_res_sent_out_w3,Date Res Sent Out W3,Date res sent out w 3.,
-EnvSample,DateResSentOutVACCINE1,date_res_sent_out_vaccine1,Date Res Sent Out VACCINE1,Date res sent out vaccine 1.,
-EnvSample,DateResSentOutVACCINE2,date_res_sent_out_vaccine2,Date Res Sent Out VACCINE2,Date res sent out vaccine 2.,
-EnvSample,DateResSentOutVACCINE3,date_res_sent_out_vaccine3,Date Res Sent Out VACCINE3,Date res sent out vaccine 3.,
-EnvSample,DateResSentOutVDPV1,date_res_sent_out_vdpv1,Date Res Sent Out VDPV1,Date res sent out VDPV1.,
-EnvSample,DateResSentOutVDPV2,date_res_sent_out_vdpv2,Date Res Sent Out VDPV2,Date res sent out VDPV2.,
-EnvSample,DateResSentOutVDPV3,date_res_sent_out_vdpv3,Date Res Sent Out VDPV3,Date res sent out VDPV3.,
-EnvSample,DateResSentOutPV1,date_res_sent_out_pv1,Date Res Sent Out PV1,Date res sent out PV1.,
-EnvSample,DateResSentOutPV2,date_res_sent_out_pv2,Date Res Sent Out PV2,Date res sent out PV2.,
-EnvSample,DateResSentOutPV3,date_res_sent_out_pv3,Date Res Sent Out PV3,Date res sent out PV3.,
-EnvSample,DateResSentOutNVACCINE2,date_res_sent_out_nvaccine2,Date Res Sent Out nVACCINE2,Date res sent out nvaccine 2.,
-EnvSample,DateResSentOutNVDPV2,date_res_sent_out_nvdpv2,Date Res Sent Out nVDPV2,Date res sent out nvdpv 2.,
-EnvSample,VirusTypes,virus_types,Virus Type(s),Virus types.,
-EnvSample,VirusClusters,virus_clusters,Virus Cluster(s),Virus clusters.,
-EnvSample,VirusGenoTypes,virus_geno_types,,Virus geno types.,
-EnvSample,VdpvEmergenceGroupNames,vdpv_emergence_group_names,Emergence Group(s),VDPV emergence group names.,
-EnvSample,NtChanges,nt_changes,Nt Changes,NT changes.,
-EnvSample,VdpvClassifications,vdpv_classifications,VDPV Classification(s),VDPV classifications.,
-EnvSample,VdpvClassificationIds,vdpv_classification_ids,VDPV Classification Id(s),VDPV classification IDs.,
-EnvSample,PoNS_Id,pons_id,,PoNS ID.,
-EnvSample,,lab_id,LabID,Lab ID.,
-EnvSample,,site,Site,Site.,
-EnvSample,,country_iso2,Country Iso2,Country ISO 2.,
-EnviroSampleSite,Admin0GUID,adm0_guid,Admin 0 GUID,Country (admin level 0) — globally unique identifier (GUID).,
-EnviroSampleSite,Admin0Id,admin0id,Admin 0 Id,Country (admin level 0) — ID.,
-EnviroSampleSite,Admin0Iso2Code,admin0iso2code,Country Iso2,Country (admin level 0) — ISO country code code.,
-EnviroSampleSite,Admin0Iso3Code,admin0iso3code,Country Iso3,Country (admin level 0) — ISO country code code.,
-EnviroSampleSite,Admin0Name,adm0,Admin0Name,Country (admin level 0) — name.,
-EnviroSampleSite,Admin0VizName,admin0viz_name,Admin 0 Vizname,Country (admin level 0) — visualisation name.,
-EnviroSampleSite,Admin1GUID,adm1_guid,Admin 1 GUID,Province/state (admin level 1) — globally unique identifier (GUID).,
-EnviroSampleSite,Admin1Id,admin1id,Admin 1 Id,Province/state (admin level 1) — ID.,
-EnviroSampleSite,Admin1Name,adm1,Admin1Name,Province/state (admin level 1) — name.,
-EnviroSampleSite,Admin1VizName,admin1viz_name,Admin 1 VizName,Province/state (admin level 1) — visualisation name.,
-EnviroSampleSite,Admin2GUID,adm2_guid,Admin 2 GUID,District (admin level 2) — globally unique identifier (GUID).,
-EnviroSampleSite,Admin2Id,admin2id,Admin 2 Id,District (admin level 2) — ID.,
-EnviroSampleSite,Admin2Name,adm2,Admin2Name,District (admin level 2) — name.,
-EnviroSampleSite,Admin2VizName,admin2viz_name,Admin 2 VizName,District (admin level 2) — visualisation name.,
-EnviroSampleSite,Comments,comments,Comments,Comments.,
-EnviroSampleSite,CountryName,country_name,Country,Name of country.,
-EnviroSampleSite,CreatedDate,created_date,Created Date,Date of created.,
-EnviroSampleSite,DateClosed,date_closed,Date closed,Date closed.,
-EnviroSampleSite,GlobalID,global_id,GlobalID,Internal identifier for global.,
-EnviroSampleSite,Id,id,Id,Internal identifier for this record.,
-EnviroSampleSite,Latitude,latitude,Latitude,Latitude.,
-EnviroSampleSite,Longitude,longitude,Longitude,Longitude.,
-EnviroSampleSite,ObjectId,object_id,ObjectId,Internal identifier for object.,
-EnviroSampleSite,RegionId,region_id,Region ID,Internal identifier for region.,
-EnviroSampleSite,SiteCode,site_code,Site Code,Site code.,
-EnviroSampleSite,SiteCodeAlternate,site_code_alternate,Site Code Alternate,Site code alternate.,
-EnviroSampleSite,SiteGUID,site_guid,Site Guid,Site globally unique identifier (GUID).,
-EnviroSampleSite,SiteName,site_name,Site Name,Name of site.,
-EnviroSampleSite,Status,status,Status,Status.,
-EnviroSampleSite,StatusId,status_id,Status Id,Internal identifier for status.,
-EnviroSampleSite,UpdatedDate,updated_date,UpdatedDate,Date of updated.,
-EnviroSampleSite,UploadedBy,uploaded_by,Uploaded by,Uploaded by.,
-EnviroSampleSite,UploadedDate,uploaded_date,Uploaded Date,Date of uploaded.,
-EnviroSampleSite,WHORegion,who_region,WHORegion,WHO region.,
-Geography,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-Geography,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-Geography,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-Geography,ADMx_vizname,ad_mx_vizname,ADMx_vizname,Ad mx map display name.,
-Geography,FK_MainGeoplaceNameId,fk_main_geoplace_name_id,FK_MainGeoplaceNameId,Internal identifier for fk main geoplace name.,
-Geography,HId,h_id,HId,Internal identifier for h.,
-HumanSpecimenViruses,CaseManualEditId,case_manual_edit_id,CaseManualEditId,Internal identifier for case manual edit.,
-HumanSpecimenViruses,EPID,epid,EPID,Epidemiological case ID (EPID number).,
-HumanSpecimenViruses,Id,id,Id,Internal identifier for this record.,
-HumanSpecimenViruses,LabSpecimenId,lab_specimen_id,LabSpecimenId,Internal identifier for laboratory specimen.,
-HumanSpecimenViruses,PublishDate,publish_date,PublishDate,Date of publish.,
-HumanSpecimenViruses,VirusId,virus_id,VirusId,Internal identifier for virus.,
-HumanSpecimenViruses,VirusTypeName,virus_type_name,VirusTypeName,Name of virus type.,
-Im,ActivityCode,activity_code,ActivityCode,Activity code.,
-Im,ActivityParentId,activity_parent_id,ActivityParentId,Internal identifier for activity parent.,
-Im,ActivityPlannedDateFrom,activity_planned_date_from,ActivityParentPlannedDateFrom,Activity planned date from.,
-Im,ActivityPlannedDateFromYear,activity_planned_date_from_year,Year,Activity planned date from year.,
-Im,ActivityPlannedDateTo,activity_planned_date_to,ActivityParentPlannedDateFrom,Activity planned date to.,
-Im,ActivityTargetPopulation,activity_target_population,ActivityTargetPopulation,Activity target population.,
-Im,ActivityTargetPopulationPercent,activity_target_population_percent,ActivityTargetPopulationPercent,Activity target population percent.,
-Im,Admin0,adm0,Admin0,Country (admin level 0).,
-Im,Admin0GUID,adm0_guid,Admin0GUID,Country (admin level 0) — globally unique identifier (GUID).,
-Im,Admin0Id,admin0id,Admin0Id,Country (admin level 0) — ID.,
-Im,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-Im,Admin1,adm1,Admin1,Province/state (admin level 1).,
-Im,Admin1GUID,adm1_guid,Admin1GUID,Province/state (admin level 1) — globally unique identifier (GUID).,
-Im,Admin1Id,admin1id,Admin1Id,Province/state (admin level 1) — ID.,
-Im,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-Im,Admin2,adm2,Admin2,District (admin level 2).,
-Im,Admin2GUID,adm2_guid,Admin2GUID,District (admin level 2) — globally unique identifier (GUID).,
-Im,Admin2Id,admin2id,Admin2Id,District (admin level 2) — ID.,
-Im,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-Im,Admin3,admin3,Admin3,Sub-district (admin level 3).,
-Im,Admin4,admin4,Admin4,Admin 4.,
-Im,Antigens,antigens,Antigens,Vaccine antigens.,
-Im,AreaPoorlyCovered,area_poorly_covered,AreaPoorlyCovered,Area poorly covered.,
-Im,Comment,comment,Comment,Comment.,
-Im,CountryISO3Code,country_iso3code,CountryISO3Code,Country ISO country code 3 code.,
-Im,DataSourceName,data_source_name,DataSource Name,Name of data source.,
-Im,HouseholdsNumberChildrenChecked,households_number_children_checked,HouseholdsNumberChildrenChecked,Households number children checked.,
-Im,HouseholdsNumberChildrenElligible,households_number_children_elligible,HouseholdsNumberChildrenElligible,Households number children elligible.,
-Im,HouseholdsNumberChildrenMarked,households_number_children_marked,HouseholdsNumberChildrenMarked,Households number children marked.,
-Im,HouseholdsResult,households_result,HouseholdsResult,Households result.,
-Im,Id,id,Id,Internal identifier for this record.,
-Im,ImId,im_id,ImId,Internal identifier for independent monitoring.,
-Im,InputFileId,input_file_id,InputFileId,Internal identifier for input file.,
-Im,IsDistrictSelectedForIM,is_district_selected_for_im,IsDistrictSelectedForIM,Whether district selected for independent monitoring (yes/no).,
-Im,IsDistrictTargetedBySIA,is_district_targeted_by_sia,IsDistrictTargetedBySIA,Whether district targeted by supplementary immunization activity (campaign) (yes/no).,
-Im,ISTCode,ist_code,ISTCode,Inter-country support team code.,
-Im,NumberChildrenNotVaccinedAbsence,number_children_not_vaccined_absence,NumberChildrenNotVaccinedAbsence,Number children not vaccined absence.,
-Im,NumberChildrenNotVaccinedHouseNotVisited,number_children_not_vaccined_house_not_visited,NumberChildrenNotVaccinedHouseNotVisited,Number children not vaccined house not visited.,
-Im,NumberChildrenNotVaccinedNonCompliance,number_children_not_vaccined_non_compliance,NumberChildrenNotVaccinedNonCompliance,Number children not vaccined non compliance.,
-Im,NumberChildrenNotVaccinedOtherReason,number_children_not_vaccined_other_reason,NumberChildrenNotVaccinedOtherReason,Number children not vaccined other reason.,
-Im,NumberDaysIM,number_days_im,NumberDaysIM,Number days independent monitoring.,
-Im,NumberHousesCheck,number_houses_check,NumberHousesCheck,Number houses check.,
-Im,NumberHousesMarked,number_houses_marked,NumberHousesMarked,Number houses marked.,
-Im,NumberOfIM,number_of_im,NumberOfIM,Number of independent monitoring.,
-Im,NumberParentsAware,number_parents_aware,NumberParentsAware,Number parents aware.,
-Im,NumberParentsInformedByChurchMosque,number_parents_informed_by_church_mosque,NumberParentsInformedByChurchMosque,Number parents informed by church mosque.,
-Im,NumberParentsInformedByCriersGriots,number_parents_informed_by_criers_griots,NumberParentsInformedByCriersGriots,Number parents informed by criers griots.,
-Im,NumberParentsInformedByOtherReason,number_parents_informed_by_other_reason,NumberParentsInformedByOtherReason,Number parents informed by other reason.,
-Im,NumberParentsInformedByRadio,number_parents_informed_by_radio,NumberParentsInformedByRadio,Number parents informed by radio.,
-Im,NumberParentsInformedBySocialMobilizationStaff,number_parents_informed_by_social_mobilization_staff,NumberParentsInformedBySocialMobilizationStaff,Number parents informed by social mobilization staff.,
-Im,NumberParentsInformedByTV,number_parents_informed_by_tv,NumberParentsInformedByTV,Number parents informed by tv.,
-Im,NumberParentsInformedByVaccinators,number_parents_informed_by_vaccinators,NumberParentsInformedByVaccinators,Number parents informed by vaccinators.,
-Im,NumberParentsInterviewed,number_parents_interviewed,NumberParentsInterviewed,Number parents interviewed.,
-Im,OutOfHouseNumberChildrenChecked,out_of_house_number_children_checked,OutOfHouseNumberChildrenChecked,Out of house number children checked.,
-Im,OutOfHouseNumberChildrenMarked,out_of_house_number_children_marked,OutOfHouseNumberChildrenMarked,Out of house number children marked.,
-Im,OutOfHouseResult,out_of_house_result,% of Out-of-house Children Marked,Out of house result.,
-Im,PopulationUnderFive,population_under_five,PopulationUnderFive,Population under five.,
-Im,ProfileOfIM,profile_of_im,ProfileOfIM,Profile of independent monitoring.,
-Im,PublishDate,publish_date,PublishDate,Date of publish.,
-Im,RegionId,region_id,RegionId,Internal identifier for region.,
-Im,StartSIA,start_sia,StartSIA,Start supplementary immunization activity (campaign).,
-Im,TotalDistrictsInCountry,total_districts_in_country,TotalDistrictsInCountry,Total districts in country.,
-Im,TotalDistrictsTargetedBySIA,total_districts_targeted_by_sia,TotalDistrictsTargetedBySIA,Total districts targeted by supplementary immunization activity (campaign).,
-Im,TotalSubDistrictsInCountry,total_sub_districts_in_country,TotalSubDistrictsInCountry,Total sub districts in country.,
-Im,TotalSubDistrictsInDistrict,total_sub_districts_in_district,TotalSubDistrictsInDistrict,Total sub districts in district.,
-Im,TotalSubDistrictsSelectedForIM,total_sub_districts_selected_for_im,TotalSubDistrictsSelectedForIM,Total sub districts selected for independent monitoring.,
-Im,TypeActivity,type_activity,TypeActivity,Type activity.,
-Im,TypeSIA,type_sia,TypeSIA,Type supplementary immunization activity (campaign).,
-Im,TypeSIAId,type_sia_id,TypeSIAId,Internal identifier for type supplementary immunization activity (campaign).,
-Im,VaccineType,vaccine_type,VaccineType,Sabin vaccine poliovirus type.,
-Im,VaccineTypeId,vaccine_type_id,VaccineTypeId,Internal identifier for Sabin vaccine poliovirus type.,
-Im,WhoSelectedIM,who_selected_im,WhoSelectedIM,WHO selected independent monitoring.,
-Im,WhoTrainedIM,who_trained_im,WhoTrainedIM,WHO trained independent monitoring.,
-LabSpecimen,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-LabSpecimen,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-LabSpecimen,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-LabSpecimen,CaseManualEditId,case_manual_edit_id,CaseManualEditId,Internal identifier for case manual edit.,
-LabSpecimen,CountryISO2Code,country_iso2code,,Country ISO country code 2 code.,
-LabSpecimen,DateFinalCellCultureResults,date_final_cell_culture_results,DateFinalCellCultureResults,Date final cell culture results.,
-LabSpecimen,DateIsolateRcvdForSeq,date_isolate_rcvd_for_seq,DateIsolateRcvdForSeq,Date isolate rcvd for genomic sequencing.,
-LabSpecimen,DateIsolateSentforITD,date_isolate_sentfor_itd,DateIsolateSentforITD,Date isolate sentfor intratypic differentiation (ITD) lab test.,
-LabSpecimen,DateIsolateSentForSequencing,date_isolate_sent_for_sequencing,DateIsolateSentForSequencing,Date isolate sent for sequencing.,
-LabSpecimen,DateITDResultReported,date_itd_result_reported,Date of ITD result reported,Date intratypic differentiation (ITD) lab test result reported.,
-LabSpecimen,DateofITDResult,dateof_itd_result,Date of ITD result,Dateof intratypic differentiation (ITD) lab test result.,
-LabSpecimen,DateofSequencing,dateof_sequencing,Date of sequencing,Dateof sequencing.,
-LabSpecimen,DateSequencingResults,date_sequencing_results,DateSequencingResults,Date sequencing results.,
-LabSpecimen,EmergenceGroup,emergence_group,,Emergence group.,
-LabSpecimen,Id,id,Id,Internal identifier for this record.,
-LabSpecimen,LabName,lab_name,LabName,Name of laboratory.,
-LabSpecimen,Location,location,Location,Location.,
-LabSpecimen,nVACCINE2,n_vaccine2,,N Sabin vaccine poliovirus 2.,
-LabSpecimen,nVDPV2,n_vdpv2,,N vaccine-derived poliovirus 2.,
-LabSpecimen,SpecimenId,specimen_id,SpecimenId,Internal identifier for specimen.,
-LabSpecimen,SpecimenNumber,specimen_number,,Specimen number.,
-LabSpecimen,VACCINE1,vaccine1,,Sabin vaccine poliovirus 1.,
-LabSpecimen,VACCINE2,vaccine2,,Sabin vaccine poliovirus 2.,
-LabSpecimen,VACCINE3,vaccine3,,Sabin vaccine poliovirus 3.,
-LabSpecimen,VaccineOrigin,vaccine_origin,VaccineOrigin,Sabin vaccine poliovirus origin.,
-LabSpecimen,VDPV1,vdpv1,,Vaccine-derived poliovirus 1.,
-LabSpecimen,VDPV2,vdpv2,,Vaccine-derived poliovirus 2.,
-LabSpecimen,VDPV3,vdpv3,,Vaccine-derived poliovirus 3.,
-LabSpecimen,VdpvClassification,vdpv_classification,VdpvClassification,Vaccine-derived poliovirus classification.,
-LabSpecimen,VirusCluster,virus_cluster,,Virus cluster.,
-LabSpecimen,WILD1,wild1,,Wild poliovirus 1.,
-LabSpecimen,WILD2,wild2,,Wild poliovirus 2.,
-LabSpecimen,WILD3,wild3,,Wild poliovirus 3.,
-Lqas,ActivityAreaPopulation,activity_area_population,ActivityAreaPopulation,Activity area population.,
-Lqas,ActivityAreaTargetPercent,activity_area_target_percent,ActivityAreaTargetPercent,Activity area target percent.,
-Lqas,ActivityCountryPopulation,activity_country_population,ActivityCountryPopulation,Activity country population.,
-Lqas,ActivityParentId,activity_parent_id,Activity Parent Id,Internal identifier for activity parent.,
-Lqas,ActivityTargetPopulation,activity_target_population,ActivityTargetPopulation,Activity target population.,
-Lqas,ActivityTargetPopulationPercent,activity_target_population_percent,ActivityTargetPopulationPercent,Activity target population percent.,
-Lqas,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-Lqas,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-Lqas,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-Lqas,DataSourceName,data_source_name,DataSource Name,Name of data source.,
-Lqas,Lqas2ClassificationCode,lqas2classification_code,Lqas2ClassificationCode,Lot quality assurance sampling 2 classification code.,
-Lqas,Lqas2ClassificationName,lqas2_classification_name,Lqas2ClassificationName,Name of lot quality assurance sampling 2 classification.,
-Lqas,Lqas3ClassificationCode,lqas3classification_code,Lqas3ClassificationCode,Lot quality assurance sampling 3 classification code.,
-Lqas,Lqas3ClassificationName,lqas3_classification_name,Lqas3ClassificationName,Name of lot quality assurance sampling 3 classification.,
-Lqas,LqasClassificationCode,lqas_classification_code,LqasClassificationCode,Lot quality assurance sampling classification code.,
-Lqas,LqasId,lqas_id,LqasId,Internal identifier for lot quality assurance sampling.,
-Lqas,Phase,phase,Phase,Phase.,
-Population,FK_MainPopulationId,fk_main_population_id,FK_MainPopulationId,Internal identifier for fk main population.,
-RefAgeGroupData,Acronym,acronym,Acronym,Acronym.,
-RefAgeGroupData,Code,code,Code,Code.,
-RefAgeGroupData,Description,description,Description,Description.,
-RefAgeGroupData,DisplaySequence,display_sequence,DisplaySequence,Display sequence.,
-RefAgeGroupData,EndAge,end_age,EndAge,End age.,
-RefAgeGroupData,Id,id,Id,Internal identifier for this record.,
-RefAgeGroupData,Name,name,Name,Name of this record.,
-RefAgeGroupData,RendererColor,renderer_color,RendererColor,Renderer color.,
-RefAgeGroupData,ShortName,short_name,ShortName,Name of short.,
-RefAgeGroupData,StartAge,start_age,StartAge,Start age.,
-SubActivity,ActivityAgeAggregated,activity_age_aggregated,Age Groups,Activity age aggregated.,
-SubActivity,ActivityAntigenAggregated,activity_antigen_aggregated,Name of the vaccines used,Activity vaccine antigen aggregated.,
-SubActivity,ActivityChildrenAffectedAggregated,activity_children_affected_aggregated,Total Children affected,Activity children affected aggregated.,
-SubActivity,ActivityChildrenImmunizedAggregated,activity_children_immunized_aggregated,Total Immunized Population,Activity children immunized aggregated.,
-SubActivity,ActivityChildrenInaccessible,activity_children_inaccessible,,Activity children inaccessible.,
-SubActivity,ActivityChildrenInaccessibleAggregated,activity_children_inaccessible_aggregated,Total Children inaccessible,Activity children inaccessible aggregated.,
-SubActivity,ActivityComments,activity_comments,ActivityComments,Activity comments.,
-SubActivity,ActivityCommentsAggregated,activity_comments_aggregated,Comments,Activity comments aggregated.,
-SubActivity,ActivityIMDataLoaded,activity_im_data_loaded,,Activity independent monitoring data loaded.,
-SubActivity,ActivityIMGenderDataLoaded,activity_im_gender_data_loaded,IM Gender loaded,Activity independent monitoring gender data loaded.,
-SubActivity,ActivityImmunizedPercentageAggregated,activity_immunized_percentage_aggregated,Average Coverage Percentage,Activity immunized percentage aggregated.,
-SubActivity,ActivityIsDatesConfirmed,activity_is_dates_confirmed,ActivityIsDatesConfirmed,Activity is dates confirmed.,
-SubActivity,ActivityLqasDataLoaded,activity_lqas_data_loaded,,Activity lot quality assurance sampling data loaded.,
-SubActivity,ActivityLqasGenderDataLoaded,activity_lqas_gender_data_loaded,LQAS Gender loaded,Activity lot quality assurance sampling gender data loaded.,
-SubActivity,ActivityMaxDateToAggregated,activity_max_date_to_aggregated,Latest End Date,Activity max date to aggregated.,
-SubActivity,ActivityMinDateFromAggregated,activity_min_date_from_aggregated,Ealiest Start Date,Activity min date from aggregated.,
-SubActivity,ActivityParent_IM_HH_MissedChildrenPercentage,activity_parent_im_hh_missed_children_percentage,ActivityParent_IM_HH_MissedChildrenPercentage,Activity parent independent monitoring house-to-house monitoring missed children percentage.,
-SubActivity,ActivityParent_IM_OH_MissedChildrenPercentage,activity_parent_im_oh_missed_children_percentage,ActivityParent_IM_OH_MissedChildrenPercentage,Activity parent independent monitoring out-of-house monitoring missed children percentage.,
-SubActivity,ActivityParent_LqasFailPercentage,activity_parent_lqas_fail_percentage,ActivityParent_LqasFailPercentage,Activity parent lot quality assurance sampling fail percentage.,
-SubActivity,ActivityParent_LqasPassPercentage,activity_parent_lqas_pass_percentage,ActivityParent_LqasPassPercentage,Activity parent lot quality assurance sampling pass percentage.,
-SubActivity,ActivityParentActivityTypeName,activity_parent_activity_type_name,,Name of activity parent activity type.,
-SubActivity,ActivityParentAreaTargetPercent,activity_parent_area_target_percent,,Activity parent area target percent.,
-SubActivity,ActivityParentChildrenInaccessible,activity_parent_children_inaccessible,,Activity parent children inaccessible.,
-SubActivity,ActivityParentHasBreakthrough,activity_parent_has_breakthrough,,Activity parent has breakthrough.,
-SubActivity,ActivityParentRoundNumber,activity_parent_round_number,,Activity parent round number.,
-SubActivity,ActivityParentSecurityAffectedChildren,activity_parent_security_affected_children,,Activity parent security affected children.,
-SubActivity,ActivityParentUpdatedBy,activity_parent_updated_by,ActivityParentUpdatedBy,Activity parent updated by.,
-SubActivity,ActivityParentUpdatedDate,activity_parent_updated_date,,Date of activity parent updated.,
-SubActivity,ActivitySecurityAffectedChildren,activity_security_affected_children,,Activity security affected children.,
-SubActivity,ActivityStatusAggregated,activity_status_aggregated,Activity Statuses,Activity status aggregated.,
-SubActivity,ActivityTargetPopulationAggregated,activity_target_population_aggregated,Total Targeted Population,Activity target population aggregated.,
-SubActivity,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-SubActivity,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-SubActivity,Admin2_IM_HH_MissedChildrenPercentage,admin2_im_hh_missed_children_percentage,Admin2_IM_HH_MissedChildrenPercentage,District (admin level 2) — independent monitoring house-to-house monitoring missed children percentage.,
-SubActivity,Admin2_IM_OH_MissedChildrenPercentage,admin2_im_oh_missed_children_percentage,Admin2_IM_OH_MissedChildrenPercentage,District (admin level 2) — independent monitoring out-of-house monitoring missed children percentage.,
-SubActivity,Admin2_LqasFailPercentage,admin2_lqas_fail_percentage,Admin2_LqasFailPercentage,District (admin level 2) — lot quality assurance sampling fail percentage.,
-SubActivity,Admin2_LqasPassPercentage,admin2_lqas_pass_percentage,Admin2_LqasPassPercentage,District (admin level 2) — lot quality assurance sampling pass percentage.,
-SubActivity,Admin2IMDataLoaded,admin2im_data_loaded,,District (admin level 2) — independent monitoring data loaded.,
-SubActivity,Admin2IMGenderDataLoaded,admin2im_gender_data_loaded,IM Admin 2 Gender data loaded,District (admin level 2) — independent monitoring gender data loaded.,
-SubActivity,Admin2LqasDataLoaded,admin2lqas_data_loaded,,District (admin level 2) — lot quality assurance sampling data loaded.,
-SubActivity,Admin2LqasGenderDataLoaded,admin2lqas_gender_data_loaded,LQAS Admin 2 Gender data loaded,District (admin level 2) — lot quality assurance sampling gender data loaded.,
-SubActivity,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-SubActivity,ApprovalDate,approval_date,ApprovalDate,Date of approval.,
-SubActivity,CountryISO2Code,country_iso2code,CountryISO2Code,Country ISO country code 2 code.,
-SubActivity,IsPartialNID,is_partial_nid,IsPartialNID,Whether partial nid (yes/no).,
-SubActivity,LastModificationDate,last_modification_date,LastModificationDate,Date of last modification.,
-SubActivity,PublishDate,publish_date,PublishDate,Date of publish.,
-SubActivity,SubActivityByAdmin2Id,sub_activity_by_admin2id,SubActivityByAdmin2Id,Internal identifier for sub activity by admin 2.,
-SubActivity,SubActivityId,sub_activity_id,Sub activity ID,Internal identifier for sub activity.,
-SubActivity,Id,id,,ID.,
-SubActivity,ParentId,parent_id,,Parent ID.,
-SubActivity,Number,number,,Number.,
-SubActivity,InitialPlannedDate,initial_planned_date,Sub-Activity Initial Planned Date,Initial planned date.,
-SubActivity,DateFrom,date_from,Sub-Activity Start Date,Date from.,
-SubActivity,IsDateFromExact,is_date_from_exact,,Is date from exact.,
-SubActivity,DateTo,date_to,Sub-Activity End Date,Date to.,
-SubActivity,IsDateToExact,is_date_to_exact,,Is date to exact.,
-SubActivity,IsDatesConfirmed,is_dates_confirmed,,Is dates confirmed.,
-SubActivity,ActivityParentPlannedDateFrom,activity_parent_planned_date_from,Activity Start Date,Activity parent planned date from.,
-SubActivity,ActivityParentPlannedDateTo,activity_parent_planned_date_to,Activity End Date,Activity parent planned date to.,
-SubActivity,StatusCode,status_code,,Status code.,
-SubActivity,Status,status,Status,Status.,
-SubActivity,PriorityCode,priority_code,,Priority code.,
-SubActivity,Priority,priority,Priority,Priority.,
-SubActivity,AgeGroupCode,age_group_code,,Age group code.,
-SubActivity,AgeGroup,age_group,Age Group,Age group.,
-SubActivity,VaccineType,vaccine_type,Vaccine Type,Vaccine type.,
-SubActivity,VaccineCode,vaccine_code,,Vaccine code.,
-SubActivity,WHORegion,who_region,WHO Region,WHO region.,
-SubActivity,ISTName,ist_name,IST,Ist name.,
-SubActivity,Admin0Id,admin0id,Admin 0 Id,Admin 0 ID.,
-SubActivity,Admin0Name,adm0,Country,Admin 0 name.,
-SubActivity,Admin1Name,adm1,Admin1,Admin 1 name.,
-SubActivity,Admin2Name,adm2,Admin2,Admin 2 name.,
-SubActivity,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,
-SubActivity,Admin1Id,admin1id,Admin 1 Id,Admin 1 ID.,
-SubActivity,Province,province,,Province.,
-SubActivity,Admin2Id,admin2id,Admin 2 Id,Admin 2 ID.,
-SubActivity,District,district,,District.,
-SubActivity,Admin0Guid,adm0_guid,Admin 0 Guid,Admin 0 guid.,
-SubActivity,Admin1Guid,adm1_guid,Admin 1 Guid,Admin 1 guid.,
-SubActivity,Admin2Guid,adm2_guid,Admin 2 Guid,Admin 2 guid.,
-SubActivity,AdditionalIntervention,additional_intervention,Additional Interventions,Additional intervention.,
-SubActivity,AreaTargetPercent,area_target_percent,Area Targeted %,Area target percent.,
-SubActivity,CountryPopulation,country_population,UNPD Country Population,Country population.,
-SubActivity,AreaPopulation,area_population,Area Population,Area population.,
-SubActivity,AgeGroupPercent,age_group_percent,Age Group %,Age group percent.,
-SubActivity,ChildrenImmunized,children_immunized,Immunized Population,Children immunized.,
-SubActivity,VaccineModifier,vaccine_modifier,,Vaccine modifier.,
-SubActivity,WastageFactor,wastage_factor,Wastage Factor,Wastage factor.,
-SubActivity,CalculatedTargetPopulation,calculated_target_population,Targeted Population,Calculated target population.,
-SubActivity,CalculatedDosages,calculated_dosages,Number of Doses,Calculated dosages.,
-SubActivity,UpdatedDate,updated_date,Sub-Activity Last Updated Date,Updated date.,
-SubActivity,UpdatedBy,updated_by,,Updated by.,
-SubActivity,IsGeoplaceUnspecified,is_geoplace_unspecified,,Is geoplace unspecified.,
-SubActivity,Admin2TargetPopulation,admin2target_population,Admin 2 Targeted Population,Admin 2 target population.,
-SubActivity,Admin2ChildrenImmunized,admin2children_immunized,Admin 2 Immunized Population,Admin 2 children immunized.,
-SubActivity,Admin2SecurityStatus,admin2security_status,Admin 2 Accessibility Status,Admin 2 security status.,
-SubActivity,Admin2Comments,admin2comments,Admin 2 Comments,Admin 2 comments.,
-SubActivity,PhaseName,phase_name,Phase,Phase name.,
-SubActivity,DelayReason,delay_reason,Delay Reason,Delay reason.,
-SubActivity,Admin2ChildrenInaccessible,admin2children_inaccessible,Admin2 children inaccessible,Admin 2 children inaccessible.,
-SubActivity,ActivityAdminCoveragePercentage,activity_admin_coverage_percentage,Admin Coverage %,Activity admin coverage percentage.,
-SubActivity,ActivityParentCode,activity_parent_code,SIA Code,Activity parent code.,
-SubActivity,SIASubActivityCode,sia_sub_activity_code,SIA Sub-Activity Code,SIA sub activity code.,
-SubActivity,ActivityParentLinkedOutbreaksList,activity_parent_linked_outbreaks_list,Linked Outbreak(s),Activity parent linked outbreaks list.,
-SubActivity,ActivityChildApprovedDosages,activity_child_approved_dosages,Number of Doses Approved,Activity child approved dosages.,
-SubActivity,,activity_comments,Activity Comments,Activity comments.,
-Virus,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,
-Virus,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,
-Virus,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,
-Virus,FinalCellCultureResult,final_cell_culture_result,NumberDaysIM,Final cell culture result.,
-Virus,HasEmergenceGroupOrClusterName,has_emergence_group_or_cluster_name,HasEmergenceGroupOrClusterName,Whether emergence group or cluster name (yes/no).,
-Virus,IsBreakthrough,is_breakthrough,IsBreakthrough,Whether breakthrough (yes/no).,
-Virus,Location,location,Location,Location.,
-Virus,nOPVCategoryCode,n_opv_category_code,nOPV Category Code,N oral polio vaccine category code.,
-Virus,nOPVCategoryId,n_opv_category_id,nOPV Category Id,Internal identifier for n oral polio vaccine category.,
-Virus,nOPVCategoryName,n_opv_category_name,nOPV Category Name,Name of n oral polio vaccine category.,
-Virus,NtChanges,nt_changes,NtChanges,Nucleotide changes.,
-Virus,ReportingWeekAndYear,reporting_week_and_year,AFP Reporting Week and Year,Reporting week and year.,
-Virus,VaccineOrigin,vaccine_origin,VaccineOrigin,Sabin vaccine poliovirus origin.,
-Virus,VirusDisplaySequence,virus_display_sequence,VirusDisplaySequence,Virus display sequence.,
-Virus,VirusId,virus_id,VirusId,Internal identifier for virus.,
-Virus,VirusRenderer,virus_renderer,VirusRenderer,Virus renderer.,
-Virus,AdvancedNotification,advanced_notification,Advanced Notification,Advanced notification.,
-Virus,SurveillanceTypeId,surveillance_type_id,,Surveillance type ID.,
-Virus,EPID,epid,EPID,EPID.,
-Virus,ReportingYear,reporting_year,,Reporting year.,
-Virus,EnviroSampleManualEditId,enviro_sample_manual_edit_id,Env Sample ID,Enviro sample manual edit ID.,
-Virus,Id,id,Virus ID,ID.,
-Virus,WHORegion,who_region,WHO Region,WHO region.,
-Virus,RegionId,region_id,,Region ID.,
-Virus,Admin0OfficialName,admin0official_name,,Admin 0 official name.,
-Virus,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,
-Virus,SubRegionId,sub_region_id,,Sub region ID.,
-Virus,Admin0Name,adm0,Place Admin 0,Admin 0 name.,
-Virus,Admin0WhoCode,admin0who_code,,Admin 0 WHO code.,
-Virus,Admin0GUID,adm0_guid,Admin 0 Guid,Admin 0 guid.,
-Virus,Admin0Id,admin0id,,Admin 0 ID.,
-Virus,Admin1GUID,adm1_guid,Admin 1 Guid,Admin 1 guid.,
-Virus,Admin1Id,admin1id,,Admin 1 ID.,
-Virus,Admin1Iso2Code,admin1iso2code,,Admin 1 ISO 2 code.,
-Virus,Admin1Iso3Code,admin1iso3code,,Admin 1 ISO 3 code.,
-Virus,Admin1Name,adm1,Place Admin 1,Admin 1 name.,
-Virus,Admin1OfficialName,admin1official_name,,Admin 1 official name.,
-Virus,Admin1WhoCode,admin1who_code,,Admin 1 WHO code.,
-Virus,Admin2GUID,adm2_guid,Admin 2 Guid,Admin 2 guid.,
-Virus,Admin2Id,admin2id,,Admin 2 ID.,
-Virus,Admin2Name,adm2,Place Admin 2,Admin 2 name.,
-Virus,Admin2OfficialName,admin2official_name,,Admin 2 official name.,
-Virus,CaseManualEditId,case_manual_edit_id,PolIS Case ID,Case manual edit ID.,
-Virus,CreatedBy,created_by,,Created by.,
-Virus,CreatedDate,created_date,,Created date.,
-Virus,EnvSiteCode,env_site_code,Site Code,Env site code.,
-Virus,EnvSiteId,env_site_id,,Env site ID.,
-Virus,EnvSiteName,env_site_name,Site Name,Env site name.,
-Virus,ExactLatitude,exact_latitude,Exact Latitude,Exact latitude.,
-Virus,ExactLongitude,exact_longitude,Exact Longitude,Exact longitude.,
-Virus,HomologyVirus1EPID,homology_virus1epid,,Homology virus 1 EPID.,
-Virus,HomologyVirus1Id,homology_virus1id,,Homology virus 1 ID.,
-Virus,HomologyVirus2EPID,homology_virus2epid,,Homology virus 2 EPID.,
-Virus,HomologyVirus2Id,homology_virus2id,,Homology virus 2 ID.,
-Virus,HomologyVirus3EPID,homology_virus3epid,,Homology virus 3 EPID.,
-Virus,HomologyVirus3Id,homology_virus3id,,Homology virus 3 ID.,
-Virus,HomologyVirus4EPID,homology_virus4epid,,Homology virus 4 EPID.,
-Virus,HomologyVirus4Id,homology_virus4id,,Homology virus 4 ID.,
-Virus,HomologyVirus5EPID,homology_virus5epid,,Homology virus 5 EPID.,
-Virus,HomologyVirus5Id,homology_virus5id,,Homology virus 5 ID.,
-Virus,ISTName,ist_name,IST,Ist name.,
-Virus,LabNationalName,lab_national_name,Lab National Name,Lab national name.,
-Virus,LabRegionalName,lab_regional_name,Lab Regional Name,Lab regional name.,
-Virus,Latitude,latitude,Y,Latitude.,
-Virus,Longitude,longitude,X,Longitude.,
-Virus,PercentHomology1,percent_homology1,,Percent homology 1.,
-Virus,PercentHomology2,percent_homology2,,Percent homology 2.,
-Virus,PercentHomology3,percent_homology3,,Percent homology 3.,
-Virus,PercentHomology4,percent_homology4,,Percent homology 4.,
-Virus,PercentHomology5,percent_homology5,,Percent homology 5.,
-Virus,PoNS_AdministrationType,pons_administration_type,PoNS Administration Type,PoNS administration type.,
-Virus,PoNS_ClosestMatch,pons_closest_match,PoNS Closest Match,PoNS closest match.,
-Virus,PoNS_ClosestMatchDash,pons_closest_match_dash,PoNS Closest Match Dash,PoNS closest match dash.,
-Virus,PoNS_Comments,pons_comments,PoNS Comments,PoNS comments.,
-Virus,PoNS_Country,pons_country,PoNS Country,PoNS country.,
-Virus,PoNS_DashId,pons_dash_id,PoNS Dash Id,PoNS dash ID.,
-Virus,PoNS_Environment,pons_environment,PoNS Environment,PoNS environment.,
-Virus,PoNS_EpiNum,pons_epi_num,PoNS Epid,PoNS EPID number.,
-Virus,PoNS_EpiNumPolis,pons_epi_num_polis,Epid in Polis,PoNS EPID number in POLIS.,
-Virus,PoNS_EpiNumTransformed,pons_epi_num_transformed,PoNS Epid formated,PoNS EPID number (formatted).,
-Virus,PoNS_Expr1005,pons_expr1005,PoNS Expr 1005,PoNS expr 1005.,
-Virus,PoNS_FileName,pons_file_name,PoNS FileName,PoNS file name.,
-Virus,PoNS_Genotype,pons_genotype,PoNS Genotype,PoNS genotype.,
-Virus,PoNS_Genotype2,pons_genotype2,PoNS Genotype2,PoNS genotype 2.,
-Virus,PoNS_Id,pons_id,PoNS Id,PoNS ID.,
-Virus,PoNS_ISO3,pons_iso3,PoNS ISO3,PoNS ISO 3.,
-Virus,PoNS_Latitude,pons_latitude,PoNS Latitude,PoNS latitude.,
-Virus,PoNS_Locality,pons_locality,PoNS Locality,PoNS locality.,
-Virus,PoNS_Longitude,pons_longitude,PoNS Longitude,PoNS longitude.,
-Virus,PoNS_MapDistEdit,pons_map_dist_edit,PoNS Map Dist Edit,PoNS map distance edit.,
-Virus,PoNS_MatchingQuality,pons_matching_quality,PoNS Matching Quality,PoNS matching quality.,
-Virus,PoNS_Mismatches,pons_mismatches,PoNS Mismatches,PoNS mismatches.,
-Virus,PoNS_NTChanges,pons_nt_changes,PoNS NT Changes,PoNS NT changes.,
-Virus,PoNS_OnSetDate,pons_on_set_date,PoNS OnSet Date,PoNS onset date.,
-Virus,PoNS_Passage,pons_passage,PoNS Passage,PoNS passage.,
-Virus,PoNS_Patient,pons_patient,PoNS Patient,PoNS patient.,
-Virus,PoNS_ReceiptDate,pons_receipt_date,PoNS Receipt Date,PoNS receipt date.,
-Virus,PoNS_Reference,pons_reference,PoNS Reference,PoNS reference.,
-Virus,PoNS_ReferenceName,pons_reference_name,PoNS Reference Name,PoNS reference name.,
-Virus,PoNS_RefLabId,pons_ref_lab_id,PoNS Ref Lab Id,PoNS ref lab ID.,
-Virus,PoNS_Region,pons_region,PoNS Region,PoNS region.,
-Virus,PoNS_SeqBy,pons_seq_by,PoNS Seq By,PoNS seq by.,
-Virus,PoNS_SeqDate,pons_seq_date,PoNS Seq Date,PoNS seq date.,
-Virus,PoNS_SeqRegion,pons_seq_region,PoNS Seq Region,PoNS seq region.,
-Virus,PoNS_Serotype,pons_serotype,PoNS Serotype,PoNS serotype.,
-Virus,PoNS_Serotype2,pons_serotype2,PoNS Serotype2,PoNS serotype 2.,
-Virus,PoNS_Source,pons_source,PoNS Source,PoNS source.,
-Virus,PoNS_SpecDate,pons_spec_date,PoNS Spec Date,PoNS spec date.,
-Virus,PoNS_SpecType,pons_spec_type,PoNS Spec Type,PoNS spec type.,
-Virus,PoNS_StateProv,pons_state_prov,PoNS State Province,PoNS state/province.,
-Virus,PoNS_WHOCountryCode,pons_who_country_code,PoNS WHO Country Code,PoNS WHO country code.,
-Virus,PoNS_WildClusterName,pons_wild_cluster_name,PoNS Wild Cluster Name,PoNS wild cluster name.,
-Virus,PublishDate,publish_date,,Publish date.,
-Virus,RegionGUID,region_guid,,Region guid.,
-Virus,RegionName,region_name,,Region name.,
-Virus,RegionOfficialName,region_official_name,,Region official name.,
-Virus,RegionWhoCode,region_who_code,,Region WHO code.,
-Virus,ReportingWeek,reporting_week,Reporting Week,Reporting week.,
-Virus,SubRegionGUID,sub_region_guid,,Sub region guid.,
-Virus,SubRegionName,sub_region_name,,Sub region name.,
-Virus,SubRegionOfficialName,sub_region_official_name,,Sub region official name.,
-Virus,SubRegionWhoCode,sub_region_who_code,,Sub region WHO code.,
-Virus,SurveillanceTypeName,surveillance_type_name,Surveillance Type,Surveillance type name.,
-Virus,UpdatedBy,updated_by,,Updated by.,
-Virus,UpdatedDate,updated_date,,Updated date.,
-Virus,VaccineNtChangesFromSabin,vaccine_nt_changes_from_sabin,,Vaccine NT changes from Sabin.,
-Virus,VdpvClassificationChangeApprovedBy,vdpv_classification_change_approved_by,,VDPV classification change approved by.,
-Virus,VdpvClassificationChangeDate,vdpv_classification_change_date,,VDPV classification change date.,
-Virus,VdpvClassificationCode,vdpv_classification_code,,VDPV classification code.,
-Virus,VdpvClassificationId,vdpv_classification_id,,VDPV classification ID.,
-Virus,VdpvClassificationName,vdpv_classification_name,VDPV Classification(s),VDPV classification name.,
-Virus,VdpvComments,vdpv_comments,,VDPV comments.,
-Virus,VdpvDocument,vdpv_document,,VDPV document.,
-Virus,VdpvEmergenceGroupCode,vdpv_emergence_group_code,,VDPV emergence group code.,
-Virus,VdpvEmergenceGroupId,vdpv_emergence_group_id,,VDPV emergence group ID.,
-Virus,VdpvEmergenceGroupName,vdpv_emergence_group_name,Emergence Group(s),VDPV emergence group name.,
-Virus,VdpvNtChangesClosestMatch,vdpv_nt_changes_closest_match,,VDPV NT changes closest match.,
-Virus,VdpvNtChangesFromSabin,vdpv_nt_changes_from_sabin,Nt Changes,VDPV NT changes from Sabin.,
-Virus,VdpvReportedBy,vdpv_reported_by,,VDPV reported by.,
-Virus,VdpvReportedToHQDate,vdpv_reported_to_hq_date,,VDPV reported to HQ date.,
-Virus,VdpvSourceCode,vdpv_source_code,,VDPV source code.,
-Virus,VdpvSourceId,vdpv_source_id,,VDPV source ID.,
-Virus,VdpvSourceName,vdpv_source_name,,VDPV source name.,
-Virus,VirusDate,virus_date,Virus Date,Virus date.,
-Virus,VirusTypeCode,virus_type_code,Virus Type(s),Virus type code.,
-Virus,VirusTypeId,virus_type_id,,Virus type ID.,
-Virus,VirusTypeName,virus_type_name,,Virus type name.,
-Virus,WildClusterCode,wild_cluster_code,,Wild cluster code.,
-Virus,WildClusterId,wild_cluster_id,,Wild cluster ID.,
-Virus,WildClusterName,wild_cluster_name,Virus Cluster(s),Wild cluster name.,
-Virus,WildGenotypeCode,wild_genotype_code,,Wild genotype code.,
-Virus,WildGenotypeId,wild_genotype_id,,Wild genotype ID.,
-Virus,WildGenotypeName,wild_genotype_name,,Wild genotype name.,
-Virus,WildImportationEventCode,wild_importation_event_code,,Wild importation event code.,
-Virus,WildImportationEventId,wild_importation_event_id,,Wild importation event ID.,
-Virus,WildImportationEventName,wild_importation_event_name,,Wild importation event name.,
-Virus,,location,location,Location.,
-Case,,year_onset,,Year of onset,derived from paralysis_onset_date (falls back to stool1collection_date then notification_date)
-Case,,month_onset,,Month of onset,derived from paralysis_onset_date
-Case,,age_months,,Age in months,derived (numeric) from calculated_age_in_month then person_age_in_months
-Case,,onset_to_notify,,Days from onset to notification,derived: notification_date - paralysis_onset_date
-Case,,onset_to_invest,,Days from onset to investigation,derived: investigation_date - paralysis_onset_date
-Case,,onset_to_stool1,,Days from onset to stool 1 collection,derived: stool1collection_date - paralysis_onset_date
-Case,,onset_to_stool2,,Days from onset to stool 2 collection,derived: stool2collection_date - paralysis_onset_date
-Case,,notify_to_invest,,Days from notification to investigation,derived: investigation_date - notification_date
-Case,,invest_to_stool1,,Days from investigation to stool 1 collection,derived: stool1collection_date - investigation_date
-Case,,stool1_to_stool2,,Days between stool 1 and stool 2 collection,derived: stool2collection_date - stool1collection_date
-Case,,onset_to_followup,,Days from onset to follow-up,derived: followup_date - paralysis_onset_date
-Case,,stool1_missing,,Stool 1 specimen missing,derived: TRUE when stool1collection_date and stool1condition both absent
-Case,,stool2_missing,,Stool 2 specimen missing,derived: TRUE when stool2collection_date and stool2condition both absent
-Case,,stool_missing,,Both stool specimens missing,derived: stool1_missing and stool2_missing
-Case,,vtype,,Decoded poliovirus type,"derived from polio_virus_types + vdpv_classifications; WPV nomenclature, c/a/i VDPV prefix"
-Case,,vtype_fixed,,Decoded poliovirus type (corrected),vtype with historical country corrections applied
-Case,,classification_all,,Fused analytic classification,virus type (WPV/cVDPV/aVDPV/iVDPV) for positives else recoded classification (NPAFP/COMPATIBLE/NOT-AFP/PENDING/LAB PENDING/VAPP/UNKNOWN)
-Case,,sabin1,,Sabin type 1 detected,derived: polio_virus_types contains VACCINE1
-Case,,sabin2,,Sabin type 2 detected,derived: polio_virus_types contains VACCINE2
-Case,,sabin3,,Sabin type 3 detected,derived: polio_virus_types contains VACCINE3
-Case,,hot_case,,Hot case flag (recomputed),derived: paralysis asymmetric + onset fever + rapid progress all Yes
-Case,,onset_date_quality,,Onset date coherence,derived (Good/Missing onset/Onset after notification/Onset after investigation)
-Case,,timeliness,,Stool collection timeliness,derived (Timely/Not Timely/Unable to Assess) from onset coherence and stool intervals
-Case,,needs_60day_followup,,Needs 60-day follow-up,derived: TRUE when stool collection not timely
-Case,,got_60day_followup,,Received 60-day follow-up,derived: a follow-up visit exists when one was needed
-Case,,followup_on_time,,60-day follow-up on time,derived: follow-up 60-90 days after onset when needed
-Case,,country_actual,,Standardised country name,"enrich_afp(): from country_lookup (countrycode UN name), falls back to title-cased adm0"
-Case,,risk_group,,Polio risk tier,enrich_afp(): from country_lookup (Endemic/Very High/High/Medium Risk)
-Case,,epi_zones,,Epidemiological zone,enrich_afp(): from country_lookup (Lake Chad Basin/Western Africa/Horn of Africa/Southern Africa/Central-Equatorial Africa/Islands/Other)
-Case,,epi_zones_v2,,Epidemiological zone (Sahel variant),enrich_afp(): epi_zones with the Lake Chad Basin & Sahel grouping
-Case,,polio_type,,Poliovirus serotype,enrich_afp(): Type 1/2/3 read from the classification serotype
-Case,,afp_class,,AFP surveillance category,enrich_afp(): AFP-Positive/Non-polio AFP/Not an AFP/VAPP/Others
-Case,,afp,,AFP-positive flag,enrich_afp(): 1 when afp_class is AFP-Positive
-Case,,npafp,,Non-polio AFP flag,enrich_afp(): 1 when Discarded/Pending and not a circulating VDPV 1/2
-Case,,pending_results,,Pending lab results flag,enrich_afp(): TRUE when classification is Pending
-EnvSample,,year_collection,,Year of collection,derived from collection_date
-EnvSample,,month_collection,,Month of collection,derived from collection_date
-SubActivity,,year_start,,Year of campaign start,derived from date_from
-SubActivity,,month_start,,Month of campaign start,derived from date_from
-Virus,,year_onset,,Year of onset,derived from virus_date
-Virus,,month_onset,,Month of onset,derived from virus_date
-Virus,,surveillance_type,,Surveillance type,derived from case/ES linkage (human/environmental)
-EnvSample,,virus_type,,Normalised full virus-type list detected,derived: normalised virus-type list from the raw ES virus columns
-EnvSample,,nvaccine,,Novel OPV2 (nOPV2) detected,derived: nOPV2 detected flag
-EnvSample,,ev_detect,,Any poliovirus/enterovirus detected,derived: fused 'anything detected' flag (polio or enterovirus)
-LabSpecimen,,culture_to_itd,,Days from culture result to ITD result,derived: itd_result_date - culture_result_date
-LabSpecimen,,sent_to_seq_result,,Days from sent-for-sequencing to result,derived: seq_result_date - date_sent_for_sequencing
-SubActivity,,round_num,,Sequential SIA round index,derived: round index within district x vaccine type
-SubActivity,,max_round_date,,Most recent campaign date in district,derived: max campaign date per district
-SubActivity,,last_campaign,,Row is the district's most recent campaign,derived: TRUE on the latest campaign per district
-Virus,,report_date,,Report-date anchor for the positive,derived: onset/collection date anchor for the positive
-Virus,,measurement,,Virus classification label,"derived: positive classification (e.g. WPV 1, cVDPV 2)"
-Lqas,Year,year,,Campaign year,
-Lqas,ChildrenChecked,children_checked,,Children checked in the lot,
-Lqas,ChildrenFoundUnvaccinated,children_found_unvaccinated,,Children found unvaccinated in the lot,
-Lqas,,coverage,,Lot coverage,derived: 1 - children_found_unvaccinated / children_checked
-Lqas,,invalid,,Lot invalid flag,derived: TRUE when children_checked is not a valid multiple
-Lqas,,lqas2_polis,,POLIS 2-level LQAS class (normalised),derived: normalised Lqas2ClassificationName (Pass/Fail/INVALID)
-Lqas,,lqas3_polis,,POLIS 3-level LQAS class (normalised),derived: normalised Lqas3ClassificationName
-Lqas,,lqas2_derived,,Derived 2-level LQAS class,derived: 2-level class computed from coverage
-Lqas,,lqas3_derived,,Derived 3-level LQAS class,derived: 3-level class computed from coverage
-Lqas,,n_lots,,Number of lots in the district-year,derived: lot count per district-year
-Lqas,,n_pass_polis,,Lots passing (POLIS class),derived: count of POLIS-class passes
-Lqas,,n_fail_polis,,Lots failing (POLIS class),derived: count of POLIS-class fails
-Lqas,,n_invalid_polis,,Lots invalid (POLIS class),derived: count of POLIS-class invalids
-Lqas,,n_pass_derived,,Lots passing (derived class),derived: count of derived-class passes
-Lqas,,n_fail_derived,,Lots failing (derived class),derived: count of derived-class fails
-Lqas,,n_invalid_derived,,Lots invalid (derived class),derived: count of derived-class invalids
-Lqas,,pass_pct_polis,,Percent of valid lots passing (POLIS),derived: n_pass_polis / valid lots x 100
-Lqas,,pass_pct_derived,,Percent of valid lots passing (derived),derived: n_pass_derived / valid lots x 100
-Im,,year,,Campaign year,derived: year from activity_planned_date_from_year
-Im,,n_checked_inhouse,,In-house children checked,derived: sum of households_number_children_checked
-Im,,n_marked_inhouse,,In-house children marked,derived: sum of households_number_children_marked
-Im,,missed_frac_inhouse,,In-house missed fraction,derived: 1 - n_marked_inhouse / n_checked_inhouse
-Im,,n_checked_outhouse,,Out-of-house children checked,derived: sum of out_of_house_number_children_checked
-Im,,n_marked_outhouse,,Out-of-house children marked,derived: sum of out_of_house_number_children_marked
-Im,,missed_frac_outhouse,,Out-of-house missed fraction,derived: 1 - n_marked_outhouse / n_checked_outhouse (falls back to mean result)
-Im,,im_status_inhouse,,In-house IM validity status,derived: Valid/Invalid from in-house missed fraction
-Im,,im_status_outhouse,,Out-of-house IM validity status,derived: Valid/Invalid from out-of-house missed fraction
-Case,,doses_opv_number,,Doses OPV number,
-Case,,has_lab_dataset,,Has lab dataset,
-Case,,geo_source,,Geo source,derived: provenance of the recovered geography
-Case,,adm0_source,,ADM0 source,derived: provenance of the recovered geography
-Case,,adm1_source,,ADM1 source,derived: provenance of the recovered geography
-Case,,adm2_source,,ADM2 source,derived: provenance of the recovered geography
-Case,,adm1_guid_source,,ADM1 GUID source,derived: provenance of the recovered geography
-Case,,adm2_guid_source,,ADM2 GUID source,derived: provenance of the recovered geography
-LabSpecimen,,date_stool_collected,,Date stool collected,
-LabSpecimen,,date_stool_received_in_lab,,Date stool received in lab,
-LabSpecimen,,date_finalr_rtpcr_results,,Date finalr RT-PCR results,
-LabSpecimen,,date_l_arm_isolate,,Date l arm isolate,
-LabSpecimen,,date_r_arm_isolate,,Date r arm isolate,
-LabSpecimen,,specimen_epid,,Specimen epid,
-LabSpecimen,,specimen_anonymous_epid,,Specimen anonymous epid,
-LabSpecimen,,case_anonymous_epid,,Case anonymous epid,
-LabSpecimen,,final_cell_culture_result_name,,Final cell culture result name,
-LabSpecimen,,final_itd_result_name,,Final ITD result name,
-LabSpecimen,,final_result_sequence_id,,Final result sequence ID,
-LabSpecimen,,specimen_stool_condition_name,,Specimen stool condition name,
-LabSpecimen,,adequate_specimen,,Adequate specimen,derived: stool/specimen adequacy flag
-LabSpecimen,,adequate_specimen_with_condition,,Adequate specimen with condition,derived: stool/specimen adequacy flag
-LabSpecimen,,case_contact_code,,Case contact code,
-LabSpecimen,,result_npent,,Result NPENT,
-LabSpecimen,,report_date_sequence_result_sent,,Report date sequence result sent,
-LabSpecimen,,collect_to_lab,,Collect to lab,derived: interval in days between the two lab dates
-LabSpecimen,,lab_to_culture,,Lab to culture,derived: interval in days between the two lab dates
-LabSpecimen,,collect_to_seq,,Collect to seq,derived: interval in days between the two lab dates
-LabSpecimen,,adequate,,Adequate,derived: stool/specimen adequacy flag
-Lqas,,month,,Month,
-Lqas,,month_for_display,,Month for display,
-Lqas,,lqas_classification_name,,LQAS classification name,
-Lqas,,start,,Start,
-Lqas,,end,,End,
-Lqas,,pass_count,,Pass count,
-Lqas,,fail_count,,Fail count,
-Lqas,,pass_percent,,Pass percent,
-Lqas,,admin3name,,Admin3name,
-Lqas,,admin4name,,Admin4name,
-Lqas,,invalid_count,,Invalid count,
-Indicators,,level,,Admin level of the row (adm0/adm1/adm2),computed indicator output
-Indicators,,guid,,Admin unit GUID,computed indicator output
-Indicators,,indicator,,Indicator code,computed indicator output
-Indicators,,family,,Indicator family,computed indicator output
-Indicators,,value,,Indicator value,computed indicator output
-Indicators,,numerator,,Indicator numerator,computed indicator output
-Indicators,,denominator,,Indicator denominator,computed indicator output
-Indicators,,confidence,,Confidence / reliability flag,computed indicator output
-Indicators,,category,,Indicator category / band,computed indicator output
-Indicators,,text_code,,Indicator text code,computed indicator output
-Indicators,,afp_cases,,AFP case count,computed indicator output
-Indicators,,npafp_cases,,Non-polio AFP case count,computed indicator output
-Indicators,,npafp_rate,,"Non-polio AFP rate per 100,000 under-15",computed indicator output
-Indicators,,ev_rate,,Enterovirus isolation rate,computed indicator output
-Indicators,,stool_adequacy_cond_pct,,Stool adequacy (with condition) percent,computed indicator output
-Indicators,,under15_pop,,Under-15 population denominator,computed indicator output
-Indicators,,check,,Validation check name,computed indicator output
-Indicators,,severity,,Validation severity,computed indicator output
-Indicators,,n_flagged,,Rows flagged by the check,computed indicator output
-SubActivity,,admin2fm_data_loaded,,Admin2fm data loaded,
-SubActivity,,activity_parent_fm_data_loaded,,Activity parent FM data loaded,
-SubActivity,,activity_parent_im_gender_data_loaded,,Activity parent IM gender data loaded,
-SubActivity,,activity_parent_lqas_gender_data_loaded,,Activity parent LQAS gender data loaded,
-SubActivity,,activity_admin_coverage_loaded,,Activity admin coverage loaded,
-SubActivity,,admin2admin_coverage_loaded,,Admin2admin coverage loaded,
-SubActivity,,days_from_initial_planned,,Days from initial planned,
-SubActivity,,admin2coverage_percentage,,Admin2coverage percentage,
-SubActivity,,activity_parent_pcm_fm_missed_children_percentage,,Activity parent PCM FM missed children percentage,
-SubActivity,,admin2_pcm_fm_missed_children_percentage,,Admin2 PCM FM missed children percentage,
-SubActivity,,activity_parent_lqas_children_checked,,Activity parent LQAS children checked,
-SubActivity,,activity_parent_lqas_children_found_unvaccinated,,Activity parent LQAS children found unvaccinated,
-SubActivity,,admin2_lqas_children_checked,,Admin2 LQAS children checked,
-SubActivity,,admin2_lqas_children_found_unvaccinated,,Admin2 LQAS children found unvaccinated,
-SubActivity,,admin2modality_id,,Admin2modality ID,
-SubActivity,,admin2modality_code,,Admin2modality code,
-SubActivity,,admin2modality_name,,Admin2modality name,
-SubActivity,,activity_parent_lqas_invalid_percentage,,Activity parent LQAS invalid percentage,
-SubActivity,,activity_parent_days_from_initial_planned,,Activity parent days from initial planned,
-SubActivity,,admin2_lqas_invalid_percentage,,Admin2 LQAS invalid percentage,
-SubActivity,,id_activity,,ID activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,sub_activity_id_activity,,Sub activity ID activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_number,,Activity number,
-SubActivity,,activity_parent_code_activity,,Activity parent code activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,initial_planned_date_activity,,Initial planned date activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_date_from,,Activity date from,
-SubActivity,,is_planned_dates_confirmed,,Is planned dates confirmed,
-SubActivity,,activity_age_group_code,,Activity age group code,
-SubActivity,,activity_age_group,,Activity age group,
-SubActivity,,activity_status_code,,Activity status code,
-SubActivity,,activity_status,,Activity status,
-SubActivity,,activity_vaccine_type,,Activity vaccine type,
-SubActivity,,pcmfm_data_loaded,,PCM/FM data loaded,
-SubActivity,,nb_doses,,Nb doses,
-SubActivity,,country_population_activity,,Country population activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,area_population_activity,,Area population activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,target_population,,Target population,
-SubActivity,,post_campaign_immunized_percentage,,Post campaign immunized percentage,
-SubActivity,,activity_children_immunized,,Activity children immunized,
-SubActivity,,activity_admin_coverage_loaded_activity,,Activity admin coverage loaded activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_date_to,,Activity date to,
-SubActivity,,activity_parent_im_hh_missed_children_percentage_activity,,Activity parent IM in-house missed children percentage activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_parent_im_oh_missed_children_percentage_activity,,Activity parent IM out-of-house missed children percentage activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_parent_linked_outbreaks_list_activity,,Activity parent linked outbreaks list activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_parent_round_number_activity,,Activity parent round number activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_parent_lqas_pass_percentage_activity,,Activity parent LQAS pass percentage activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_parent_lqas_fail_percentage_activity,,Activity parent LQAS fail percentage activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_parent_children_inaccessible_activity,,Activity parent children inaccessible activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_children_inaccessible_activity,,Activity children inaccessible activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,activity_additional_interventions,,Activity additional interventions,
-SubActivity,,activity_parent_pcm_fm_missed_children_percentage_activity,,Activity parent PCM FM missed children percentage activity,parent-activity copy from the activity/sub-activity join
-SubActivity,,approval_date_activity,,Approval date activity,parent-activity copy from the activity/sub-activity join
+Table,API_Name,Snake_Name,Web_Name,Label,note,clean
+Activity,ActivityAdminCoveragePercentage,activity_admin_coverage_percentage,ActivityAdminCoveragePercentage,Activity admin coverage percentage.,,TRUE
+Activity,ActivityParent_IM_HH_MissedChildrenPercentage,activity_parent_im_hh_missed_children_percentage,ActivityParent_IM_HH_MissedChildrenPercentage,Activity parent independent monitoring house-to-house monitoring missed children percentage.,,TRUE
+Activity,ActivityParent_IM_OH_MissedChildrenPercentage,activity_parent_im_oh_missed_children_percentage,ActivityParent_IM_OH_MissedChildrenPercentage,Activity parent independent monitoring out-of-house monitoring missed children percentage.,,TRUE
+Activity,ActivityParent_LqasFailPercentage,activity_parent_lqas_fail_percentage,ActivityParent_LqasFailPercentage,Activity parent lot quality assurance sampling fail percentage.,,TRUE
+Activity,ActivityParent_LqasPassPercentage,activity_parent_lqas_pass_percentage,ActivityParent_LqasPassPercentage,Activity parent lot quality assurance sampling pass percentage.,,TRUE
+Activity,Admin0ShapeId,admin0shape_id,Admin0ShapeId,Country (admin level 0) — shape ID.,,TRUE
+Activity,Admin1ShapeId,admin1shape_id,Admin1ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+Activity,Admin2ShapeId,admin2shape_id,Admin2ShapeId,District (admin level 2) — shape ID.,,TRUE
+Activity,SubActivityId,sub_activity_id,SubActivityId,Internal identifier for sub activity.,,TRUE
+Activity,ActivityChildrenInaccessible,activity_children_inaccessible,Children inaccessible,Activity children inaccessible.,,TRUE
+Activity,ActivityParentChildrenInaccessible,activity_parent_children_inaccessible,Activity parent children inaccessible,Activity parent children inaccessible.,,TRUE
+Activity,ActivityType,activity_type,Activity Type,Activity type.,,TRUE
+Activity,Admin0Id,admin0id,Admin 0 Id,Admin 0 ID.,,TRUE
+Activity,AreaPopulationPercent,area_population_percent,Country Population %,Area population percent.,,TRUE
+Activity,IMDataLoaded,im_data_loaded,IM loaded,Im data loaded.,,TRUE
+Activity,LastUpdateDate,last_update_date,Last Updated Date,Last update date.,,TRUE
+Activity,LqasDataLoaded,lqas_data_loaded,LQAS loaded,LQAS data loaded.,,TRUE
+ActivityParent,ActivityParentRoundNumber,activity_parent_round_number,Round Number,Activity parent round number.,,TRUE
+ActivityParent,Admin0ShapeId,admin0shape_id,Admin0ShapeId,Country (admin level 0) — shape ID.,,TRUE
+ActivityParent,Admin0TrendId,admin0trend_id,Admin0TrendId,Country (admin level 0) — trend ID.,,TRUE
+ActivityParent,Admin1ShapeId,admin1shape_id,Admin1ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+ActivityParent,Admin1TrendId,admin1trend_id,Admin1TrendId,Province/state (admin level 1) — trend ID.,,TRUE
+ActivityParent,Admin2ShapeId,admin2shape_id,Admin2ShapeId,District (admin level 2) — shape ID.,,TRUE
+ActivityParent,Admin2TrendId,admin2trend_id,Admin2TrendId,District (admin level 2) — trend ID.,,TRUE
+ActivityParent,ApprovalDate,approval_date,Approval Date,Date of approval.,,TRUE
+ApiV2ReferenceData,Id,id,Id,Internal identifier for this record.,,TRUE
+Case,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+Case,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+Case,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+Case,CaseManualEditId,case_manual_edit_id,CaseManualEditId,Internal identifier for case manual edit.,,TRUE
+Case,CountryISO2Code,country_iso2code,CountryISO2Code,Country ISO country code 2 code.,,TRUE
+Case,DatasetCodes,dataset_codes,DatasetCodes,Dataset codes.,,TRUE
+Case,HasEmergenceGroupOrClusterName,has_emergence_group_or_cluster_name,,Whether emergence group or cluster name (yes/no).,,TRUE
+Case,IsBreakthrough,is_breakthrough,IsBreakthrough,Whether breakthrough (yes/no).,,TRUE
+Case,LastUpdateBy,last_update_by,,Last update by.,,TRUE
+Case,Location,location,Location,Location.,,TRUE
+Case,NPEV,npev,,Non-polio enterovirus.,,TRUE
+Case,nVACCINE1,n_vaccine1,nVACCINE1,N Sabin vaccine poliovirus 1.,,TRUE
+Case,nVACCINE2,n_vaccine2,nVACCINE2,N Sabin vaccine poliovirus 2.,,TRUE
+Case,nVACCINE3,n_vaccine3,nVACCINE3,N Sabin vaccine poliovirus 3.,,TRUE
+Case,PoNS_AdministrationType,pons_administration_type,PoNS Administration Type,PoNS administration type.,,TRUE
+Case,PoNS_ClosestMatch,pons_closest_match,PoNS Closest Match,PoNS closest match.,,TRUE
+Case,PoNS_ClosestMatchDash,pons_closest_match_dash,PoNS Closest Match Dash,PoNS closest match (DASH).,,TRUE
+Case,PoNS_Comments,pons_comments,PoNS Comments,PoNS comments.,,TRUE
+Case,PoNS_Country,pons_country,PoNS Country,PoNS country.,,TRUE
+Case,PoNS_DashId,pons_dash_id,PoNS Dash Id,Internal identifier for PoNS DASH.,,TRUE
+Case,PoNS_Environment,pons_environment,PoNS Environment,PoNS environment.,,TRUE
+Case,PoNS_EpiNum,pons_epi_num,PoNS Epid,PoNS EPID number.,,TRUE
+Case,PoNS_EpiNumPolis,pons_epi_num_polis,Epid in Polis,PoNS EPID number in POLIS.,,TRUE
+Case,PoNS_EpiNumTransformed,pons_epi_num_transformed,PoNS Epid formated,PoNS EPID number (formatted).,,TRUE
+Case,PoNS_Expr1005,pons_expr1005,PoNS Expr 1005,PoNS Expr1005.,,TRUE
+Case,PoNS_FileName,pons_file_name,PoNS FileName,Name of PoNS file.,,TRUE
+Case,PoNS_Genotype,pons_genotype,PoNS Genotype,PoNS genotype.,,TRUE
+Case,PoNS_Genotype2,pons_genotype2,PoNS Genotype2,PoNS genotype 2.,,TRUE
+Case,PoNS_ISO3,pons_iso3,PoNS ISO3,PoNS ISO country code 3.,,TRUE
+Case,PoNS_Latitude,pons_latitude,PoNS Latitude,PoNS latitude.,,TRUE
+Case,PoNS_Locality,pons_locality,PoNS Locality,PoNS locality.,,TRUE
+Case,PoNS_Longitude,pons_longitude,PoNS Longitude,PoNS longitude.,,TRUE
+Case,PoNS_MapDistEdit,pons_map_dist_edit,PoNS Map Dist Edit,PoNS map distance edit.,,TRUE
+Case,PoNS_MatchingQuality,pons_matching_quality,PoNS Matching Quality,PoNS matching quality.,,TRUE
+Case,PoNS_Mismatches,pons_mismatches,PoNS Mismatches,PoNS mismatches.,,TRUE
+Case,PoNS_NTChanges,pons_nt_changes,PoNS NT Changes,PoNS nucleotide changes.,,TRUE
+Case,PoNS_OnSetDate,pons_on_set_date,PoNS OnSet Date,Date of PoNS onset.,,TRUE
+Case,PoNS_Passage,pons_passage,PoNS Passage,PoNS passage.,,TRUE
+Case,PoNS_Patient,pons_patient,PoNS Patient,PoNS patient.,,TRUE
+Case,PoNS_ReceiptDate,pons_receipt_date,PoNS Receipt Date,Date of PoNS receipt.,,TRUE
+Case,PoNS_Reference,pons_reference,PoNS Reference,PoNS reference.,,TRUE
+Case,PoNS_ReferenceName,pons_reference_name,PoNS Reference Name,Name of PoNS reference.,,TRUE
+Case,PoNS_RefLabId,pons_ref_lab_id,PoNS Ref Lab Id,Internal identifier for PoNS reference laboratory.,,TRUE
+Case,PoNS_Region,pons_region,PoNS Region,PoNS region.,,TRUE
+Case,PoNS_SeqBy,pons_seq_by,PoNS Seq By,PoNS genomic sequencing by.,,TRUE
+Case,PoNS_SeqDate,pons_seq_date,PoNS Seq Date,Date of PoNS genomic sequencing.,,TRUE
+Case,PoNS_SeqRegion,pons_seq_region,PoNS Seq Region,PoNS genomic sequencing region.,,TRUE
+Case,PoNS_Serotype,pons_serotype,PoNS Serotype,PoNS serotype.,,TRUE
+Case,PoNS_Serotype2,pons_serotype2,PoNS Serotype2,PoNS serotype 2.,,TRUE
+Case,PoNS_Source,pons_source,PoNS Source,PoNS source.,,TRUE
+Case,PoNS_SpecDate,pons_spec_date,PoNS Spec Date,Date of PoNS specimen.,,TRUE
+Case,PoNS_SpecType,pons_spec_type,PoNS Spec Type,PoNS specimen type.,,TRUE
+Case,PoNS_StateProv,pons_state_prov,PoNS State Province,PoNS state/province.,,TRUE
+Case,PoNS_WHOCountryCode,pons_who_country_code,PoNS WHO Country Code,PoNS WHO country code.,,TRUE
+Case,PoNS_WildClusterName,pons_wild_cluster_name,PoNS Wild Cluster Name,Name of PoNS wild poliovirus cluster.,,TRUE
+Case,PositiveContactCaseManualEditId,positive_contact_case_manual_edit_id,Positive Contact Case Manual Edit Id,Internal identifier for positive contact case manual edit.,,TRUE
+Case,PositiveContactDateSEQResultstoProgram,positive_contact_date_seq_resultsto_program,PositiveContactDateSEQResultstoProgram,Positive contact date genomic sequencing resultsto program.,,TRUE
+Case,PositiveContactEPID,positive_contact_epid,PositiveContactEPID,Positive contact epidemiological case ID (EPID number).,,TRUE
+Case,PositiveContactNtChanges,positive_contact_nt_changes,Positive Contact Nt Changes,Positive contact nucleotide changes.,,TRUE
+Case,PositiveContactStool1CollectionDate,positive_contact_stool1collection_date,PositiveContactStool1CollectionDate,Date of positive contact stool specimen 1 collection.,,TRUE
+Case,PositiveContactVaccineOrigin,positive_contact_vaccine_origin,Positive Contact Vaccine Origin,Positive contact Sabin vaccine poliovirus origin.,,TRUE
+Case,PositiveContactVirusTypeId,positive_contact_virus_type_id,Positive Contact Virus Type Id,Internal identifier for positive contact virus type.,,TRUE
+Case,PositiveContactVirusTypeName,positive_contact_virus_type_name,Positive Contact Virus Type Name,Name of positive contact virus type.,,TRUE
+Case,ReportingWeekAndYear,reporting_week_and_year,AFP Reporting Week and Year,Reporting week and year.,,TRUE
+Case,TotalNumberOfDoses,total_number_of_doses,,Total number of vaccine doses.,,TRUE
+Case,VaccineOrigins,vaccine_origins,VaccineOrigins,Sabin vaccine poliovirus origins.,,TRUE
+Case,VirusSourceLinkedto,virus_source_linkedto,Virus source linked to,Virus source linkedto.,,TRUE
+Case,Id,id,,ID.,,TRUE
+Case,EPID,epid,EPID,EPID.,,TRUE
+Case,AnonymousEPID,anonymous_epid,,Anonymous EPID.,,TRUE
+Case,ClinicalAdmitted,clinical_admitted,Clinical Admitted,Clinical admitted.,,TRUE
+Case,ClinicalAdmittedDate,clinical_admitted_date,Clinical Admitted Date,Clinical admitted date.,,TRUE
+Case,EpiDateIsolationResultsReceived,epi_date_isolation_results_received,,Epi date isolation results received.,,TRUE
+Case,EpiDateITDResultsReceived,epi_date_itd_results_received,,Epi date ITD results received.,,TRUE
+Case,FollowupDate,followup_date,Followup Date,Followup date.,,TRUE
+Case,FollowupFindings,followup_findings,Followup Findings,Followup findings.,,TRUE
+Case,InvestigationDate,investigation_date,Investigation Date,Investigation date.,,TRUE
+Case,NotificationDate,notification_date,Notification Date,Notification date.,,TRUE
+Case,Stool1CollectionDate,stool1collection_date,Stool 1 Collection Date,Stool 1 collection date.,,TRUE
+Case,Stool2CollectionDate,stool2collection_date,Stool 2 Collection Date,Stool 2 collection date.,,TRUE
+Case,StoolDateSentToICLab,stool_date_sent_to_ic_lab,Stool Date Sent To IC Lab,Stool date sent to ic lab.,,TRUE
+Case,StoolDateSentToLab,stool_date_sent_to_lab,Stool Date Sent To Lab,Stool date sent to lab.,,TRUE
+Case,ParalysisOnsetDate,paralysis_onset_date,Date Onset,Paralysis onset date.,,TRUE
+Case,DatasetAfp,dataset_afp,Dataset AFP,Dataset AFP.,,TRUE
+Case,DatasetWild,dataset_wild,Dataset WVL,Dataset wild.,,TRUE
+Case,DatasetLab,dataset_lab,Dataset Lab,Dataset lab.,,TRUE
+Case,DatasetManual,dataset_manual,Dataset Manual,Dataset manual.,,TRUE
+Case,Classification,classification,Classification,Classification.,,TRUE
+Case,DiagnosisFinal,diagnosis_final,Diagnosis Final,Diagnosis final.,,TRUE
+Case,DiagnosisOther,diagnosis_other,Diagnosis Other,Diagnosis other.,,TRUE
+Case,DiagnosisOtherSpecified,diagnosis_other_specified,Diagnosis Other Specified,Diagnosis other specified.,,TRUE
+Case,SourceAdvancedNotification,source_advanced_notification,Source Advanced Notification,Source advanced notification.,,TRUE
+Case,AdvancedNotification,advanced_notification,Advanced Notification,Advanced notification.,,TRUE
+Case,DateNotificationtoHQ,date_notificationto_hq,Date Notification To HQ,Date notificationto HQ.,,TRUE
+Case,Stool1Condition,stool1condition,Stool 1 Condition,Stool 1 condition.,,TRUE
+Case,Stool2Condition,stool2condition,Stool 2 Condition,Stool 2 condition.,,TRUE
+Case,SpecDateReceivedByNatLab,spec_date_received_by_nat_lab,Specimen Date,Spec date received by nat lab.,,TRUE
+Case,ParalysisAsymmetric,paralysis_asymmetric,Paralysis Asymmetric,Paralysis asymmetric.,,TRUE
+Case,ParalysisConfirmed,paralysis_confirmed,Paralysis Confirmed,Paralysis confirmed.,,TRUE
+Case,ParalysisHotCase,paralysis_hot_case,Paralysis Hot Case,Paralysis hot case.,,TRUE
+Case,ParalysisLeftArm,paralysis_left_arm,Paralysis Left Arm,Paralysis left arm.,,TRUE
+Case,ParalysisLeftLeg,paralysis_left_leg,Paralysis Left Leg,Paralysis left leg.,,TRUE
+Case,ParalysisOnsetFever,paralysis_onset_fever,Paralysis Onset Fever,Paralysis onset fever.,,TRUE
+Case,ParalysisRapidProgress,paralysis_rapid_progress,Paralysis Rapid Progress,Paralysis rapid progress.,,TRUE
+Case,ParalysisRightArm,paralysis_right_arm,Paralysis Right Arm,Paralysis right arm.,,TRUE
+Case,ParalysisRightLeg,paralysis_right_leg,Paralysis Right Leg,Paralysis right leg.,,TRUE
+Case,ParalysisSite,paralysis_site,Paralysis Site,Paralysis site.,,TRUE
+Case,ParalysisSudden,paralysis_sudden,Paralysis Sudden,Paralysis sudden.,,TRUE
+Case,PersonAgeInMonths,person_age_in_months,Person Age In Months,Person age in months.,,FALSE
+Case,PersonAgeInYears,person_age_in_years,Person Age In Years,Person age in years.,,TRUE
+Case,PersonSex,person_sex,Person Sex,Person sex.,,TRUE
+Case,PlaceAdmin3,place_admin3,Place Admin 3,Place admin 3.,,TRUE
+Case,PlaceEURAdmin0CodeISO3,place_eur_admin0code_iso3,Place Admin 0 ISO3,Place eur admin 0 code ISO 3.,,TRUE
+Case,PlaceEURAdmin1Code,place_eur_admin1code,Place EUR Admin 1 Code,Place eur admin 1 code.,,TRUE
+Case,PlaceEURProvDistrCode,place_eur_prov_distr_code,Place EUR Prov Distr Code,Place eur prov distr code.,,TRUE
+Case,Admin0Id,admin0id,,Admin 0 ID.,,TRUE
+Case,Admin0Name,adm0,Place Admin 0,Admin 0 name.,,TRUE
+Case,Admin1Id,admin1id,,Admin 1 ID.,,TRUE
+Case,Admin1Name,adm1,Place Admin 1,Admin 1 name.,,TRUE
+Case,Admin2Id,admin2id,,Admin 2 ID.,,TRUE
+Case,Admin2Name,adm2,Place Admin 2,Admin 2 name.,,TRUE
+Case,Admin0GUID,adm0_guid,Admin 0 Guid,Admin 0 guid.,,TRUE
+Case,Admin1GUID,adm1_guid,Admin 1 Guid,Admin 1 guid.,,TRUE
+Case,Admin2GUID,adm2_guid,Admin 2 Guid,Admin 2 guid.,,TRUE
+Case,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,,TRUE
+Case,Admin0OfficialName,admin0official_name,,Admin 0 official name.,,TRUE
+Case,Admin1OfficialName,admin1official_name,,Admin 1 official name.,,TRUE
+Case,Admin2OfficialName,admin2official_name,,Admin 2 official name.,,TRUE
+Case,WHORegion,who_region,WHO Region,WHO region.,,TRUE
+Case,ISTName,ist_name,IST,Ist name.,,TRUE
+Case,DosesDateOf1st,doses_date_of1st,Doses Date Of 1st,Doses date of 1 st.,,TRUE
+Case,DosesDateOf2nd,doses_date_of2nd,Doses Date Of 2nd,Doses date of 2 nd.,,TRUE
+Case,DosesDateOf3rd,doses_date_of3rd,Doses Date Of 3rd,Doses date of 3 rd.,,TRUE
+Case,DosesDateOf4th,doses_date_of4th,Doses Date Of 4th,Doses date of 4 th.,,TRUE
+Case,DosesIPVNumber,doses_ipv_number,Doses IPV Number,Doses IPV number.,,TRUE
+Case,DosesIPVDateofLast,doses_ipv_dateof_last,Doses IPV Date of Last,Doses IPV date of last.,,TRUE
+Case,DosesIPVRoutine,doses_ipv_routine,Doses IPV Routine,Doses IPV routine.,,TRUE
+Case,DosesIPVSIA,doses_ipvsia,Doses IPV SIA,Doses IPV SIA.,,TRUE
+Case,DosesOPVDateofLast,doses_opv_dateof_last,Doses OPV Date of Last,Doses OPV date of last.,,TRUE
+Case,DosesOPVRoutine,doses_opv_routine,Doses OPV Routine,Doses OPV routine.,,TRUE
+Case,DosesOPVSIA,doses_opvsia,Doses OPV SIA,Doses OPV SIA.,,TRUE
+Case,DosesTotal,doses_total,Doses,Doses total.,,TRUE
+Case,CalcDosesRISI,calc_doses_risi,CalcDosesRISI,Calc doses risi.,,TRUE
+Case,SourceRIVaccinationInfoCode,source_ri_vaccination_info_code,Source RI Vaccination Information,Source ri vaccination info code.,,TRUE
+Case,DateSEQResultstoProgram,date_seq_resultsto_program,Results Seq Date to program,Date seq resultsto program.,,TRUE
+Case,DateLastOpvSIA,date_last_opv_sia,Last Opv SIA Date,Date last OPV SIA.,,TRUE
+Case,DateLastIpvSIA,date_last_ipv_sia,Last Ipv SIA Date,Date last IPV SIA.,,TRUE
+Case,VirusIsOrphan,virus_is_orphan,Virus Is Orphan,Virus is orphan.,,TRUE
+Case,VirusOrigin,virus_origin,Virus Origin,Virus origin.,,TRUE
+Case,EventComment,event_comment,Event Comments,Event comment.,,TRUE
+Case,EventDirectImportation,event_direct_importation,Event Direct Importation,Event direct importation.,,TRUE
+Case,EventName,event_name,Event Name,Event name.,,TRUE
+Case,VirusSequenced,virus_sequenced,Virus Sequenced,Virus sequenced.,,TRUE
+Case,CreatedDate,created_date,Created Date,Created date.,,TRUE
+Case,LastUpdateDate,last_update_date,Last Updated Date,Last update date.,,TRUE
+Case,VACCINE1,vaccine1,Vaccine 1,Vaccine 1.,,TRUE
+Case,VACCINE2,vaccine2,Vaccine 2,Vaccine 2.,,TRUE
+Case,VACCINE3,vaccine3,Vaccine 3,Vaccine 3.,,TRUE
+Case,VDPV1,vdpv1,Vdpv 1,VDPV1.,,TRUE
+Case,VDPV2,vdpv2,Vdpv 2,VDPV2.,,TRUE
+Case,VDPV3,vdpv3,Vdpv 3,VDPV3.,,TRUE
+Case,WILD1,wild1,Wild 1,Wild 1.,,TRUE
+Case,WILD2,wild2,Wild 2,Wild 2.,,TRUE
+Case,WILD3,wild3,Wild 3,Wild 3.,,TRUE
+Case,nVDPV2,n_vdpv2,nVDPV 2,nVDPV2.,,TRUE
+Case,PV1,pv1,PV 1,PV1.,,TRUE
+Case,PV2,pv2,PV 2,PV2.,,TRUE
+Case,PV3,pv3,PV 3,PV3.,,TRUE
+Case,PlaceNearestFacility,place_nearest_facility,Place Nearest Facility,Place nearest facility.,,TRUE
+Case,EventImmediateSource,event_immediate_source,Event Immediate Source,Event immediate source.,,TRUE
+Case,CalculatedAgeInMonth,calculated_age_in_month,Calculated Age (months),Calculated age in month.,,FALSE
+Case,ExactLatitude,exact_latitude,Exact Latitude,Exact latitude.,,TRUE
+Case,ExactLongitude,exact_longitude,Exact Longitude,Exact longitude.,,TRUE
+Case,Latitude,latitude,X,Latitude.,,TRUE
+Case,Longitude,longitude,Y,Longitude.,,TRUE
+Case,FollowupFindingsCode,followup_findings_code,,Followup findings code.,,TRUE
+Case,Stool1ConditionCode,stool1condition_code,,Stool 1 condition code.,,TRUE
+Case,Stool2ConditionCode,stool2condition_code,,Stool 2 condition code.,,TRUE
+Case,PublishDate,publish_date,,Publish date.,,TRUE
+Case,SurveillanceTypeName,surveillance_type_name,Surveillance Type,Surveillance type name.,,TRUE
+Case,SurveillanceTypeCode,surveillance_type_code,,Surveillance type code.,,TRUE
+Case,CaseDate,case_date,Case Date,Case date.,,TRUE
+Case,ProvisionalDiagnosis,provisional_diagnosis,Provisional Diagnosis,Provisional diagnosis.,,TRUE
+Case,AdequateStool,adequate_stool,Stool Adequacy,Adequate stool.,,TRUE
+Case,AdequateStoolWithCondition,adequate_stool_with_condition,Stool Adequacy with Condition,Adequate stool with condition.,,TRUE
+Case,VirusHomologyPercent,virus_homology_percent,Virus Homology Percent,Virus homology percent.,,TRUE
+Case,FinalCultureResult,final_culture_result,Final Cell Culture Result,Final culture result.,,TRUE
+Case,PolioVirusTypes,polio_virus_types,Virus Type(s),Polio virus types.,,TRUE
+Case,VirusTypeIds,virus_type_ids,,Virus type IDs.,,TRUE
+Case,VirusClusters,virus_clusters,Virus Cluster(s),Virus clusters.,,TRUE
+Case,VirusGenoTypes,virus_geno_types,Virus Genotypes,Virus geno types.,,TRUE
+Case,VdpvEmergenceGroupNames,vdpv_emergence_group_names,Emergence Group(s),VDPV emergence group names.,,TRUE
+Case,NtChanges,nt_changes,Nt Changes,NT changes.,,TRUE
+Case,VdpvClassifications,vdpv_classifications,VDPV Classification(s),VDPV classifications.,,TRUE
+Case,VdpvClassificationIds,vdpv_classification_ids,VDPV Classification Id(s),VDPV classification IDs.,,TRUE
+Case,PoNS_Id,pons_id,,PoNS ID.,,TRUE
+Case,,total_number_of_ipv_opv_doses,total.number.of.ipv./.opv.doses,Total number of IPV OPV doses.,,TRUE
+EnvSample,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+EnvSample,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+EnvSample,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+EnvSample,CountryISO2Code,country_iso2code,CountryISO2Code,Country ISO country code 2 code.,,TRUE
+EnvSample,DateF7RefITD,date_f7ref_itd,DateF7RefITD,Date f 7 reference laboratory intratypic differentiation (ITD) lab test.,,TRUE
+EnvSample,DateF8RefITD,date_f8ref_itd,DateF8RefITD,Date f 8 reference laboratory intratypic differentiation (ITD) lab test.,,TRUE
+EnvSample,DateIsolrecSeq7,date_isolrec_seq7,DateIsolrecSeq7,Date isolrec genomic sequencing 7.,,TRUE
+EnvSample,DateIsolrecSeq8,date_isolrec_seq8,DateIsolrecSeq8,Date isolrec genomic sequencing 8.,,TRUE
+EnvSample,DateIsolSentSeq7,date_isol_sent_seq7,DateIsolSentSeq7,Date isol sent genomic sequencing 7.,,TRUE
+EnvSample,DateIsolSentSeq8,date_isol_sent_seq8,DateIsolSentSeq8,Date isol sent genomic sequencing 8.,,TRUE
+EnvSample,DateRecF7RefITD,date_rec_f7ref_itd,DateRecF7RefITD,Date rec f 7 reference laboratory intratypic differentiation (ITD) lab test.,,TRUE
+EnvSample,DateRecF8RefITD,date_rec_f8ref_itd,DateRecF8RefITD,Date rec f 8 reference laboratory intratypic differentiation (ITD) lab test.,,TRUE
+EnvSample,HasEmergenceGroupOrClusterName,has_emergence_group_or_cluster_name,HasEmergenceGroupOrClusterName,Whether emergence group or cluster name (yes/no).,,TRUE
+EnvSample,IsBreakthrough,is_breakthrough,IsBreakthrough,Whether breakthrough (yes/no).,,TRUE
+EnvSample,Location,location,Location,Location.,,TRUE
+EnvSample,Mixture,mixture,Mixture,Mixture.,,TRUE
+EnvSample,PoNS_AdministrationType,pons_administration_type,PoNS Administration Type,PoNS administration type.,,TRUE
+EnvSample,PoNS_ClosestMatch,pons_closest_match,PoNS Closest Match,PoNS closest match.,,TRUE
+EnvSample,PoNS_ClosestMatchDash,pons_closest_match_dash,PoNS Closest Match Dash,PoNS closest match (DASH).,,TRUE
+EnvSample,PoNS_Comments,pons_comments,PoNS Comments,PoNS comments.,,TRUE
+EnvSample,PoNS_Country,pons_country,PoNS Country,PoNS country.,,TRUE
+EnvSample,PoNS_DashId,pons_dash_id,PoNS Dash Id,Internal identifier for PoNS DASH.,,TRUE
+EnvSample,PoNS_Environment,pons_environment,PoNS Environment,PoNS environment.,,TRUE
+EnvSample,PoNS_EpiNum,pons_epi_num,PoNS Epid,PoNS EPID number.,,TRUE
+EnvSample,PoNS_EpiNumPolis,pons_epi_num_polis,Epid in Polis,PoNS EPID number in POLIS.,,TRUE
+EnvSample,PoNS_EpiNumTransformed,pons_epi_num_transformed,PoNS Epid formated,PoNS EPID number (formatted).,,TRUE
+EnvSample,PoNS_Expr1005,pons_expr1005,PoNS Expr 1005,PoNS Expr1005.,,TRUE
+EnvSample,PoNS_FileName,pons_file_name,PoNS FileName,Name of PoNS file.,,TRUE
+EnvSample,PoNS_Genotype,pons_genotype,PoNS Genotype,PoNS genotype.,,TRUE
+EnvSample,PoNS_Genotype2,pons_genotype2,PoNS Genotype2,PoNS genotype 2.,,TRUE
+EnvSample,PoNS_ISO3,pons_iso3,PoNS ISO3,PoNS ISO country code 3.,,TRUE
+EnvSample,PoNS_Latitude,pons_latitude,PoNS Latitude,PoNS latitude.,,TRUE
+EnvSample,PoNS_Locality,pons_locality,PoNS Locality,PoNS locality.,,TRUE
+EnvSample,PoNS_Longitude,pons_longitude,PoNS Longitude,PoNS longitude.,,TRUE
+EnvSample,PoNS_MapDistEdit,pons_map_dist_edit,PoNS Map Dist Edit,PoNS map distance edit.,,TRUE
+EnvSample,PoNS_MatchingQuality,pons_matching_quality,PoNS Matching Quality,PoNS matching quality.,,TRUE
+EnvSample,PoNS_Mismatches,pons_mismatches,PoNS Mismatches,PoNS mismatches.,,TRUE
+EnvSample,PoNS_NTChanges,pons_nt_changes,PoNS NT Changes,PoNS nucleotide changes.,,TRUE
+EnvSample,PoNS_OnSetDate,pons_on_set_date,PoNS OnSet Date,Date of PoNS onset.,,TRUE
+EnvSample,PoNS_Passage,pons_passage,PoNS Passage,PoNS passage.,,TRUE
+EnvSample,PoNS_Patient,pons_patient,PoNS Patient,PoNS patient.,,TRUE
+EnvSample,PoNS_ReceiptDate,pons_receipt_date,PoNS Receipt Date,Date of PoNS receipt.,,TRUE
+EnvSample,PoNS_Reference,pons_reference,PoNS Reference,PoNS reference.,,TRUE
+EnvSample,PoNS_ReferenceName,pons_reference_name,PoNS Reference Name,Name of PoNS reference.,,TRUE
+EnvSample,PoNS_RefLabId,pons_ref_lab_id,PoNS Ref Lab Id,Internal identifier for PoNS reference laboratory.,,TRUE
+EnvSample,PoNS_Region,pons_region,PoNS Region,PoNS region.,,TRUE
+EnvSample,PoNS_SeqBy,pons_seq_by,PoNS Seq By,PoNS genomic sequencing by.,,TRUE
+EnvSample,PoNS_SeqDate,pons_seq_date,PoNS Seq Date,Date of PoNS genomic sequencing.,,TRUE
+EnvSample,PoNS_SeqRegion,pons_seq_region,PoNS Seq Region,PoNS genomic sequencing region.,,TRUE
+EnvSample,PoNS_Serotype,pons_serotype,PoNS Serotype,PoNS serotype.,,TRUE
+EnvSample,PoNS_Serotype2,pons_serotype2,PoNS Serotype2,PoNS serotype 2.,,TRUE
+EnvSample,PoNS_Source,pons_source,PoNS Source,PoNS source.,,TRUE
+EnvSample,PoNS_SpecDate,pons_spec_date,PoNS Spec Date,Date of PoNS specimen.,,TRUE
+EnvSample,PoNS_SpecType,pons_spec_type,PoNS Spec Type,PoNS specimen type.,,TRUE
+EnvSample,PoNS_StateProv,pons_state_prov,PoNS State Province,PoNS state/province.,,TRUE
+EnvSample,PoNS_WHOCountryCode,pons_who_country_code,PoNS WHO Country Code,PoNS WHO country code.,,TRUE
+EnvSample,PoNS_WildClusterName,pons_wild_cluster_name,PoNS Wild Cluster Name,Name of PoNS wild poliovirus cluster.,,TRUE
+EnvSample,ReportingWeekAndYear,reporting_week_and_year,Reporting Week and Year,Reporting week and year.,,TRUE
+EnvSample,SiteFullName,site_full_name,Environmental Site,Name of site full.,,TRUE
+EnvSample,SourceAdvancedNotification,source_advanced_notification,SourceAdvancedNotification,Source advanced notification.,,TRUE
+EnvSample,SQSL1homologyClosestMatch,sqsl1homology_closest_match,SQSL1homologyClosestMatch,Sqsl 1 homology closest match.,,TRUE
+EnvSample,SQSL1NtdiffSabin1,sqsl1ntdiff_sabin1,SQSL1NtdiffSabin1,Sqsl 1 ntdiff sabin 1.,,TRUE
+EnvSample,SQSL2homologyClosestMatch,sqsl2homology_closest_match,SQSL2homologyClosestMatch,Sqsl 2 homology closest match.,,TRUE
+EnvSample,SQSL2NtdiffSabin2,sqsl2ntdiff_sabin2,SQSL2NtdiffSabin2,Sqsl 2 ntdiff sabin 2.,,TRUE
+EnvSample,SQSL3homologyClosestMatch,sqsl3homology_closest_match,SQSL3homologyClosestMatch,Sqsl 3 homology closest match.,,TRUE
+EnvSample,SQSL3NtdiffSabin3,sqsl3ntdiff_sabin3,SQSL3NtdiffSabin3,Sqsl 3 ntdiff sabin 3.,,TRUE
+EnvSample,SQSLhomologyClosestMatch,sqs_lhomology_closest_match,SQVDPVNtdiffhomologSabin,Sqs lhomology closest match.,,TRUE
+EnvSample,SQSLNtdiffhomologSabin,sqsl_ntdiffhomolog_sabin,SQSLNtdiffhomologSabin,Sqsl ntdiffhomolog sabin.,,TRUE
+EnvSample,SQVDPV1homologyClosestMatch,sqvdpv1homology_closest_match,SQVDPV1homologyClosestMatch,Sqvdpv 1 homology closest match.,,TRUE
+EnvSample,SQVDPV1NtdiffSabin1,sqvdpv1ntdiff_sabin1,SQVDPV1NtdiffSabin1,Sqvdpv 1 ntdiff sabin 1.,,TRUE
+EnvSample,SQVDPV2homologyClosestMatch,sqvdpv2homology_closest_match,SQVDPV2homologyClosestMatch,Sqvdpv 2 homology closest match.,,TRUE
+EnvSample,SQVDPV2NtdiffSabin2,sqvdpv2ntdiff_sabin2,SQVDPV2NtdiffSabin2,Sqvdpv 2 ntdiff sabin 2.,,TRUE
+EnvSample,SQVDPV3homologyClosestMatch,sqvdpv3homology_closest_match,SQVDPV3homologyClosestMatch,Sqvdpv 3 homology closest match.,,TRUE
+EnvSample,SQVDPV3NtdiffSabin3,sqvdpv3ntdiff_sabin3,SQVDPV3NtdiffSabin3,Sqvdpv 3 ntdiff sabin 3.,,TRUE
+EnvSample,SQVDPVhomologyClosestMatch,sqvdp_vhomology_closest_match,SQVDPVhomologyClosestMatch,Sqvdp vhomology closest match.,,TRUE
+EnvSample,SQVDPVNtdiffhomologSabin,sqvdpv_ntdiffhomolog_sabin,SQVDPVNtdiffhomologSabin,Sqvdpv ntdiffhomolog sabin.,,TRUE
+EnvSample,SQW1homologyClosestMatch,sqw1homology_closest_match,SQW1homologyClosestMatch,Sqw 1 homology closest match.,,TRUE
+EnvSample,SQW2homologyClosestMatch,sqw2homology_closest_match,SQW2homologyClosestMatch,Sqw 2 homology closest match.,,TRUE
+EnvSample,SQWCluster4,sqw_cluster4,SQWCluster4,Sqw cluster 4.,,TRUE
+EnvSample,SQWhomologyClosestMatch,sq_whomology_closest_match,SQWhomologyClosestMatch,Sq whomology closest match.,,TRUE
+EnvSample,VaccineOrigins,vaccine_origins,VaccineOrigins,Sabin vaccine poliovirus origins.,,TRUE
+EnvSample,WHORegion,who_region,WHORegion,WHO region.,,TRUE
+EnvSample,Id,id,,ID.,,TRUE
+EnvSample,EnviroSampleManualEditId,enviro_sample_manual_edit_id,Env Sample Manual Edit Id,Enviro sample manual edit ID.,,TRUE
+EnvSample,EnviroSampleId,enviro_sample_id,Sample Id,Enviro sample ID.,,TRUE
+EnvSample,WorksheetName,worksheet_name,Worksheet Name,Worksheet name.,,TRUE
+EnvSample,LabID,lab_id,,Lab ID.,,TRUE
+EnvSample,SiteId,site_id,Site Id,Site ID.,,TRUE
+EnvSample,SiteCode,site_code,Site Code,Site code.,,TRUE
+EnvSample,SiteName,site_name,Site Name,Site name.,,TRUE
+EnvSample,SiteStatus,site_status,Site Status,Site status.,,TRUE
+EnvSample,SiteGuid,site_guid,Site Guid,Site guid.,,TRUE
+EnvSample,SiteComment,site_comment,Site Comment,Site comment.,,TRUE
+EnvSample,SiteXCoordinate,site_x_coordinate,x,Site x coordinate.,,TRUE
+EnvSample,SiteYCoordinate,site_y_coordinate,y,Site y coordinate.,,TRUE
+EnvSample,SampleId,sample_id,Env Sample ID,Sample ID.,,TRUE
+EnvSample,CollectionDate,collection_date,Collection Date,Collection date.,,TRUE
+EnvSample,IsNPEV,is_npev,NPEV,Is NPEV.,,TRUE
+EnvSample,IsNegative,is_negative,,Is negative.,,TRUE
+EnvSample,IsUnderProcess,is_under_process,Under Process,Is under process.,,TRUE
+EnvSample,IsSuspected,is_suspected,Is Suspected,Is suspected.,,TRUE
+EnvSample,DateShippedToRefLab,date_shipped_to_ref_lab,Date Shipped To Ref Lab,Date shipped to ref lab.,,TRUE
+EnvSample,DateReceivedInLab,date_received_in_lab,Date received in lab,Date received in lab.,,TRUE
+EnvSample,Admin0Id,admin0id,Admin 0 Id,Admin 0 ID.,,TRUE
+EnvSample,Admin0Name,adm0,Admin 0,Admin 0 name.,,TRUE
+EnvSample,Admin1Id,admin1id,Admin 1 Id,Admin 1 ID.,,TRUE
+EnvSample,Admin1Name,adm1,Admin 1,Admin 1 name.,,TRUE
+EnvSample,Admin2Id,admin2id,Admin 2 Id,Admin 2 ID.,,TRUE
+EnvSample,Admin2Name,adm2,Admin 2,Admin 2 name.,,TRUE
+EnvSample,Admin0GUID,adm0_guid,Admin 0 Guid,Admin 0 guid.,,TRUE
+EnvSample,Admin1GUID,adm1_guid,Admin 1 Guid,Admin 1 guid.,,TRUE
+EnvSample,Admin2GUID,adm2_guid,Admin 2 Guid,Admin 2 guid.,,TRUE
+EnvSample,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,,TRUE
+EnvSample,Admin0OfficialName,admin0official_name,Admin 0 OfficialName,Admin 0 official name.,,TRUE
+EnvSample,Admin1OfficialName,admin1official_name,Admin 1 OfficialName,Admin 1 official name.,,TRUE
+EnvSample,Admin2OfficialName,admin2official_name,Admin 2 OfficialName,Admin 2 official name.,,TRUE
+EnvSample,Admin0Vizname,admin0vizname,Admin 0 Vizname,Admin 0 vizname.,,TRUE
+EnvSample,Admin1Vizname,admin1vizname,Admin 1 Vizname,Admin 1 vizname.,,TRUE
+EnvSample,Admin2Vizname,admin2vizname,Admin 2 Vizname,Admin 2 vizname.,,TRUE
+EnvSample,Admin0WhoCode,admin0who_code,Admin 0 WHO Region,Admin 0 WHO code.,,TRUE
+EnvSample,ISTName,ist_name,IST,Ist name.,,TRUE
+EnvSample,RegionId,region_id,Region ID,Region ID.,,TRUE
+EnvSample,RegionGUID,region_guid,Region Guid,Region guid.,,TRUE
+EnvSample,RegionName,region_name,Region Name,Region name.,,TRUE
+EnvSample,RegionOfficialName,region_official_name,Region Official Name,Region official name.,,TRUE
+EnvSample,RegionWhoCode,region_who_code,Region Who Code,Region WHO code.,,TRUE
+EnvSample,VACCINE1,vaccine1,Vaccine 1,Vaccine 1.,,TRUE
+EnvSample,VACCINE2,vaccine2,Vaccine 2,Vaccine 2.,,TRUE
+EnvSample,VACCINE3,vaccine3,Vaccine 3,Vaccine 3.,,TRUE
+EnvSample,VDPV1,vdpv1,Vdpv 1,VDPV1.,,TRUE
+EnvSample,VDPV2,vdpv2,Vdpv 2,VDPV2.,,TRUE
+EnvSample,VDPV3,vdpv3,Vdpv 3,VDPV3.,,TRUE
+EnvSample,WILD1,wild1,Wild 1,Wild 1.,,TRUE
+EnvSample,WILD2,wild2,Wild 2,Wild 2.,,TRUE
+EnvSample,WILD3,wild3,Wild 3,Wild 3.,,TRUE
+EnvSample,nVACCINE2,n_vaccine2,nVaccine 2,N vaccine 2.,,TRUE
+EnvSample,nVDPV2,n_vdpv2,nVDPV 2,nVDPV2.,,TRUE
+EnvSample,PV1,pv1,PV 1,PV1.,,TRUE
+EnvSample,PV2,pv2,PV 2,PV2.,,TRUE
+EnvSample,PV3,pv3,PV 3,PV3.,,TRUE
+EnvSample,CreatedDate,created_date,Created Date,Created date.,,TRUE
+EnvSample,LastUpdateDate,last_update_date,Updated Date,Last update date.,,TRUE
+EnvSample,PublishDate,publish_date,Publish Date,Publish date.,,TRUE
+EnvSample,UploadedDate,uploaded_date,Uploaded Date,Uploaded date.,,TRUE
+EnvSample,UploadedBy,uploaded_by,Uploaded by,Uploaded by.,,TRUE
+EnvSample,ReportingWeek,reporting_week,Reporting Week,Reporting week.,,TRUE
+EnvSample,ReportingYear,reporting_year,Reporting Year,Reporting year.,,TRUE
+EnvSample,IsAdvancedNotification,is_advanced_notification,Advanced Notification,Is advanced notification.,,TRUE
+EnvSample,DateNotificationToHQ,date_notification_to_hq,Date Notification To HQ,Date notification to HQ.,,TRUE
+EnvSample,Methodologies,methodologies,Methodologies,Methodologies.,,TRUE
+EnvSample,SampleCondition,sample_condition,Sample condition,Sample condition.,,TRUE
+EnvSample,Source,source,Source,Source.,,TRUE
+EnvSample,LabName,lab_name,Laboratory Name,Lab name.,,TRUE
+EnvSample,FinalCellCultureResult,final_cell_culture_result,Final Cell Culture Result,Final cell culture result.,,TRUE
+EnvSample,DateFinalCultureResult,date_final_culture_result,Date Final Culture Result,Date final culture result.,,TRUE
+EnvSample,DateResultToLab,date_result_to_lab,Date Result to Lab,Date result to lab.,,TRUE
+EnvSample,LabSentIsolateforITD,lab_sent_isolatefor_itd,Lab sent Isolate for ITD,Lab sent isolatefor ITD.,,TRUE
+EnvSample,DateF1RefITD,date_f1ref_itd,Date F1 ref ITD,Date f 1 ref ITD.,,TRUE
+EnvSample,DateF2RefITD,date_f2ref_itd,Date F2 ref ITD,Date f 2 ref ITD.,,TRUE
+EnvSample,DateF3RefITD,date_f3ref_itd,Date F3 ref ITD,Date f 3 ref ITD.,,TRUE
+EnvSample,DateF4RefITD,date_f4ref_itd,Date F4 ref ITD,Date f 4 ref ITD.,,TRUE
+EnvSample,DateF5RefITD,date_f5ref_itd,Date F5 ref ITD,Date f 5 ref ITD.,,TRUE
+EnvSample,DateF6RefITD,date_f6ref_itd,Date F6 ref ITD,Date f 6 ref ITD.,,TRUE
+EnvSample,DateRecF1RefITD,date_rec_f1ref_itd,Date Rec F1 ref ITD,Date rec f 1 ref ITD.,,TRUE
+EnvSample,DateRecF2RefITD,date_rec_f2ref_itd,Date Rec F2 ref ITD,Date rec f 2 ref ITD.,,TRUE
+EnvSample,DateRecF3RefITD,date_rec_f3ref_itd,Date Rec F3 ref ITD,Date rec f 3 ref ITD.,,TRUE
+EnvSample,DateRecF4RefITD,date_rec_f4ref_itd,Date Rec F4 ref ITD,Date rec f 4 ref ITD.,,TRUE
+EnvSample,DateRecF5RefITD,date_rec_f5ref_itd,Date Rec F5 ref ITD,Date rec f 5 ref ITD.,,TRUE
+EnvSample,DateRecF6RefITD,date_rec_f6ref_itd,Date Rec F6 ref ITD,Date rec f 6 ref ITD.,,TRUE
+EnvSample,FTACardSent,fta_card_sent,FTA Card Sent,Fta card sent.,,TRUE
+EnvSample,DateFinalResultsReported,date_final_results_reported,Date Final Results Reported,Date final results reported.,,TRUE
+EnvSample,FinalCombinedrRTPCRresults,final_combinedr_rtpc_rresults,Final Combined RTPCR Results,Final combinedr rtpc rresults.,,TRUE
+EnvSample,DateFinalCombinedResult,date_final_combined_result,Date Final Combined Result,Date final combined result.,,TRUE
+EnvSample,NameSeqLab,name_seq_lab,Name Seq Lab,Name seq lab.,,TRUE
+EnvSample,DateIsolSentSeq1,date_isol_sent_seq1,Date Isol Sent Seq1,Date isol sent seq 1.,,TRUE
+EnvSample,DateIsolSentSeq2,date_isol_sent_seq2,Date Isol Sent Seq2,Date isol sent seq 2.,,TRUE
+EnvSample,DateIsolSentSeq3,date_isol_sent_seq3,Date Isol Sent Seq3,Date isol sent seq 3.,,TRUE
+EnvSample,DateIsolSentSeq4,date_isol_sent_seq4,Date Isol Sent Seq4,Date isol sent seq 4.,,TRUE
+EnvSample,DateIsolSentSeq5,date_isol_sent_seq5,Date Isol Sent Seq5,Date isol sent seq 5.,,TRUE
+EnvSample,DateIsolSentSeq6,date_isol_sent_seq6,Date Isol Sent Seq6,Date isol sent seq 6.,,TRUE
+EnvSample,DateIsolrecSeq1,date_isolrec_seq1,Date Isol Rec Seq1,Date isolrec seq 1.,,TRUE
+EnvSample,DateIsolrecSeq2,date_isolrec_seq2,Date Isol Rec Seq2,Date isolrec seq 2.,,TRUE
+EnvSample,DateIsolrecSeq3,date_isolrec_seq3,Date Isol Rec Seq3,Date isolrec seq 3.,,TRUE
+EnvSample,DateIsolrecSeq4,date_isolrec_seq4,Date Isol Rec Seq4,Date isolrec seq 4.,,TRUE
+EnvSample,DateIsolrecSeq5,date_isolrec_seq5,Date Isol Rec Seq5,Date isolrec seq 5.,,TRUE
+EnvSample,DateIsolrecSeq6,date_isolrec_seq6,Date Isol Rec Seq6,Date isolrec seq 6.,,TRUE
+EnvSample,DateFinalSeqResult,date_final_seq_result,Date Final Seq Result,Date final seq result.,,TRUE
+EnvSample,DateResSentOutW1,date_res_sent_out_w1,Date Res Sent Out W1,Date res sent out w 1.,,TRUE
+EnvSample,DateResSentOutW2,date_res_sent_out_w2,Date Res Sent Out W2,Date res sent out w 2.,,TRUE
+EnvSample,DateResSentOutW3,date_res_sent_out_w3,Date Res Sent Out W3,Date res sent out w 3.,,TRUE
+EnvSample,DateResSentOutVACCINE1,date_res_sent_out_vaccine1,Date Res Sent Out VACCINE1,Date res sent out vaccine 1.,,TRUE
+EnvSample,DateResSentOutVACCINE2,date_res_sent_out_vaccine2,Date Res Sent Out VACCINE2,Date res sent out vaccine 2.,,TRUE
+EnvSample,DateResSentOutVACCINE3,date_res_sent_out_vaccine3,Date Res Sent Out VACCINE3,Date res sent out vaccine 3.,,TRUE
+EnvSample,DateResSentOutVDPV1,date_res_sent_out_vdpv1,Date Res Sent Out VDPV1,Date res sent out VDPV1.,,TRUE
+EnvSample,DateResSentOutVDPV2,date_res_sent_out_vdpv2,Date Res Sent Out VDPV2,Date res sent out VDPV2.,,TRUE
+EnvSample,DateResSentOutVDPV3,date_res_sent_out_vdpv3,Date Res Sent Out VDPV3,Date res sent out VDPV3.,,TRUE
+EnvSample,DateResSentOutPV1,date_res_sent_out_pv1,Date Res Sent Out PV1,Date res sent out PV1.,,TRUE
+EnvSample,DateResSentOutPV2,date_res_sent_out_pv2,Date Res Sent Out PV2,Date res sent out PV2.,,TRUE
+EnvSample,DateResSentOutPV3,date_res_sent_out_pv3,Date Res Sent Out PV3,Date res sent out PV3.,,TRUE
+EnvSample,DateResSentOutNVACCINE2,date_res_sent_out_nvaccine2,Date Res Sent Out nVACCINE2,Date res sent out nvaccine 2.,,TRUE
+EnvSample,DateResSentOutNVDPV2,date_res_sent_out_nvdpv2,Date Res Sent Out nVDPV2,Date res sent out nvdpv 2.,,TRUE
+EnvSample,VirusTypes,virus_types,Virus Type(s),Virus types.,,TRUE
+EnvSample,VirusClusters,virus_clusters,Virus Cluster(s),Virus clusters.,,TRUE
+EnvSample,VirusGenoTypes,virus_geno_types,,Virus geno types.,,TRUE
+EnvSample,VdpvEmergenceGroupNames,vdpv_emergence_group_names,Emergence Group(s),VDPV emergence group names.,,TRUE
+EnvSample,NtChanges,nt_changes,Nt Changes,NT changes.,,TRUE
+EnvSample,VdpvClassifications,vdpv_classifications,VDPV Classification(s),VDPV classifications.,,TRUE
+EnvSample,VdpvClassificationIds,vdpv_classification_ids,VDPV Classification Id(s),VDPV classification IDs.,,TRUE
+EnvSample,PoNS_Id,pons_id,,PoNS ID.,,TRUE
+EnvSample,,lab_id,LabID,Lab ID.,,TRUE
+EnvSample,,site,Site,Site.,,TRUE
+EnvSample,,country_iso2,Country Iso2,Country ISO 2.,,TRUE
+EnviroSampleSite,Admin0GUID,adm0_guid,Admin 0 GUID,Country (admin level 0) — globally unique identifier (GUID).,,TRUE
+EnviroSampleSite,Admin0Id,admin0id,Admin 0 Id,Country (admin level 0) — ID.,,TRUE
+EnviroSampleSite,Admin0Iso2Code,admin0iso2code,Country Iso2,Country (admin level 0) — ISO country code code.,,TRUE
+EnviroSampleSite,Admin0Iso3Code,admin0iso3code,Country Iso3,Country (admin level 0) — ISO country code code.,,TRUE
+EnviroSampleSite,Admin0Name,adm0,Admin0Name,Country (admin level 0) — name.,,TRUE
+EnviroSampleSite,Admin0VizName,admin0viz_name,Admin 0 Vizname,Country (admin level 0) — visualisation name.,,TRUE
+EnviroSampleSite,Admin1GUID,adm1_guid,Admin 1 GUID,Province/state (admin level 1) — globally unique identifier (GUID).,,TRUE
+EnviroSampleSite,Admin1Id,admin1id,Admin 1 Id,Province/state (admin level 1) — ID.,,TRUE
+EnviroSampleSite,Admin1Name,adm1,Admin1Name,Province/state (admin level 1) — name.,,TRUE
+EnviroSampleSite,Admin1VizName,admin1viz_name,Admin 1 VizName,Province/state (admin level 1) — visualisation name.,,TRUE
+EnviroSampleSite,Admin2GUID,adm2_guid,Admin 2 GUID,District (admin level 2) — globally unique identifier (GUID).,,TRUE
+EnviroSampleSite,Admin2Id,admin2id,Admin 2 Id,District (admin level 2) — ID.,,TRUE
+EnviroSampleSite,Admin2Name,adm2,Admin2Name,District (admin level 2) — name.,,TRUE
+EnviroSampleSite,Admin2VizName,admin2viz_name,Admin 2 VizName,District (admin level 2) — visualisation name.,,TRUE
+EnviroSampleSite,Comments,comments,Comments,Comments.,,TRUE
+EnviroSampleSite,CountryName,country_name,Country,Name of country.,,TRUE
+EnviroSampleSite,CreatedDate,created_date,Created Date,Date of created.,,TRUE
+EnviroSampleSite,DateClosed,date_closed,Date closed,Date closed.,,TRUE
+EnviroSampleSite,GlobalID,global_id,GlobalID,Internal identifier for global.,,TRUE
+EnviroSampleSite,Id,id,Id,Internal identifier for this record.,,TRUE
+EnviroSampleSite,Latitude,latitude,Latitude,Latitude.,,TRUE
+EnviroSampleSite,Longitude,longitude,Longitude,Longitude.,,TRUE
+EnviroSampleSite,ObjectId,object_id,ObjectId,Internal identifier for object.,,TRUE
+EnviroSampleSite,RegionId,region_id,Region ID,Internal identifier for region.,,TRUE
+EnviroSampleSite,SiteCode,site_code,Site Code,Site code.,,TRUE
+EnviroSampleSite,SiteCodeAlternate,site_code_alternate,Site Code Alternate,Site code alternate.,,TRUE
+EnviroSampleSite,SiteGUID,site_guid,Site Guid,Site globally unique identifier (GUID).,,TRUE
+EnviroSampleSite,SiteName,site_name,Site Name,Name of site.,,TRUE
+EnviroSampleSite,Status,status,Status,Status.,,TRUE
+EnviroSampleSite,StatusId,status_id,Status Id,Internal identifier for status.,,TRUE
+EnviroSampleSite,UpdatedDate,updated_date,UpdatedDate,Date of updated.,,TRUE
+EnviroSampleSite,UploadedBy,uploaded_by,Uploaded by,Uploaded by.,,TRUE
+EnviroSampleSite,UploadedDate,uploaded_date,Uploaded Date,Date of uploaded.,,TRUE
+EnviroSampleSite,WHORegion,who_region,WHORegion,WHO region.,,TRUE
+Geography,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+Geography,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+Geography,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+Geography,ADMx_vizname,ad_mx_vizname,ADMx_vizname,Ad mx map display name.,,TRUE
+Geography,FK_MainGeoplaceNameId,fk_main_geoplace_name_id,FK_MainGeoplaceNameId,Internal identifier for fk main geoplace name.,,TRUE
+Geography,HId,h_id,HId,Internal identifier for h.,,TRUE
+HumanSpecimenViruses,CaseManualEditId,case_manual_edit_id,CaseManualEditId,Internal identifier for case manual edit.,,TRUE
+HumanSpecimenViruses,EPID,epid,EPID,Epidemiological case ID (EPID number).,,TRUE
+HumanSpecimenViruses,Id,id,Id,Internal identifier for this record.,,TRUE
+HumanSpecimenViruses,LabSpecimenId,lab_specimen_id,LabSpecimenId,Internal identifier for laboratory specimen.,,TRUE
+HumanSpecimenViruses,PublishDate,publish_date,PublishDate,Date of publish.,,TRUE
+HumanSpecimenViruses,VirusId,virus_id,VirusId,Internal identifier for virus.,,TRUE
+HumanSpecimenViruses,VirusTypeName,virus_type_name,VirusTypeName,Name of virus type.,,TRUE
+Im,ActivityCode,activity_code,ActivityCode,Activity code.,,TRUE
+Im,ActivityParentId,activity_parent_id,ActivityParentId,Internal identifier for activity parent.,,TRUE
+Im,ActivityPlannedDateFrom,activity_planned_date_from,ActivityParentPlannedDateFrom,Activity planned date from.,,TRUE
+Im,ActivityPlannedDateFromYear,activity_planned_date_from_year,Year,Activity planned date from year.,,TRUE
+Im,ActivityPlannedDateTo,activity_planned_date_to,ActivityParentPlannedDateFrom,Activity planned date to.,,TRUE
+Im,ActivityTargetPopulation,activity_target_population,ActivityTargetPopulation,Activity target population.,,TRUE
+Im,ActivityTargetPopulationPercent,activity_target_population_percent,ActivityTargetPopulationPercent,Activity target population percent.,,TRUE
+Im,Admin0,adm0,Admin0,Country (admin level 0).,,TRUE
+Im,Admin0GUID,adm0_guid,Admin0GUID,Country (admin level 0) — globally unique identifier (GUID).,,TRUE
+Im,Admin0Id,admin0id,Admin0Id,Country (admin level 0) — ID.,,TRUE
+Im,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+Im,Admin1,adm1,Admin1,Province/state (admin level 1).,,TRUE
+Im,Admin1GUID,adm1_guid,Admin1GUID,Province/state (admin level 1) — globally unique identifier (GUID).,,TRUE
+Im,Admin1Id,admin1id,Admin1Id,Province/state (admin level 1) — ID.,,TRUE
+Im,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+Im,Admin2,adm2,Admin2,District (admin level 2).,,TRUE
+Im,Admin2GUID,adm2_guid,Admin2GUID,District (admin level 2) — globally unique identifier (GUID).,,TRUE
+Im,Admin2Id,admin2id,Admin2Id,District (admin level 2) — ID.,,TRUE
+Im,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+Im,Admin3,admin3,Admin3,Sub-district (admin level 3).,,TRUE
+Im,Admin4,admin4,Admin4,Admin 4.,,TRUE
+Im,Antigens,antigens,Antigens,Vaccine antigens.,,TRUE
+Im,AreaPoorlyCovered,area_poorly_covered,AreaPoorlyCovered,Area poorly covered.,,TRUE
+Im,Comment,comment,Comment,Comment.,,TRUE
+Im,CountryISO3Code,country_iso3code,CountryISO3Code,Country ISO country code 3 code.,,TRUE
+Im,DataSourceName,data_source_name,DataSource Name,Name of data source.,,TRUE
+Im,HouseholdsNumberChildrenChecked,households_number_children_checked,HouseholdsNumberChildrenChecked,Households number children checked.,,TRUE
+Im,HouseholdsNumberChildrenElligible,households_number_children_elligible,HouseholdsNumberChildrenElligible,Households number children elligible.,,TRUE
+Im,HouseholdsNumberChildrenMarked,households_number_children_marked,HouseholdsNumberChildrenMarked,Households number children marked.,,TRUE
+Im,HouseholdsResult,households_result,HouseholdsResult,Households result.,,TRUE
+Im,Id,id,Id,Internal identifier for this record.,,TRUE
+Im,ImId,im_id,ImId,Internal identifier for independent monitoring.,,TRUE
+Im,InputFileId,input_file_id,InputFileId,Internal identifier for input file.,,TRUE
+Im,IsDistrictSelectedForIM,is_district_selected_for_im,IsDistrictSelectedForIM,Whether district selected for independent monitoring (yes/no).,,TRUE
+Im,IsDistrictTargetedBySIA,is_district_targeted_by_sia,IsDistrictTargetedBySIA,Whether district targeted by supplementary immunization activity (campaign) (yes/no).,,TRUE
+Im,ISTCode,ist_code,ISTCode,Inter-country support team code.,,TRUE
+Im,NumberChildrenNotVaccinedAbsence,number_children_not_vaccined_absence,NumberChildrenNotVaccinedAbsence,Number children not vaccined absence.,,TRUE
+Im,NumberChildrenNotVaccinedHouseNotVisited,number_children_not_vaccined_house_not_visited,NumberChildrenNotVaccinedHouseNotVisited,Number children not vaccined house not visited.,,TRUE
+Im,NumberChildrenNotVaccinedNonCompliance,number_children_not_vaccined_non_compliance,NumberChildrenNotVaccinedNonCompliance,Number children not vaccined non compliance.,,TRUE
+Im,NumberChildrenNotVaccinedOtherReason,number_children_not_vaccined_other_reason,NumberChildrenNotVaccinedOtherReason,Number children not vaccined other reason.,,TRUE
+Im,NumberDaysIM,number_days_im,NumberDaysIM,Number days independent monitoring.,,TRUE
+Im,NumberHousesCheck,number_houses_check,NumberHousesCheck,Number houses check.,,TRUE
+Im,NumberHousesMarked,number_houses_marked,NumberHousesMarked,Number houses marked.,,TRUE
+Im,NumberOfIM,number_of_im,NumberOfIM,Number of independent monitoring.,,TRUE
+Im,NumberParentsAware,number_parents_aware,NumberParentsAware,Number parents aware.,,TRUE
+Im,NumberParentsInformedByChurchMosque,number_parents_informed_by_church_mosque,NumberParentsInformedByChurchMosque,Number parents informed by church mosque.,,TRUE
+Im,NumberParentsInformedByCriersGriots,number_parents_informed_by_criers_griots,NumberParentsInformedByCriersGriots,Number parents informed by criers griots.,,TRUE
+Im,NumberParentsInformedByOtherReason,number_parents_informed_by_other_reason,NumberParentsInformedByOtherReason,Number parents informed by other reason.,,TRUE
+Im,NumberParentsInformedByRadio,number_parents_informed_by_radio,NumberParentsInformedByRadio,Number parents informed by radio.,,TRUE
+Im,NumberParentsInformedBySocialMobilizationStaff,number_parents_informed_by_social_mobilization_staff,NumberParentsInformedBySocialMobilizationStaff,Number parents informed by social mobilization staff.,,TRUE
+Im,NumberParentsInformedByTV,number_parents_informed_by_tv,NumberParentsInformedByTV,Number parents informed by tv.,,TRUE
+Im,NumberParentsInformedByVaccinators,number_parents_informed_by_vaccinators,NumberParentsInformedByVaccinators,Number parents informed by vaccinators.,,TRUE
+Im,NumberParentsInterviewed,number_parents_interviewed,NumberParentsInterviewed,Number parents interviewed.,,TRUE
+Im,OutOfHouseNumberChildrenChecked,out_of_house_number_children_checked,OutOfHouseNumberChildrenChecked,Out of house number children checked.,,TRUE
+Im,OutOfHouseNumberChildrenMarked,out_of_house_number_children_marked,OutOfHouseNumberChildrenMarked,Out of house number children marked.,,TRUE
+Im,OutOfHouseResult,out_of_house_result,% of Out-of-house Children Marked,Out of house result.,,TRUE
+Im,PopulationUnderFive,population_under_five,PopulationUnderFive,Population under five.,,TRUE
+Im,ProfileOfIM,profile_of_im,ProfileOfIM,Profile of independent monitoring.,,TRUE
+Im,PublishDate,publish_date,PublishDate,Date of publish.,,TRUE
+Im,RegionId,region_id,RegionId,Internal identifier for region.,,TRUE
+Im,StartSIA,start_sia,StartSIA,Start supplementary immunization activity (campaign).,,TRUE
+Im,TotalDistrictsInCountry,total_districts_in_country,TotalDistrictsInCountry,Total districts in country.,,TRUE
+Im,TotalDistrictsTargetedBySIA,total_districts_targeted_by_sia,TotalDistrictsTargetedBySIA,Total districts targeted by supplementary immunization activity (campaign).,,TRUE
+Im,TotalSubDistrictsInCountry,total_sub_districts_in_country,TotalSubDistrictsInCountry,Total sub districts in country.,,TRUE
+Im,TotalSubDistrictsInDistrict,total_sub_districts_in_district,TotalSubDistrictsInDistrict,Total sub districts in district.,,TRUE
+Im,TotalSubDistrictsSelectedForIM,total_sub_districts_selected_for_im,TotalSubDistrictsSelectedForIM,Total sub districts selected for independent monitoring.,,TRUE
+Im,TypeActivity,type_activity,TypeActivity,Type activity.,,TRUE
+Im,TypeSIA,type_sia,TypeSIA,Type supplementary immunization activity (campaign).,,TRUE
+Im,TypeSIAId,type_sia_id,TypeSIAId,Internal identifier for type supplementary immunization activity (campaign).,,TRUE
+Im,VaccineType,vaccine_type,VaccineType,Sabin vaccine poliovirus type.,,TRUE
+Im,VaccineTypeId,vaccine_type_id,VaccineTypeId,Internal identifier for Sabin vaccine poliovirus type.,,TRUE
+Im,WhoSelectedIM,who_selected_im,WhoSelectedIM,WHO selected independent monitoring.,,TRUE
+Im,WhoTrainedIM,who_trained_im,WhoTrainedIM,WHO trained independent monitoring.,,TRUE
+LabSpecimen,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+LabSpecimen,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+LabSpecimen,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+LabSpecimen,CaseManualEditId,case_manual_edit_id,CaseManualEditId,Internal identifier for case manual edit.,,TRUE
+LabSpecimen,CountryISO2Code,country_iso2code,,Country ISO country code 2 code.,,TRUE
+LabSpecimen,DateFinalCellCultureResults,date_final_cell_culture_results,DateFinalCellCultureResults,Date final cell culture results.,,TRUE
+LabSpecimen,DateIsolateRcvdForSeq,date_isolate_rcvd_for_seq,DateIsolateRcvdForSeq,Date isolate rcvd for genomic sequencing.,,TRUE
+LabSpecimen,DateIsolateSentforITD,date_isolate_sentfor_itd,DateIsolateSentforITD,Date isolate sentfor intratypic differentiation (ITD) lab test.,,TRUE
+LabSpecimen,DateIsolateSentForSequencing,date_isolate_sent_for_sequencing,DateIsolateSentForSequencing,Date isolate sent for sequencing.,,TRUE
+LabSpecimen,DateITDResultReported,date_itd_result_reported,Date of ITD result reported,Date intratypic differentiation (ITD) lab test result reported.,,TRUE
+LabSpecimen,DateofITDResult,dateof_itd_result,Date of ITD result,Dateof intratypic differentiation (ITD) lab test result.,,TRUE
+LabSpecimen,DateofSequencing,dateof_sequencing,Date of sequencing,Dateof sequencing.,,TRUE
+LabSpecimen,DateSequencingResults,date_sequencing_results,DateSequencingResults,Date sequencing results.,,TRUE
+LabSpecimen,EmergenceGroup,emergence_group,,Emergence group.,,TRUE
+LabSpecimen,Id,id,Id,Internal identifier for this record.,,TRUE
+LabSpecimen,LabName,lab_name,LabName,Name of laboratory.,,TRUE
+LabSpecimen,Location,location,Location,Location.,,TRUE
+LabSpecimen,nVACCINE2,n_vaccine2,,N Sabin vaccine poliovirus 2.,,TRUE
+LabSpecimen,nVDPV2,n_vdpv2,,N vaccine-derived poliovirus 2.,,TRUE
+LabSpecimen,SpecimenId,specimen_id,SpecimenId,Internal identifier for specimen.,,TRUE
+LabSpecimen,SpecimenNumber,specimen_number,,Specimen number.,,TRUE
+LabSpecimen,VACCINE1,vaccine1,,Sabin vaccine poliovirus 1.,,TRUE
+LabSpecimen,VACCINE2,vaccine2,,Sabin vaccine poliovirus 2.,,TRUE
+LabSpecimen,VACCINE3,vaccine3,,Sabin vaccine poliovirus 3.,,TRUE
+LabSpecimen,VaccineOrigin,vaccine_origin,VaccineOrigin,Sabin vaccine poliovirus origin.,,TRUE
+LabSpecimen,VDPV1,vdpv1,,Vaccine-derived poliovirus 1.,,TRUE
+LabSpecimen,VDPV2,vdpv2,,Vaccine-derived poliovirus 2.,,TRUE
+LabSpecimen,VDPV3,vdpv3,,Vaccine-derived poliovirus 3.,,TRUE
+LabSpecimen,VdpvClassification,vdpv_classification,VdpvClassification,Vaccine-derived poliovirus classification.,,TRUE
+LabSpecimen,VirusCluster,virus_cluster,,Virus cluster.,,TRUE
+LabSpecimen,WILD1,wild1,,Wild poliovirus 1.,,TRUE
+LabSpecimen,WILD2,wild2,,Wild poliovirus 2.,,TRUE
+LabSpecimen,WILD3,wild3,,Wild poliovirus 3.,,TRUE
+Lqas,ActivityAreaPopulation,activity_area_population,ActivityAreaPopulation,Activity area population.,,TRUE
+Lqas,ActivityAreaTargetPercent,activity_area_target_percent,ActivityAreaTargetPercent,Activity area target percent.,,TRUE
+Lqas,ActivityCountryPopulation,activity_country_population,ActivityCountryPopulation,Activity country population.,,TRUE
+Lqas,ActivityParentId,activity_parent_id,Activity Parent Id,Internal identifier for activity parent.,,TRUE
+Lqas,ActivityTargetPopulation,activity_target_population,ActivityTargetPopulation,Activity target population.,,TRUE
+Lqas,ActivityTargetPopulationPercent,activity_target_population_percent,ActivityTargetPopulationPercent,Activity target population percent.,,TRUE
+Lqas,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+Lqas,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+Lqas,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+Lqas,DataSourceName,data_source_name,DataSource Name,Name of data source.,,TRUE
+Lqas,Lqas2ClassificationCode,lqas2classification_code,Lqas2ClassificationCode,Lot quality assurance sampling 2 classification code.,,TRUE
+Lqas,Lqas2ClassificationName,lqas2_classification_name,Lqas2ClassificationName,Name of lot quality assurance sampling 2 classification.,,TRUE
+Lqas,Lqas3ClassificationCode,lqas3classification_code,Lqas3ClassificationCode,Lot quality assurance sampling 3 classification code.,,TRUE
+Lqas,Lqas3ClassificationName,lqas3_classification_name,Lqas3ClassificationName,Name of lot quality assurance sampling 3 classification.,,TRUE
+Lqas,LqasClassificationCode,lqas_classification_code,LqasClassificationCode,Lot quality assurance sampling classification code.,,TRUE
+Lqas,LqasId,lqas_id,LqasId,Internal identifier for lot quality assurance sampling.,,TRUE
+Lqas,Phase,phase,Phase,Phase.,,TRUE
+Population,FK_MainPopulationId,fk_main_population_id,FK_MainPopulationId,Internal identifier for fk main population.,,TRUE
+RefAgeGroupData,Acronym,acronym,Acronym,Acronym.,,TRUE
+RefAgeGroupData,Code,code,Code,Code.,,TRUE
+RefAgeGroupData,Description,description,Description,Description.,,TRUE
+RefAgeGroupData,DisplaySequence,display_sequence,DisplaySequence,Display sequence.,,TRUE
+RefAgeGroupData,EndAge,end_age,EndAge,End age.,,TRUE
+RefAgeGroupData,Id,id,Id,Internal identifier for this record.,,TRUE
+RefAgeGroupData,Name,name,Name,Name of this record.,,TRUE
+RefAgeGroupData,RendererColor,renderer_color,RendererColor,Renderer color.,,TRUE
+RefAgeGroupData,ShortName,short_name,ShortName,Name of short.,,TRUE
+RefAgeGroupData,StartAge,start_age,StartAge,Start age.,,TRUE
+SubActivity,ActivityAgeAggregated,activity_age_aggregated,Age Groups,Activity age aggregated.,,TRUE
+SubActivity,ActivityAntigenAggregated,activity_antigen_aggregated,Name of the vaccines used,Activity vaccine antigen aggregated.,,TRUE
+SubActivity,ActivityChildrenAffectedAggregated,activity_children_affected_aggregated,Total Children affected,Activity children affected aggregated.,,TRUE
+SubActivity,ActivityChildrenImmunizedAggregated,activity_children_immunized_aggregated,Total Immunized Population,Activity children immunized aggregated.,,TRUE
+SubActivity,ActivityChildrenInaccessible,activity_children_inaccessible,,Activity children inaccessible.,,TRUE
+SubActivity,ActivityChildrenInaccessibleAggregated,activity_children_inaccessible_aggregated,Total Children inaccessible,Activity children inaccessible aggregated.,,TRUE
+SubActivity,ActivityComments,activity_comments,ActivityComments,Activity comments.,,TRUE
+SubActivity,ActivityCommentsAggregated,activity_comments_aggregated,Comments,Activity comments aggregated.,,TRUE
+SubActivity,ActivityIMDataLoaded,activity_im_data_loaded,,Activity independent monitoring data loaded.,,TRUE
+SubActivity,ActivityIMGenderDataLoaded,activity_im_gender_data_loaded,IM Gender loaded,Activity independent monitoring gender data loaded.,,TRUE
+SubActivity,ActivityImmunizedPercentageAggregated,activity_immunized_percentage_aggregated,Average Coverage Percentage,Activity immunized percentage aggregated.,,TRUE
+SubActivity,ActivityIsDatesConfirmed,activity_is_dates_confirmed,ActivityIsDatesConfirmed,Activity is dates confirmed.,,TRUE
+SubActivity,ActivityLqasDataLoaded,activity_lqas_data_loaded,,Activity lot quality assurance sampling data loaded.,,TRUE
+SubActivity,ActivityLqasGenderDataLoaded,activity_lqas_gender_data_loaded,LQAS Gender loaded,Activity lot quality assurance sampling gender data loaded.,,TRUE
+SubActivity,ActivityMaxDateToAggregated,activity_max_date_to_aggregated,Latest End Date,Activity max date to aggregated.,,TRUE
+SubActivity,ActivityMinDateFromAggregated,activity_min_date_from_aggregated,Ealiest Start Date,Activity min date from aggregated.,,TRUE
+SubActivity,ActivityParent_IM_HH_MissedChildrenPercentage,activity_parent_im_hh_missed_children_percentage,ActivityParent_IM_HH_MissedChildrenPercentage,Activity parent independent monitoring house-to-house monitoring missed children percentage.,,TRUE
+SubActivity,ActivityParent_IM_OH_MissedChildrenPercentage,activity_parent_im_oh_missed_children_percentage,ActivityParent_IM_OH_MissedChildrenPercentage,Activity parent independent monitoring out-of-house monitoring missed children percentage.,,TRUE
+SubActivity,ActivityParent_LqasFailPercentage,activity_parent_lqas_fail_percentage,ActivityParent_LqasFailPercentage,Activity parent lot quality assurance sampling fail percentage.,,TRUE
+SubActivity,ActivityParent_LqasPassPercentage,activity_parent_lqas_pass_percentage,ActivityParent_LqasPassPercentage,Activity parent lot quality assurance sampling pass percentage.,,TRUE
+SubActivity,ActivityParentActivityTypeName,activity_parent_activity_type_name,,Name of activity parent activity type.,,TRUE
+SubActivity,ActivityParentAreaTargetPercent,activity_parent_area_target_percent,,Activity parent area target percent.,,TRUE
+SubActivity,ActivityParentChildrenInaccessible,activity_parent_children_inaccessible,,Activity parent children inaccessible.,,TRUE
+SubActivity,ActivityParentHasBreakthrough,activity_parent_has_breakthrough,,Activity parent has breakthrough.,,TRUE
+SubActivity,ActivityParentRoundNumber,activity_parent_round_number,,Activity parent round number.,,TRUE
+SubActivity,ActivityParentSecurityAffectedChildren,activity_parent_security_affected_children,,Activity parent security affected children.,,TRUE
+SubActivity,ActivityParentUpdatedBy,activity_parent_updated_by,ActivityParentUpdatedBy,Activity parent updated by.,,TRUE
+SubActivity,ActivityParentUpdatedDate,activity_parent_updated_date,,Date of activity parent updated.,,TRUE
+SubActivity,ActivitySecurityAffectedChildren,activity_security_affected_children,,Activity security affected children.,,TRUE
+SubActivity,ActivityStatusAggregated,activity_status_aggregated,Activity Statuses,Activity status aggregated.,,TRUE
+SubActivity,ActivityTargetPopulationAggregated,activity_target_population_aggregated,Total Targeted Population,Activity target population aggregated.,,TRUE
+SubActivity,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,TRUE
+SubActivity,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,TRUE
+SubActivity,Admin2_IM_HH_MissedChildrenPercentage,admin2_im_hh_missed_children_percentage,Admin2_IM_HH_MissedChildrenPercentage,District (admin level 2) — independent monitoring house-to-house monitoring missed children percentage.,,TRUE
+SubActivity,Admin2_IM_OH_MissedChildrenPercentage,admin2_im_oh_missed_children_percentage,Admin2_IM_OH_MissedChildrenPercentage,District (admin level 2) — independent monitoring out-of-house monitoring missed children percentage.,,TRUE
+SubActivity,Admin2_LqasFailPercentage,admin2_lqas_fail_percentage,Admin2_LqasFailPercentage,District (admin level 2) — lot quality assurance sampling fail percentage.,,TRUE
+SubActivity,Admin2_LqasPassPercentage,admin2_lqas_pass_percentage,Admin2_LqasPassPercentage,District (admin level 2) — lot quality assurance sampling pass percentage.,,TRUE
+SubActivity,Admin2IMDataLoaded,admin2im_data_loaded,,District (admin level 2) — independent monitoring data loaded.,,TRUE
+SubActivity,Admin2IMGenderDataLoaded,admin2im_gender_data_loaded,IM Admin 2 Gender data loaded,District (admin level 2) — independent monitoring gender data loaded.,,TRUE
+SubActivity,Admin2LqasDataLoaded,admin2lqas_data_loaded,,District (admin level 2) — lot quality assurance sampling data loaded.,,TRUE
+SubActivity,Admin2LqasGenderDataLoaded,admin2lqas_gender_data_loaded,LQAS Admin 2 Gender data loaded,District (admin level 2) — lot quality assurance sampling gender data loaded.,,TRUE
+SubActivity,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,TRUE
+SubActivity,ApprovalDate,approval_date,ApprovalDate,Date of approval.,,TRUE
+SubActivity,CountryISO2Code,country_iso2code,CountryISO2Code,Country ISO country code 2 code.,,TRUE
+SubActivity,IsPartialNID,is_partial_nid,IsPartialNID,Whether partial nid (yes/no).,,TRUE
+SubActivity,LastModificationDate,last_modification_date,LastModificationDate,Date of last modification.,,TRUE
+SubActivity,PublishDate,publish_date,PublishDate,Date of publish.,,TRUE
+SubActivity,SubActivityByAdmin2Id,sub_activity_by_admin2id,SubActivityByAdmin2Id,Internal identifier for sub activity by admin 2.,,TRUE
+SubActivity,SubActivityId,sub_activity_id,Sub activity ID,Internal identifier for sub activity.,,TRUE
+SubActivity,Id,id,,ID.,,TRUE
+SubActivity,ParentId,parent_id,,Parent ID.,,TRUE
+SubActivity,Number,number,,Number.,,TRUE
+SubActivity,InitialPlannedDate,initial_planned_date,Sub-Activity Initial Planned Date,Initial planned date.,,TRUE
+SubActivity,DateFrom,date_from,Sub-Activity Start Date,Date from.,,TRUE
+SubActivity,IsDateFromExact,is_date_from_exact,,Is date from exact.,,TRUE
+SubActivity,DateTo,date_to,Sub-Activity End Date,Date to.,,TRUE
+SubActivity,IsDateToExact,is_date_to_exact,,Is date to exact.,,TRUE
+SubActivity,IsDatesConfirmed,is_dates_confirmed,,Is dates confirmed.,,TRUE
+SubActivity,ActivityParentPlannedDateFrom,activity_parent_planned_date_from,Activity Start Date,Activity parent planned date from.,,TRUE
+SubActivity,ActivityParentPlannedDateTo,activity_parent_planned_date_to,Activity End Date,Activity parent planned date to.,,TRUE
+SubActivity,StatusCode,status_code,,Status code.,,TRUE
+SubActivity,Status,status,Status,Status.,,TRUE
+SubActivity,PriorityCode,priority_code,,Priority code.,,TRUE
+SubActivity,Priority,priority,Priority,Priority.,,TRUE
+SubActivity,AgeGroupCode,age_group_code,,Age group code.,,TRUE
+SubActivity,AgeGroup,age_group,Age Group,Age group.,,TRUE
+SubActivity,VaccineType,vaccine_type,Vaccine Type,Vaccine type.,,TRUE
+SubActivity,VaccineCode,vaccine_code,,Vaccine code.,,TRUE
+SubActivity,WHORegion,who_region,WHO Region,WHO region.,,TRUE
+SubActivity,ISTName,ist_name,IST,Ist name.,,TRUE
+SubActivity,Admin0Id,admin0id,Admin 0 Id,Admin 0 ID.,,TRUE
+SubActivity,Admin0Name,adm0,Country,Admin 0 name.,,TRUE
+SubActivity,Admin1Name,adm1,Admin1,Admin 1 name.,,TRUE
+SubActivity,Admin2Name,adm2,Admin2,Admin 2 name.,,TRUE
+SubActivity,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,,TRUE
+SubActivity,Admin1Id,admin1id,Admin 1 Id,Admin 1 ID.,,TRUE
+SubActivity,Province,province,,Province.,,TRUE
+SubActivity,Admin2Id,admin2id,Admin 2 Id,Admin 2 ID.,,TRUE
+SubActivity,District,district,,District.,,TRUE
+SubActivity,Admin0Guid,adm0_guid,Admin 0 Guid,Admin 0 guid.,,TRUE
+SubActivity,Admin1Guid,adm1_guid,Admin 1 Guid,Admin 1 guid.,,TRUE
+SubActivity,Admin2Guid,adm2_guid,Admin 2 Guid,Admin 2 guid.,,TRUE
+SubActivity,AdditionalIntervention,additional_intervention,Additional Interventions,Additional intervention.,,TRUE
+SubActivity,AreaTargetPercent,area_target_percent,Area Targeted %,Area target percent.,,TRUE
+SubActivity,CountryPopulation,country_population,UNPD Country Population,Country population.,,TRUE
+SubActivity,AreaPopulation,area_population,Area Population,Area population.,,TRUE
+SubActivity,AgeGroupPercent,age_group_percent,Age Group %,Age group percent.,,TRUE
+SubActivity,ChildrenImmunized,children_immunized,Immunized Population,Children immunized.,,TRUE
+SubActivity,VaccineModifier,vaccine_modifier,,Vaccine modifier.,,TRUE
+SubActivity,WastageFactor,wastage_factor,Wastage Factor,Wastage factor.,,TRUE
+SubActivity,CalculatedTargetPopulation,calculated_target_population,Targeted Population,Calculated target population.,,TRUE
+SubActivity,CalculatedDosages,calculated_dosages,Number of Doses,Calculated dosages.,,TRUE
+SubActivity,UpdatedDate,updated_date,Sub-Activity Last Updated Date,Updated date.,,TRUE
+SubActivity,UpdatedBy,updated_by,,Updated by.,,TRUE
+SubActivity,IsGeoplaceUnspecified,is_geoplace_unspecified,,Is geoplace unspecified.,,TRUE
+SubActivity,Admin2TargetPopulation,admin2target_population,Admin 2 Targeted Population,Admin 2 target population.,,TRUE
+SubActivity,Admin2ChildrenImmunized,admin2children_immunized,Admin 2 Immunized Population,Admin 2 children immunized.,,TRUE
+SubActivity,Admin2SecurityStatus,admin2security_status,Admin 2 Accessibility Status,Admin 2 security status.,,TRUE
+SubActivity,Admin2Comments,admin2comments,Admin 2 Comments,Admin 2 comments.,,TRUE
+SubActivity,PhaseName,phase_name,Phase,Phase name.,,TRUE
+SubActivity,DelayReason,delay_reason,Delay Reason,Delay reason.,,TRUE
+SubActivity,Admin2ChildrenInaccessible,admin2children_inaccessible,Admin2 children inaccessible,Admin 2 children inaccessible.,,TRUE
+SubActivity,ActivityAdminCoveragePercentage,activity_admin_coverage_percentage,Admin Coverage %,Activity admin coverage percentage.,,TRUE
+SubActivity,ActivityParentCode,activity_parent_code,SIA Code,Activity parent code.,,TRUE
+SubActivity,SIASubActivityCode,sia_sub_activity_code,SIA Sub-Activity Code,SIA sub activity code.,,TRUE
+SubActivity,ActivityParentLinkedOutbreaksList,activity_parent_linked_outbreaks_list,Linked Outbreak(s),Activity parent linked outbreaks list.,,TRUE
+SubActivity,ActivityChildApprovedDosages,activity_child_approved_dosages,Number of Doses Approved,Activity child approved dosages.,,TRUE
+SubActivity,,activity_comments,Activity Comments,Activity comments.,,TRUE
+Virus,Admin0ShapeId,admin0shape_id,Admin 0 ShapeId,Country (admin level 0) — shape ID.,,FALSE
+Virus,Admin1ShapeId,admin1shape_id,Admin 1 ShapeId,Province/state (admin level 1) — shape ID.,,FALSE
+Virus,Admin2ShapeId,admin2shape_id,Admin 2 ShapeId,District (admin level 2) — shape ID.,,FALSE
+Virus,FinalCellCultureResult,final_cell_culture_result,NumberDaysIM,Final cell culture result.,,FALSE
+Virus,HasEmergenceGroupOrClusterName,has_emergence_group_or_cluster_name,HasEmergenceGroupOrClusterName,Whether emergence group or cluster name (yes/no).,,FALSE
+Virus,IsBreakthrough,is_breakthrough,IsBreakthrough,Whether breakthrough (yes/no).,,FALSE
+Virus,Location,location,Location,Location.,,FALSE
+Virus,nOPVCategoryCode,n_opv_category_code,nOPV Category Code,N oral polio vaccine category code.,,FALSE
+Virus,nOPVCategoryId,n_opv_category_id,nOPV Category Id,Internal identifier for n oral polio vaccine category.,,FALSE
+Virus,nOPVCategoryName,n_opv_category_name,nOPV Category Name,Name of n oral polio vaccine category.,,FALSE
+Virus,NtChanges,nt_changes,NtChanges,Nucleotide changes.,,TRUE
+Virus,ReportingWeekAndYear,reporting_week_and_year,AFP Reporting Week and Year,Reporting week and year.,,FALSE
+Virus,VaccineOrigin,vaccine_origin,VaccineOrigin,Sabin vaccine poliovirus origin.,,FALSE
+Virus,VirusDisplaySequence,virus_display_sequence,VirusDisplaySequence,Virus display sequence.,,FALSE
+Virus,VirusId,virus_id,VirusId,Internal identifier for virus.,,FALSE
+Virus,VirusRenderer,virus_renderer,VirusRenderer,Virus renderer.,,FALSE
+Virus,AdvancedNotification,advanced_notification,Advanced Notification,Advanced notification.,,FALSE
+Virus,SurveillanceTypeId,surveillance_type_id,,Surveillance type ID.,,FALSE
+Virus,EPID,epid,EPID,EPID.,,TRUE
+Virus,ReportingYear,reporting_year,,Reporting year.,,FALSE
+Virus,EnviroSampleManualEditId,enviro_sample_manual_edit_id,Env Sample ID,Enviro sample manual edit ID.,,FALSE
+Virus,Id,id,Virus ID,ID.,,FALSE
+Virus,WHORegion,who_region,WHO Region,WHO region.,,FALSE
+Virus,RegionId,region_id,,Region ID.,,FALSE
+Virus,Admin0OfficialName,admin0official_name,,Admin 0 official name.,,FALSE
+Virus,CountryISO3Code,country_iso3code,Country Iso3,Country ISO 3 code.,,TRUE
+Virus,SubRegionId,sub_region_id,,Sub region ID.,,FALSE
+Virus,Admin0Name,adm0,Place Admin 0,Admin 0 name.,,TRUE
+Virus,Admin0WhoCode,admin0who_code,,Admin 0 WHO code.,,FALSE
+Virus,Admin0GUID,adm0_guid,Admin 0 Guid,Admin 0 guid.,,TRUE
+Virus,Admin0Id,admin0id,,Admin 0 ID.,,FALSE
+Virus,Admin1GUID,adm1_guid,Admin 1 Guid,Admin 1 guid.,,TRUE
+Virus,Admin1Id,admin1id,,Admin 1 ID.,,FALSE
+Virus,Admin1Iso2Code,admin1iso2code,,Admin 1 ISO 2 code.,,FALSE
+Virus,Admin1Iso3Code,admin1iso3code,,Admin 1 ISO 3 code.,,FALSE
+Virus,Admin1Name,adm1,Place Admin 1,Admin 1 name.,,TRUE
+Virus,Admin1OfficialName,admin1official_name,,Admin 1 official name.,,FALSE
+Virus,Admin1WhoCode,admin1who_code,,Admin 1 WHO code.,,FALSE
+Virus,Admin2GUID,adm2_guid,Admin 2 Guid,Admin 2 guid.,,TRUE
+Virus,Admin2Id,admin2id,,Admin 2 ID.,,FALSE
+Virus,Admin2Name,adm2,Place Admin 2,Admin 2 name.,,TRUE
+Virus,Admin2OfficialName,admin2official_name,,Admin 2 official name.,,FALSE
+Virus,CaseManualEditId,case_manual_edit_id,PolIS Case ID,Case manual edit ID.,,FALSE
+Virus,CreatedBy,created_by,,Created by.,,FALSE
+Virus,CreatedDate,created_date,,Created date.,,FALSE
+Virus,EnvSiteCode,env_site_code,Site Code,Env site code.,,FALSE
+Virus,EnvSiteId,env_site_id,,Env site ID.,,FALSE
+Virus,EnvSiteName,env_site_name,Site Name,Env site name.,,FALSE
+Virus,ExactLatitude,exact_latitude,Exact Latitude,Exact latitude.,,FALSE
+Virus,ExactLongitude,exact_longitude,Exact Longitude,Exact longitude.,,FALSE
+Virus,HomologyVirus1EPID,homology_virus1epid,,Homology virus 1 EPID.,,FALSE
+Virus,HomologyVirus1Id,homology_virus1id,,Homology virus 1 ID.,,FALSE
+Virus,HomologyVirus2EPID,homology_virus2epid,,Homology virus 2 EPID.,,FALSE
+Virus,HomologyVirus2Id,homology_virus2id,,Homology virus 2 ID.,,FALSE
+Virus,HomologyVirus3EPID,homology_virus3epid,,Homology virus 3 EPID.,,FALSE
+Virus,HomologyVirus3Id,homology_virus3id,,Homology virus 3 ID.,,FALSE
+Virus,HomologyVirus4EPID,homology_virus4epid,,Homology virus 4 EPID.,,FALSE
+Virus,HomologyVirus4Id,homology_virus4id,,Homology virus 4 ID.,,FALSE
+Virus,HomologyVirus5EPID,homology_virus5epid,,Homology virus 5 EPID.,,FALSE
+Virus,HomologyVirus5Id,homology_virus5id,,Homology virus 5 ID.,,FALSE
+Virus,ISTName,ist_name,IST,Ist name.,,FALSE
+Virus,LabNationalName,lab_national_name,Lab National Name,Lab national name.,,FALSE
+Virus,LabRegionalName,lab_regional_name,Lab Regional Name,Lab regional name.,,FALSE
+Virus,Latitude,latitude,Y,Latitude.,,TRUE
+Virus,Longitude,longitude,X,Longitude.,,TRUE
+Virus,PercentHomology1,percent_homology1,,Percent homology 1.,,FALSE
+Virus,PercentHomology2,percent_homology2,,Percent homology 2.,,FALSE
+Virus,PercentHomology3,percent_homology3,,Percent homology 3.,,FALSE
+Virus,PercentHomology4,percent_homology4,,Percent homology 4.,,FALSE
+Virus,PercentHomology5,percent_homology5,,Percent homology 5.,,FALSE
+Virus,PoNS_AdministrationType,pons_administration_type,PoNS Administration Type,PoNS administration type.,,FALSE
+Virus,PoNS_ClosestMatch,pons_closest_match,PoNS Closest Match,PoNS closest match.,,FALSE
+Virus,PoNS_ClosestMatchDash,pons_closest_match_dash,PoNS Closest Match Dash,PoNS closest match dash.,,FALSE
+Virus,PoNS_Comments,pons_comments,PoNS Comments,PoNS comments.,,FALSE
+Virus,PoNS_Country,pons_country,PoNS Country,PoNS country.,,FALSE
+Virus,PoNS_DashId,pons_dash_id,PoNS Dash Id,PoNS dash ID.,,FALSE
+Virus,PoNS_Environment,pons_environment,PoNS Environment,PoNS environment.,,FALSE
+Virus,PoNS_EpiNum,pons_epi_num,PoNS Epid,PoNS EPID number.,,FALSE
+Virus,PoNS_EpiNumPolis,pons_epi_num_polis,Epid in Polis,PoNS EPID number in POLIS.,,FALSE
+Virus,PoNS_EpiNumTransformed,pons_epi_num_transformed,PoNS Epid formated,PoNS EPID number (formatted).,,FALSE
+Virus,PoNS_Expr1005,pons_expr1005,PoNS Expr 1005,PoNS expr 1005.,,FALSE
+Virus,PoNS_FileName,pons_file_name,PoNS FileName,PoNS file name.,,FALSE
+Virus,PoNS_Genotype,pons_genotype,PoNS Genotype,PoNS genotype.,,FALSE
+Virus,PoNS_Genotype2,pons_genotype2,PoNS Genotype2,PoNS genotype 2.,,FALSE
+Virus,PoNS_Id,pons_id,PoNS Id,PoNS ID.,,FALSE
+Virus,PoNS_ISO3,pons_iso3,PoNS ISO3,PoNS ISO 3.,,FALSE
+Virus,PoNS_Latitude,pons_latitude,PoNS Latitude,PoNS latitude.,,FALSE
+Virus,PoNS_Locality,pons_locality,PoNS Locality,PoNS locality.,,FALSE
+Virus,PoNS_Longitude,pons_longitude,PoNS Longitude,PoNS longitude.,,FALSE
+Virus,PoNS_MapDistEdit,pons_map_dist_edit,PoNS Map Dist Edit,PoNS map distance edit.,,FALSE
+Virus,PoNS_MatchingQuality,pons_matching_quality,PoNS Matching Quality,PoNS matching quality.,,FALSE
+Virus,PoNS_Mismatches,pons_mismatches,PoNS Mismatches,PoNS mismatches.,,FALSE
+Virus,PoNS_NTChanges,pons_nt_changes,PoNS NT Changes,PoNS NT changes.,,FALSE
+Virus,PoNS_OnSetDate,pons_on_set_date,PoNS OnSet Date,PoNS onset date.,,FALSE
+Virus,PoNS_Passage,pons_passage,PoNS Passage,PoNS passage.,,FALSE
+Virus,PoNS_Patient,pons_patient,PoNS Patient,PoNS patient.,,FALSE
+Virus,PoNS_ReceiptDate,pons_receipt_date,PoNS Receipt Date,PoNS receipt date.,,FALSE
+Virus,PoNS_Reference,pons_reference,PoNS Reference,PoNS reference.,,FALSE
+Virus,PoNS_ReferenceName,pons_reference_name,PoNS Reference Name,PoNS reference name.,,FALSE
+Virus,PoNS_RefLabId,pons_ref_lab_id,PoNS Ref Lab Id,PoNS ref lab ID.,,FALSE
+Virus,PoNS_Region,pons_region,PoNS Region,PoNS region.,,FALSE
+Virus,PoNS_SeqBy,pons_seq_by,PoNS Seq By,PoNS seq by.,,FALSE
+Virus,PoNS_SeqDate,pons_seq_date,PoNS Seq Date,PoNS seq date.,,FALSE
+Virus,PoNS_SeqRegion,pons_seq_region,PoNS Seq Region,PoNS seq region.,,FALSE
+Virus,PoNS_Serotype,pons_serotype,PoNS Serotype,PoNS serotype.,,FALSE
+Virus,PoNS_Serotype2,pons_serotype2,PoNS Serotype2,PoNS serotype 2.,,FALSE
+Virus,PoNS_Source,pons_source,PoNS Source,PoNS source.,,FALSE
+Virus,PoNS_SpecDate,pons_spec_date,PoNS Spec Date,PoNS spec date.,,FALSE
+Virus,PoNS_SpecType,pons_spec_type,PoNS Spec Type,PoNS spec type.,,FALSE
+Virus,PoNS_StateProv,pons_state_prov,PoNS State Province,PoNS state/province.,,FALSE
+Virus,PoNS_WHOCountryCode,pons_who_country_code,PoNS WHO Country Code,PoNS WHO country code.,,FALSE
+Virus,PoNS_WildClusterName,pons_wild_cluster_name,PoNS Wild Cluster Name,PoNS wild cluster name.,,FALSE
+Virus,PublishDate,publish_date,,Publish date.,,FALSE
+Virus,RegionGUID,region_guid,,Region guid.,,FALSE
+Virus,RegionName,region_name,,Region name.,,FALSE
+Virus,RegionOfficialName,region_official_name,,Region official name.,,FALSE
+Virus,RegionWhoCode,region_who_code,,Region WHO code.,,FALSE
+Virus,ReportingWeek,reporting_week,Reporting Week,Reporting week.,,FALSE
+Virus,SubRegionGUID,sub_region_guid,,Sub region guid.,,FALSE
+Virus,SubRegionName,sub_region_name,,Sub region name.,,FALSE
+Virus,SubRegionOfficialName,sub_region_official_name,,Sub region official name.,,FALSE
+Virus,SubRegionWhoCode,sub_region_who_code,,Sub region WHO code.,,FALSE
+Virus,SurveillanceTypeName,surveillance_type_name,Surveillance Type,Surveillance type name.,,FALSE
+Virus,UpdatedBy,updated_by,,Updated by.,,FALSE
+Virus,UpdatedDate,updated_date,,Updated date.,,FALSE
+Virus,VaccineNtChangesFromSabin,vaccine_nt_changes_from_sabin,,Vaccine NT changes from Sabin.,,FALSE
+Virus,VdpvClassificationChangeApprovedBy,vdpv_classification_change_approved_by,,VDPV classification change approved by.,,FALSE
+Virus,VdpvClassificationChangeDate,vdpv_classification_change_date,,VDPV classification change date.,,TRUE
+Virus,VdpvClassificationCode,vdpv_classification_code,,VDPV classification code.,,FALSE
+Virus,VdpvClassificationId,vdpv_classification_id,,VDPV classification ID.,,FALSE
+Virus,VdpvClassificationName,vdpv_classification_name,VDPV Classification(s),VDPV classification name.,,FALSE
+Virus,VdpvComments,vdpv_comments,,VDPV comments.,,FALSE
+Virus,VdpvDocument,vdpv_document,,VDPV document.,,FALSE
+Virus,VdpvEmergenceGroupCode,vdpv_emergence_group_code,,VDPV emergence group code.,,FALSE
+Virus,VdpvEmergenceGroupId,vdpv_emergence_group_id,,VDPV emergence group ID.,,FALSE
+Virus,VdpvEmergenceGroupName,vdpv_emergence_group_name,Emergence Group(s),VDPV emergence group name.,,FALSE
+Virus,VdpvNtChangesClosestMatch,vdpv_nt_changes_closest_match,,VDPV NT changes closest match.,,FALSE
+Virus,VdpvNtChangesFromSabin,vdpv_nt_changes_from_sabin,Nt Changes,VDPV NT changes from Sabin.,,FALSE
+Virus,VdpvReportedBy,vdpv_reported_by,,VDPV reported by.,,FALSE
+Virus,VdpvReportedToHQDate,vdpv_reported_to_hq_date,,VDPV reported to HQ date.,,FALSE
+Virus,VdpvSourceCode,vdpv_source_code,,VDPV source code.,,FALSE
+Virus,VdpvSourceId,vdpv_source_id,,VDPV source ID.,,FALSE
+Virus,VdpvSourceName,vdpv_source_name,,VDPV source name.,,FALSE
+Virus,VirusDate,virus_date,Virus Date,Virus date.,,TRUE
+Virus,VirusTypeCode,virus_type_code,Virus Type(s),Virus type code.,,FALSE
+Virus,VirusTypeId,virus_type_id,,Virus type ID.,,FALSE
+Virus,VirusTypeName,virus_type_name,,Virus type name.,,FALSE
+Virus,WildClusterCode,wild_cluster_code,,Wild cluster code.,,FALSE
+Virus,WildClusterId,wild_cluster_id,,Wild cluster ID.,,FALSE
+Virus,WildClusterName,wild_cluster_name,Virus Cluster(s),Wild cluster name.,,FALSE
+Virus,WildGenotypeCode,wild_genotype_code,,Wild genotype code.,,FALSE
+Virus,WildGenotypeId,wild_genotype_id,,Wild genotype ID.,,FALSE
+Virus,WildGenotypeName,wild_genotype_name,,Wild genotype name.,,FALSE
+Virus,WildImportationEventCode,wild_importation_event_code,,Wild importation event code.,,FALSE
+Virus,WildImportationEventId,wild_importation_event_id,,Wild importation event ID.,,FALSE
+Virus,WildImportationEventName,wild_importation_event_name,,Wild importation event name.,,FALSE
+Virus,,location,location,Location.,,FALSE
+Case,,year_onset,,Year of onset,derived from paralysis_onset_date (falls back to stool1collection_date then notification_date),TRUE
+Case,,month_onset,,Month of onset,derived from paralysis_onset_date,TRUE
+Case,,age_months,,Age in months,derived (numeric) from calculated_age_in_month then person_age_in_months,TRUE
+Case,,onset_to_notify,,Days from onset to notification,derived: notification_date - paralysis_onset_date,TRUE
+Case,,onset_to_invest,,Days from onset to investigation,derived: investigation_date - paralysis_onset_date,TRUE
+Case,,onset_to_stool1,,Days from onset to stool 1 collection,derived: stool1collection_date - paralysis_onset_date,TRUE
+Case,,onset_to_stool2,,Days from onset to stool 2 collection,derived: stool2collection_date - paralysis_onset_date,TRUE
+Case,,notify_to_invest,,Days from notification to investigation,derived: investigation_date - notification_date,TRUE
+Case,,invest_to_stool1,,Days from investigation to stool 1 collection,derived: stool1collection_date - investigation_date,TRUE
+Case,,stool1_to_stool2,,Days between stool 1 and stool 2 collection,derived: stool2collection_date - stool1collection_date,TRUE
+Case,,onset_to_followup,,Days from onset to follow-up,derived: followup_date - paralysis_onset_date,TRUE
+Case,,stool1_missing,,Stool 1 specimen missing,derived: TRUE when stool1collection_date and stool1condition both absent,TRUE
+Case,,stool2_missing,,Stool 2 specimen missing,derived: TRUE when stool2collection_date and stool2condition both absent,TRUE
+Case,,stool_missing,,Both stool specimens missing,derived: stool1_missing and stool2_missing,TRUE
+Case,,vtype,,Decoded poliovirus type,"derived from polio_virus_types + vdpv_classifications; WPV nomenclature, c/a/i VDPV prefix",TRUE
+Case,,vtype_fixed,,Decoded poliovirus type (corrected),vtype with historical country corrections applied,TRUE
+Case,,classification_all,,Fused analytic classification,virus type (WPV/cVDPV/aVDPV/iVDPV) for positives else recoded classification (NPAFP/COMPATIBLE/NOT-AFP/PENDING/LAB PENDING/VAPP/UNKNOWN),TRUE
+Case,,sabin1,,Sabin type 1 detected,derived: polio_virus_types contains VACCINE1,TRUE
+Case,,sabin2,,Sabin type 2 detected,derived: polio_virus_types contains VACCINE2,TRUE
+Case,,sabin3,,Sabin type 3 detected,derived: polio_virus_types contains VACCINE3,TRUE
+Case,,hot_case,,Hot case flag (recomputed),derived: paralysis asymmetric + onset fever + rapid progress all Yes,TRUE
+Case,,onset_date_quality,,Onset date coherence,derived (Good/Missing onset/Onset after notification/Onset after investigation),TRUE
+Case,,timeliness,,Stool collection timeliness,derived (Timely/Not Timely/Unable to Assess) from onset coherence and stool intervals,TRUE
+Case,,needs_60day_followup,,Needs 60-day follow-up,derived: TRUE when stool collection not timely,TRUE
+Case,,got_60day_followup,,Received 60-day follow-up,derived: a follow-up visit exists when one was needed,TRUE
+Case,,followup_on_time,,60-day follow-up on time,derived: follow-up 60-90 days after onset when needed,TRUE
+Case,,country_actual,,Standardised country name,"enrich_afp(): from country_lookup (countrycode UN name), falls back to title-cased adm0",TRUE
+Case,,risk_group,,Polio risk tier,enrich_afp(): from country_lookup (Endemic/Very High/High/Medium Risk),TRUE
+Case,,epi_zones,,Epidemiological zone,enrich_afp(): from country_lookup (Lake Chad Basin/Western Africa/Horn of Africa/Southern Africa/Central-Equatorial Africa/Islands/Other),TRUE
+Case,,epi_zones_v2,,Epidemiological zone (Sahel variant),enrich_afp(): epi_zones with the Lake Chad Basin & Sahel grouping,TRUE
+Case,,polio_type,,Poliovirus serotype,enrich_afp(): Type 1/2/3 read from the classification serotype,TRUE
+Case,,afp_class,,AFP surveillance category,enrich_afp(): AFP-Positive/Non-polio AFP/Not an AFP/VAPP/Others,TRUE
+Case,,afp,,AFP-positive flag,enrich_afp(): 1 when afp_class is AFP-Positive,TRUE
+Case,,npafp,,Non-polio AFP flag,enrich_afp(): 1 when Discarded/Pending and not a circulating VDPV 1/2,TRUE
+Case,,pending_results,,Pending lab results flag,enrich_afp(): TRUE when classification is Pending,TRUE
+EnvSample,,year_collection,,Year of collection,derived from collection_date,TRUE
+EnvSample,,month_collection,,Month of collection,derived from collection_date,TRUE
+SubActivity,,year_start,,Year of campaign start,derived from date_from,TRUE
+SubActivity,,month_start,,Month of campaign start,derived from date_from,TRUE
+Virus,,year_onset,,Year of onset,derived from virus_date,TRUE
+Virus,,month_onset,,Month of onset,derived from virus_date,TRUE
+Virus,,surveillance_type,,Surveillance type,derived from case/ES linkage (human/environmental),TRUE
+EnvSample,,virus_type,,Normalised full virus-type list detected,derived: normalised virus-type list from the raw ES virus columns,TRUE
+EnvSample,,nvaccine,,Novel OPV2 (nOPV2) detected,derived: nOPV2 detected flag,TRUE
+EnvSample,,ev_detect,,Any poliovirus/enterovirus detected,derived: fused 'anything detected' flag (polio or enterovirus),TRUE
+LabSpecimen,,culture_to_itd,,Days from culture result to ITD result,derived: itd_result_date - culture_result_date,TRUE
+LabSpecimen,,sent_to_seq_result,,Days from sent-for-sequencing to result,derived: seq_result_date - date_sent_for_sequencing,TRUE
+SubActivity,,round_num,,Sequential SIA round index,derived: round index within district x vaccine type,TRUE
+SubActivity,,max_round_date,,Most recent campaign date in district,derived: max campaign date per district,TRUE
+SubActivity,,last_campaign,,Row is the district's most recent campaign,derived: TRUE on the latest campaign per district,TRUE
+Virus,,report_date,,Report-date anchor for the positive,derived: onset/collection date anchor for the positive,TRUE
+Virus,,measurement,,Virus classification label,"derived: positive classification (e.g. WPV 1, cVDPV 2)",TRUE
+Lqas,Year,year,,Campaign year,,TRUE
+Lqas,ChildrenChecked,children_checked,,Children checked in the lot,,TRUE
+Lqas,ChildrenFoundUnvaccinated,children_found_unvaccinated,,Children found unvaccinated in the lot,,TRUE
+Lqas,,coverage,,Lot coverage,derived: 1 - children_found_unvaccinated / children_checked,TRUE
+Lqas,,invalid,,Lot invalid flag,derived: TRUE when children_checked is not a valid multiple,TRUE
+Lqas,,lqas2_polis,,POLIS 2-level LQAS class (normalised),derived: normalised Lqas2ClassificationName (Pass/Fail/INVALID),TRUE
+Lqas,,lqas3_polis,,POLIS 3-level LQAS class (normalised),derived: normalised Lqas3ClassificationName,TRUE
+Lqas,,lqas2_derived,,Derived 2-level LQAS class,derived: 2-level class computed from coverage,TRUE
+Lqas,,lqas3_derived,,Derived 3-level LQAS class,derived: 3-level class computed from coverage,TRUE
+Lqas,,n_lots,,Number of lots in the district-year,derived: lot count per district-year,TRUE
+Lqas,,n_pass_polis,,Lots passing (POLIS class),derived: count of POLIS-class passes,TRUE
+Lqas,,n_fail_polis,,Lots failing (POLIS class),derived: count of POLIS-class fails,TRUE
+Lqas,,n_invalid_polis,,Lots invalid (POLIS class),derived: count of POLIS-class invalids,TRUE
+Lqas,,n_pass_derived,,Lots passing (derived class),derived: count of derived-class passes,TRUE
+Lqas,,n_fail_derived,,Lots failing (derived class),derived: count of derived-class fails,TRUE
+Lqas,,n_invalid_derived,,Lots invalid (derived class),derived: count of derived-class invalids,TRUE
+Lqas,,pass_pct_polis,,Percent of valid lots passing (POLIS),derived: n_pass_polis / valid lots x 100,TRUE
+Lqas,,pass_pct_derived,,Percent of valid lots passing (derived),derived: n_pass_derived / valid lots x 100,TRUE
+Im,,year,,Campaign year,derived: year from activity_planned_date_from_year,TRUE
+Im,,n_checked_inhouse,,In-house children checked,derived: sum of households_number_children_checked,TRUE
+Im,,n_marked_inhouse,,In-house children marked,derived: sum of households_number_children_marked,TRUE
+Im,,missed_frac_inhouse,,In-house missed fraction,derived: 1 - n_marked_inhouse / n_checked_inhouse,TRUE
+Im,,n_checked_outhouse,,Out-of-house children checked,derived: sum of out_of_house_number_children_checked,TRUE
+Im,,n_marked_outhouse,,Out-of-house children marked,derived: sum of out_of_house_number_children_marked,TRUE
+Im,,missed_frac_outhouse,,Out-of-house missed fraction,derived: 1 - n_marked_outhouse / n_checked_outhouse (falls back to mean result),TRUE
+Im,,im_status_inhouse,,In-house IM validity status,derived: Valid/Invalid from in-house missed fraction,TRUE
+Im,,im_status_outhouse,,Out-of-house IM validity status,derived: Valid/Invalid from out-of-house missed fraction,TRUE
+Case,,doses_opv_number,,Doses OPV number,,TRUE
+Case,,has_lab_dataset,,Has lab dataset,,TRUE
+Case,,geo_source,,Geo source,derived: provenance of the recovered geography,TRUE
+Case,,adm0_source,,ADM0 source,derived: provenance of the recovered geography,TRUE
+Case,,adm1_source,,ADM1 source,derived: provenance of the recovered geography,TRUE
+Case,,adm2_source,,ADM2 source,derived: provenance of the recovered geography,TRUE
+Case,,adm1_guid_source,,ADM1 GUID source,derived: provenance of the recovered geography,TRUE
+Case,,adm2_guid_source,,ADM2 GUID source,derived: provenance of the recovered geography,TRUE
+LabSpecimen,,date_stool_collected,,Date stool collected,,TRUE
+LabSpecimen,,date_stool_received_in_lab,,Date stool received in lab,,TRUE
+LabSpecimen,,date_finalr_rtpcr_results,,Date finalr RT-PCR results,,TRUE
+LabSpecimen,,date_l_arm_isolate,,Date l arm isolate,,TRUE
+LabSpecimen,,date_r_arm_isolate,,Date r arm isolate,,TRUE
+LabSpecimen,,specimen_epid,,Specimen epid,,TRUE
+LabSpecimen,,specimen_anonymous_epid,,Specimen anonymous epid,,TRUE
+LabSpecimen,,case_anonymous_epid,,Case anonymous epid,,TRUE
+LabSpecimen,,final_cell_culture_result_name,,Final cell culture result name,,TRUE
+LabSpecimen,,final_itd_result_name,,Final ITD result name,,TRUE
+LabSpecimen,,final_result_sequence_id,,Final result sequence ID,,TRUE
+LabSpecimen,,specimen_stool_condition_name,,Specimen stool condition name,,TRUE
+LabSpecimen,,adequate_specimen,,Adequate specimen,derived: stool/specimen adequacy flag,TRUE
+LabSpecimen,,adequate_specimen_with_condition,,Adequate specimen with condition,derived: stool/specimen adequacy flag,TRUE
+LabSpecimen,,case_contact_code,,Case contact code,,TRUE
+LabSpecimen,,result_npent,,Result NPENT,,TRUE
+LabSpecimen,,report_date_sequence_result_sent,,Report date sequence result sent,,TRUE
+LabSpecimen,,collect_to_lab,,Collect to lab,derived: interval in days between the two lab dates,TRUE
+LabSpecimen,,lab_to_culture,,Lab to culture,derived: interval in days between the two lab dates,TRUE
+LabSpecimen,,collect_to_seq,,Collect to seq,derived: interval in days between the two lab dates,TRUE
+LabSpecimen,,adequate,,Adequate,derived: stool/specimen adequacy flag,TRUE
+Lqas,,month,,Month,,TRUE
+Lqas,,month_for_display,,Month for display,,TRUE
+Lqas,,lqas_classification_name,,LQAS classification name,,TRUE
+Lqas,,start,,Start,,TRUE
+Lqas,,end,,End,,TRUE
+Lqas,,pass_count,,Pass count,,TRUE
+Lqas,,fail_count,,Fail count,,TRUE
+Lqas,,pass_percent,,Pass percent,,TRUE
+Lqas,,admin3name,,Admin3name,,TRUE
+Lqas,,admin4name,,Admin4name,,TRUE
+Lqas,,invalid_count,,Invalid count,,TRUE
+Indicators,,level,,Admin level of the row (adm0/adm1/adm2),computed indicator output,TRUE
+Indicators,,guid,,Admin unit GUID,computed indicator output,TRUE
+Indicators,,indicator,,Indicator code,computed indicator output,TRUE
+Indicators,,family,,Indicator family,computed indicator output,TRUE
+Indicators,,value,,Indicator value,computed indicator output,TRUE
+Indicators,,numerator,,Indicator numerator,computed indicator output,TRUE
+Indicators,,denominator,,Indicator denominator,computed indicator output,TRUE
+Indicators,,confidence,,Confidence / reliability flag,computed indicator output,TRUE
+Indicators,,category,,Indicator category / band,computed indicator output,TRUE
+Indicators,,text_code,,Indicator text code,computed indicator output,TRUE
+Indicators,,afp_cases,,AFP case count,computed indicator output,TRUE
+Indicators,,npafp_cases,,Non-polio AFP case count,computed indicator output,TRUE
+Indicators,,npafp_rate,,"Non-polio AFP rate per 100,000 under-15",computed indicator output,TRUE
+Indicators,,ev_rate,,Enterovirus isolation rate,computed indicator output,TRUE
+Indicators,,stool_adequacy_cond_pct,,Stool adequacy (with condition) percent,computed indicator output,TRUE
+Indicators,,under15_pop,,Under-15 population denominator,computed indicator output,TRUE
+Indicators,,check,,Validation check name,computed indicator output,TRUE
+Indicators,,severity,,Validation severity,computed indicator output,TRUE
+Indicators,,n_flagged,,Rows flagged by the check,computed indicator output,TRUE
+SubActivity,,admin2fm_data_loaded,,Admin2fm data loaded,,TRUE
+SubActivity,,activity_parent_fm_data_loaded,,Activity parent FM data loaded,,TRUE
+SubActivity,,activity_parent_im_gender_data_loaded,,Activity parent IM gender data loaded,,TRUE
+SubActivity,,activity_parent_lqas_gender_data_loaded,,Activity parent LQAS gender data loaded,,TRUE
+SubActivity,,activity_admin_coverage_loaded,,Activity admin coverage loaded,,TRUE
+SubActivity,,admin2admin_coverage_loaded,,Admin2admin coverage loaded,,TRUE
+SubActivity,,days_from_initial_planned,,Days from initial planned,,TRUE
+SubActivity,,admin2coverage_percentage,,Admin2coverage percentage,,TRUE
+SubActivity,,activity_parent_pcm_fm_missed_children_percentage,,Activity parent PCM FM missed children percentage,,TRUE
+SubActivity,,admin2_pcm_fm_missed_children_percentage,,Admin2 PCM FM missed children percentage,,TRUE
+SubActivity,,activity_parent_lqas_children_checked,,Activity parent LQAS children checked,,TRUE
+SubActivity,,activity_parent_lqas_children_found_unvaccinated,,Activity parent LQAS children found unvaccinated,,TRUE
+SubActivity,,admin2_lqas_children_checked,,Admin2 LQAS children checked,,TRUE
+SubActivity,,admin2_lqas_children_found_unvaccinated,,Admin2 LQAS children found unvaccinated,,TRUE
+SubActivity,,admin2modality_id,,Admin2modality ID,,TRUE
+SubActivity,,admin2modality_code,,Admin2modality code,,TRUE
+SubActivity,,admin2modality_name,,Admin2modality name,,TRUE
+SubActivity,,activity_parent_lqas_invalid_percentage,,Activity parent LQAS invalid percentage,,TRUE
+SubActivity,,activity_parent_days_from_initial_planned,,Activity parent days from initial planned,,TRUE
+SubActivity,,admin2_lqas_invalid_percentage,,Admin2 LQAS invalid percentage,,TRUE
+SubActivity,,id_activity,,ID activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,sub_activity_id_activity,,Sub activity ID activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_number,,Activity number,,TRUE
+SubActivity,,activity_parent_code_activity,,Activity parent code activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,initial_planned_date_activity,,Initial planned date activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_date_from,,Activity date from,,TRUE
+SubActivity,,is_planned_dates_confirmed,,Is planned dates confirmed,,TRUE
+SubActivity,,activity_age_group_code,,Activity age group code,,TRUE
+SubActivity,,activity_age_group,,Activity age group,,TRUE
+SubActivity,,activity_status_code,,Activity status code,,TRUE
+SubActivity,,activity_status,,Activity status,,TRUE
+SubActivity,,activity_vaccine_type,,Activity vaccine type,,TRUE
+SubActivity,,pcmfm_data_loaded,,PCM/FM data loaded,,TRUE
+SubActivity,,nb_doses,,Nb doses,,TRUE
+SubActivity,,country_population_activity,,Country population activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,area_population_activity,,Area population activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,target_population,,Target population,,TRUE
+SubActivity,,post_campaign_immunized_percentage,,Post campaign immunized percentage,,TRUE
+SubActivity,,activity_children_immunized,,Activity children immunized,,TRUE
+SubActivity,,activity_admin_coverage_loaded_activity,,Activity admin coverage loaded activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_date_to,,Activity date to,,TRUE
+SubActivity,,activity_parent_im_hh_missed_children_percentage_activity,,Activity parent IM in-house missed children percentage activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_parent_im_oh_missed_children_percentage_activity,,Activity parent IM out-of-house missed children percentage activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_parent_linked_outbreaks_list_activity,,Activity parent linked outbreaks list activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_parent_round_number_activity,,Activity parent round number activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_parent_lqas_pass_percentage_activity,,Activity parent LQAS pass percentage activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_parent_lqas_fail_percentage_activity,,Activity parent LQAS fail percentage activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_parent_children_inaccessible_activity,,Activity parent children inaccessible activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_children_inaccessible_activity,,Activity children inaccessible activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,activity_additional_interventions,,Activity additional interventions,,TRUE
+SubActivity,,activity_parent_pcm_fm_missed_children_percentage_activity,,Activity parent PCM FM missed children percentage activity,parent-activity copy from the activity/sub-activity join,TRUE
+SubActivity,,approval_date_activity,,Approval date activity,parent-activity copy from the activity/sub-activity join,TRUE

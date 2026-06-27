@@ -88,9 +88,11 @@ reference:
 - title: Reference tables
   desc: >
     The packaged lookups the cleaners are driven by: the raw-to-canonical column
-    crosswalk and the country grouping/risk reference.
+    crosswalk, the data dictionary (raw or cleaned schema) it backs, and the
+    country grouping/risk reference.
   contents:
   - polis_crosswalk
+  - polis_dictionary
   - polis_country_lookup
 - title: Recover & reconcile geography
   desc: >
