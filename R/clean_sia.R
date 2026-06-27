@@ -19,7 +19,8 @@
 #'   \item the sub-activity grain enriched with its parent campaign: the activity
 #'     table is restricted to the sub-activity codes actually present, then joined
 #'     onto each sub-activity by `sia_sub_activity_code` (parent columns that
-#'     clash with a sub-activity column take an `_activity` suffix);
+#'     clash take an `_activity` suffix; the redundant geographic parent copies
+#'     -- region, ISO, admin name/GUID, shape id, IST -- are dropped);
 #'   \item every campaign/planning date parsed to `Date` and sanitised with the
 #'     same "sensible date" rule (a value before `min_year` or in the future is a
 #'     data-entry error and set to `NA`); audit timestamps stay ISO strings for
@@ -275,12 +276,39 @@ clean_sia <- function(
   invisible(cache_path)
 }
 
+#' Parent-activity columns that merely duplicate the sub-activity geography
+#'
+#' The activity/sub-activity join suffixes clashing parent columns with
+#' `_activity`. For the place-identity columns (region, ISO, admin name/GUID,
+#' shape id, IST) the parent value is identical to the sub-activity value, so the
+#' suffixed copy is pure redundancy and is dropped. Columns whose parent value
+#' can legitimately differ from the sub-activity (dates, populations, coverage,
+#' counts) keep their `_activity` copy.
+#' @noRd
+.sia_redundant_activity <- c(
+  "who_region_activity",
+  "admin0id_activity",
+  "country_iso3code_activity",
+  "adm0_activity",
+  "adm0_guid_activity",
+  "admin0shape_id_activity",
+  "adm1_activity",
+  "adm1_guid_activity",
+  "admin1shape_id_activity",
+  "adm2_activity",
+  "adm2_guid_activity",
+  "admin2shape_id_activity",
+  "ist_name_activity"
+)
+
 #' Join the parent campaign onto the sub-activity grain
 #'
 #' Restricts the activity table to the sub-activity codes that actually occur,
 #' deduplicates it, and left-joins it onto the sub-activities by
-#' `sia_sub_activity_code`. A no-op join (returns the sub-activities unchanged)
-#' when either side lacks the code column.
+#' `sia_sub_activity_code`. Parent columns that clash with a sub-activity column
+#' take an `_activity` suffix; the redundant geographic parent copies (see
+#' `.sia_redundant_activity`) are then dropped. A no-op join (returns the
+#' sub-activities unchanged) when either side lacks the code column.
 #' @noRd
 .sia_combine <- function(activity, subactivity) {
   key <- "sia_sub_activity_code"
@@ -296,7 +324,8 @@ clean_sia <- function(
     by = key,
     relationship = "many-to-many",
     suffix = c("", "_activity")
-  )
+  ) |>
+    dplyr::select(-dplyr::any_of(.sia_redundant_activity))
 }
 
 #' Garbage floor for the SIA "sensible date" test (pre-surveillance era).

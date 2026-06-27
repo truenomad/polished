@@ -959,3 +959,114 @@ Im,,n_marked_outhouse,,Out-of-house children marked,derived: sum of out_of_house
 Im,,missed_frac_outhouse,,Out-of-house missed fraction,derived: 1 - n_marked_outhouse / n_checked_outhouse (falls back to mean result)
 Im,,im_status_inhouse,,In-house IM validity status,derived: Valid/Invalid from in-house missed fraction
 Im,,im_status_outhouse,,Out-of-house IM validity status,derived: Valid/Invalid from out-of-house missed fraction
+Case,,doses_opv_number,,Doses OPV number,
+Case,,has_lab_dataset,,Has lab dataset,
+Case,,geo_source,,Geo source,derived: provenance of the recovered geography
+Case,,adm0_source,,ADM0 source,derived: provenance of the recovered geography
+Case,,adm1_source,,ADM1 source,derived: provenance of the recovered geography
+Case,,adm2_source,,ADM2 source,derived: provenance of the recovered geography
+Case,,adm1_guid_source,,ADM1 GUID source,derived: provenance of the recovered geography
+Case,,adm2_guid_source,,ADM2 GUID source,derived: provenance of the recovered geography
+LabSpecimen,,date_stool_collected,,Date stool collected,
+LabSpecimen,,date_stool_received_in_lab,,Date stool received in lab,
+LabSpecimen,,date_finalr_rtpcr_results,,Date finalr RT-PCR results,
+LabSpecimen,,date_l_arm_isolate,,Date l arm isolate,
+LabSpecimen,,date_r_arm_isolate,,Date r arm isolate,
+LabSpecimen,,specimen_epid,,Specimen epid,
+LabSpecimen,,specimen_anonymous_epid,,Specimen anonymous epid,
+LabSpecimen,,case_anonymous_epid,,Case anonymous epid,
+LabSpecimen,,final_cell_culture_result_name,,Final cell culture result name,
+LabSpecimen,,final_itd_result_name,,Final ITD result name,
+LabSpecimen,,final_result_sequence_id,,Final result sequence ID,
+LabSpecimen,,specimen_stool_condition_name,,Specimen stool condition name,
+LabSpecimen,,adequate_specimen,,Adequate specimen,derived: stool/specimen adequacy flag
+LabSpecimen,,adequate_specimen_with_condition,,Adequate specimen with condition,derived: stool/specimen adequacy flag
+LabSpecimen,,case_contact_code,,Case contact code,
+LabSpecimen,,result_npent,,Result NPENT,
+LabSpecimen,,report_date_sequence_result_sent,,Report date sequence result sent,
+LabSpecimen,,collect_to_lab,,Collect to lab,derived: interval in days between the two lab dates
+LabSpecimen,,lab_to_culture,,Lab to culture,derived: interval in days between the two lab dates
+LabSpecimen,,collect_to_seq,,Collect to seq,derived: interval in days between the two lab dates
+LabSpecimen,,adequate,,Adequate,derived: stool/specimen adequacy flag
+Lqas,,month,,Month,
+Lqas,,month_for_display,,Month for display,
+Lqas,,lqas_classification_name,,LQAS classification name,
+Lqas,,start,,Start,
+Lqas,,end,,End,
+Lqas,,pass_count,,Pass count,
+Lqas,,fail_count,,Fail count,
+Lqas,,pass_percent,,Pass percent,
+Lqas,,admin3name,,Admin3name,
+Lqas,,admin4name,,Admin4name,
+Lqas,,invalid_count,,Invalid count,
+Indicators,,level,,Admin level of the row (adm0/adm1/adm2),computed indicator output
+Indicators,,guid,,Admin unit GUID,computed indicator output
+Indicators,,indicator,,Indicator code,computed indicator output
+Indicators,,family,,Indicator family,computed indicator output
+Indicators,,value,,Indicator value,computed indicator output
+Indicators,,numerator,,Indicator numerator,computed indicator output
+Indicators,,denominator,,Indicator denominator,computed indicator output
+Indicators,,confidence,,Confidence / reliability flag,computed indicator output
+Indicators,,category,,Indicator category / band,computed indicator output
+Indicators,,text_code,,Indicator text code,computed indicator output
+Indicators,,afp_cases,,AFP case count,computed indicator output
+Indicators,,npafp_cases,,Non-polio AFP case count,computed indicator output
+Indicators,,npafp_rate,,"Non-polio AFP rate per 100,000 under-15",computed indicator output
+Indicators,,ev_rate,,Enterovirus isolation rate,computed indicator output
+Indicators,,stool_adequacy_cond_pct,,Stool adequacy (with condition) percent,computed indicator output
+Indicators,,under15_pop,,Under-15 population denominator,computed indicator output
+Indicators,,check,,Validation check name,computed indicator output
+Indicators,,severity,,Validation severity,computed indicator output
+Indicators,,n_flagged,,Rows flagged by the check,computed indicator output
+SubActivity,,admin2fm_data_loaded,,Admin2fm data loaded,
+SubActivity,,activity_parent_fm_data_loaded,,Activity parent FM data loaded,
+SubActivity,,activity_parent_im_gender_data_loaded,,Activity parent IM gender data loaded,
+SubActivity,,activity_parent_lqas_gender_data_loaded,,Activity parent LQAS gender data loaded,
+SubActivity,,activity_admin_coverage_loaded,,Activity admin coverage loaded,
+SubActivity,,admin2admin_coverage_loaded,,Admin2admin coverage loaded,
+SubActivity,,days_from_initial_planned,,Days from initial planned,
+SubActivity,,admin2coverage_percentage,,Admin2coverage percentage,
+SubActivity,,activity_parent_pcm_fm_missed_children_percentage,,Activity parent PCM FM missed children percentage,
+SubActivity,,admin2_pcm_fm_missed_children_percentage,,Admin2 PCM FM missed children percentage,
+SubActivity,,activity_parent_lqas_children_checked,,Activity parent LQAS children checked,
+SubActivity,,activity_parent_lqas_children_found_unvaccinated,,Activity parent LQAS children found unvaccinated,
+SubActivity,,admin2_lqas_children_checked,,Admin2 LQAS children checked,
+SubActivity,,admin2_lqas_children_found_unvaccinated,,Admin2 LQAS children found unvaccinated,
+SubActivity,,admin2modality_id,,Admin2modality ID,
+SubActivity,,admin2modality_code,,Admin2modality code,
+SubActivity,,admin2modality_name,,Admin2modality name,
+SubActivity,,activity_parent_lqas_invalid_percentage,,Activity parent LQAS invalid percentage,
+SubActivity,,activity_parent_days_from_initial_planned,,Activity parent days from initial planned,
+SubActivity,,admin2_lqas_invalid_percentage,,Admin2 LQAS invalid percentage,
+SubActivity,,id_activity,,ID activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,sub_activity_id_activity,,Sub activity ID activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_number,,Activity number,
+SubActivity,,activity_parent_code_activity,,Activity parent code activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,initial_planned_date_activity,,Initial planned date activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_date_from,,Activity date from,
+SubActivity,,is_planned_dates_confirmed,,Is planned dates confirmed,
+SubActivity,,activity_age_group_code,,Activity age group code,
+SubActivity,,activity_age_group,,Activity age group,
+SubActivity,,activity_status_code,,Activity status code,
+SubActivity,,activity_status,,Activity status,
+SubActivity,,activity_vaccine_type,,Activity vaccine type,
+SubActivity,,pcmfm_data_loaded,,PCM/FM data loaded,
+SubActivity,,nb_doses,,Nb doses,
+SubActivity,,country_population_activity,,Country population activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,area_population_activity,,Area population activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,target_population,,Target population,
+SubActivity,,post_campaign_immunized_percentage,,Post campaign immunized percentage,
+SubActivity,,activity_children_immunized,,Activity children immunized,
+SubActivity,,activity_admin_coverage_loaded_activity,,Activity admin coverage loaded activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_date_to,,Activity date to,
+SubActivity,,activity_parent_im_hh_missed_children_percentage_activity,,Activity parent IM in-house missed children percentage activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_parent_im_oh_missed_children_percentage_activity,,Activity parent IM out-of-house missed children percentage activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_parent_linked_outbreaks_list_activity,,Activity parent linked outbreaks list activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_parent_round_number_activity,,Activity parent round number activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_parent_lqas_pass_percentage_activity,,Activity parent LQAS pass percentage activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_parent_lqas_fail_percentage_activity,,Activity parent LQAS fail percentage activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_parent_children_inaccessible_activity,,Activity parent children inaccessible activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_children_inaccessible_activity,,Activity children inaccessible activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,activity_additional_interventions,,Activity additional interventions,
+SubActivity,,activity_parent_pcm_fm_missed_children_percentage_activity,,Activity parent PCM FM missed children percentage activity,parent-activity copy from the activity/sub-activity join
+SubActivity,,approval_date_activity,,Approval date activity,parent-activity copy from the activity/sub-activity join
