@@ -54,12 +54,17 @@
 #' @param round_gap_days Maximum number of days between consecutive campaigns in
 #'   the same district and `vaccine_type` for them to count as one round; a
 #'   larger gap starts a new round. Default `21`.
+#' @param reference_date Date treated as "today" when sanitising campaign dates:
+#'   any parsed date after it is nulled as a data-entry error (default
+#'   [Sys.Date()]). It is part of the cache key, so a run on a later day does not
+#'   return a stale cached table in which then-future dates are still `NA`. Pin
+#'   it for reproducible output.
 #' @param cache_dir Optional directory for an opt-in, content-addressed cache.
 #'   When set, the cleaned table is written to (and on a later identical call
 #'   read back from) a `qs2` file whose name hashes every input that affects the
-#'   output (`activity`, `subactivity`, `cfg`, `shape`, `round_gap_days`); any
-#'   change to an input recomputes and writes a new entry. Default `NULL` (no
-#'   caching).
+#'   output (`activity`, `subactivity`, `cfg`, `shape`, `round_gap_days`,
+#'   `reference_date`); any change to an input recomputes and writes a new entry.
+#'   Default `NULL` (no caching).
 #' @param cache_key Optional cheap stand-in for the raw tables in the cache key
 #'   (e.g. a download snapshot id). When supplied, the key is built from it
 #'   instead of hashing `activity`/`subactivity`, avoiding a full content hash of
@@ -97,6 +102,7 @@ clean_sia <- function(
   cfg = polis_active_config(),
   shape = NULL,
   round_gap_days = 21L,
+  reference_date = Sys.Date(),
   cache_dir = NULL,
   cache_key = NULL,
   verbose = TRUE
@@ -123,6 +129,7 @@ clean_sia <- function(
       cfg,
       shape,
       round_gap_days,
+      reference_date,
       cache_key = cache_key
     )
     if (file.exists(cache_path)) {
@@ -166,7 +173,7 @@ clean_sia <- function(
     "Parsed dates and derived year/month of campaign start"
   )
   data <- data |>
-    .sia_parse_dates() |>
+    .sia_parse_dates(reference_date = reference_date) |>
     .sia_add_start_vars()
 
   # ---- standardise geography ------------------------------------------------
@@ -237,15 +244,21 @@ clean_sia <- function(
   cfg,
   shape,
   gap_days,
+  reference_date,
   cache_key = NULL
 ) {
   data_key <- cache_key %||%
     list(activity = activity, subactivity = subactivity)
+  # reference_date is part of the key: clean_sia() nulls campaign dates after it
+  # (and derives year/round from them), so the same inputs cleaned on a later day
+  # can yield a different result. Omitting it would return a stale cached table
+  # in which then-future campaign dates remain NA.
   key <- .polis_hash(list(
     data = data_key,
     cfg = cfg,
     shape = shape,
     gap_days = gap_days,
+    reference_date = reference_date,
     version = .sia_cache_version
   ))
   file.path(cache_dir, paste0("clean_sia_", key, ".qs2"))
