@@ -30,18 +30,19 @@ ever inventing a place that the data doesn’t already vouch for.
 does exactly this triangulation. Here is the kind of messy input it is
 built for:
 
-| epid                 | adm0    | adm2      | adm2_guid |
-|:---------------------|:--------|:----------|:----------|
-| NIE-BOR-MMC-24-001   | NIGERIA | MAIDUGURI | guid-mmc  |
-| NIE-BOR-MMC-24-014   | NIGERIA | NA        | NA        |
-| NIE-BOR-MMC-24-001CC | NIGERIA | NA        | NA        |
-| NIE-BOR-JER-23-007   | NIGERIA | JERE      | guid-jere |
-| NIE-BOR-JER-24-021   | NIGERIA | NA        | NA        |
-| AGO-LUA-CAC-24-002   | NA      | CACUACO   | guid-cac  |
-| NIE-YOB-DAM-24-001   | NIGERIA | DAMATURU  | guid-dam  |
-| NIE-YOB-DAM-24-002   | NIGERIA | POTISKUM  | guid-pot  |
-| NIE-YOB-DAM-24-009   | NIGERIA | NA        | NA        |
-| NIE-KAN-XYZ-24-001   | NIGERIA | NA        | NA        |
+    #> # A tibble: 10 × 4
+    #>    epid                 adm0    adm2      adm2_guid
+    #>    <chr>                <chr>   <chr>     <chr>
+    #>  1 NIE-BOR-MMC-24-001   NIGERIA MAIDUGURI guid-mmc
+    #>  2 NIE-BOR-MMC-24-014   NIGERIA <NA>      <NA>
+    #>  3 NIE-BOR-MMC-24-001CC NIGERIA <NA>      <NA>
+    #>  4 NIE-BOR-JER-23-007   NIGERIA JERE      guid-jere
+    #>  5 NIE-BOR-JER-24-021   NIGERIA <NA>      <NA>
+    #>  6 AGO-LUA-CAC-24-002   <NA>    CACUACO   guid-cac
+    #>  7 NIE-YOB-DAM-24-001   NIGERIA DAMATURU  guid-dam
+    #>  8 NIE-YOB-DAM-24-002   NIGERIA POTISKUM  guid-pot
+    #>  9 NIE-YOB-DAM-24-009   NIGERIA <NA>      <NA>
+    #> 10 NIE-KAN-XYZ-24-001   NIGERIA <NA>      <NA>
 
 Five rows are missing their district (and four their GUID); one is
 missing its country. Each gap is recoverable from a *different* kind of
@@ -103,20 +104,20 @@ cell got its value.
 
 result$data |>
   dplyr::select(epid, adm2, adm2_source, adm2_guid)
+#> # A tibble: 10 × 4
+#>    epid                 adm2      adm2_source  adm2_guid
+#>    <chr>                <chr>     <fct>        <chr>    
+#>  1 NIE-BOR-MMC-24-001   MAIDUGURI original     guid-mmc 
+#>  2 NIE-BOR-MMC-24-014   MAIDUGURI prefix_match guid-mmc 
+#>  3 NIE-BOR-MMC-24-001CC MAIDUGURI self_ref     guid-mmc 
+#>  4 NIE-BOR-JER-23-007   JERE      original     guid-jere
+#>  5 NIE-BOR-JER-24-021   JERE      prefix_match guid-jere
+#>  6 AGO-LUA-CAC-24-002   CACUACO   original     guid-cac 
+#>  7 NIE-YOB-DAM-24-001   DAMATURU  original     guid-dam 
+#>  8 NIE-YOB-DAM-24-002   POTISKUM  original     guid-pot 
+#>  9 NIE-YOB-DAM-24-009   <NA>      unresolved   <NA>     
+#> 10 NIE-KAN-XYZ-24-001   <NA>      unresolved   <NA>
 ```
-
-| epid                 | adm2      | adm2_source  | adm2_guid |
-|:---------------------|:----------|:-------------|:----------|
-| NIE-BOR-MMC-24-001   | MAIDUGURI | original     | guid-mmc  |
-| NIE-BOR-MMC-24-014   | MAIDUGURI | prefix_match | guid-mmc  |
-| NIE-BOR-MMC-24-001CC | MAIDUGURI | self_ref     | guid-mmc  |
-| NIE-BOR-JER-23-007   | JERE      | original     | guid-jere |
-| NIE-BOR-JER-24-021   | JERE      | prefix_match | guid-jere |
-| AGO-LUA-CAC-24-002   | CACUACO   | original     | guid-cac  |
-| NIE-YOB-DAM-24-001   | DAMATURU  | original     | guid-dam  |
-| NIE-YOB-DAM-24-002   | POTISKUM  | original     | guid-pot  |
-| NIE-YOB-DAM-24-009   | NA        | unresolved   | NA        |
-| NIE-KAN-XYZ-24-001   | NA        | unresolved   | NA        |
 
 Every `<col>_source` is a factor with these levels:
 
@@ -156,11 +157,11 @@ Admin0 tells the same story through a different strategy:
 result$data |>
   dplyr::filter(adm0_source != "original") |>
   dplyr::select(epid, adm0, adm0_source)
+#> # A tibble: 1 × 3
+#>   epid               adm0   adm0_source   
+#>   <chr>              <chr>  <fct>         
+#> 1 AGO-LUA-CAC-24-002 ANGOLA country_prefix
 ```
-
-| epid               | adm0   | adm0_source    |
-|:-------------------|:-------|:---------------|
-| AGO-LUA-CAC-24-002 | ANGOLA | country_prefix |
 
 The Angola row had no country name; `country_prefix` recovered it from
 the `AGO` code via the crosswalk.
@@ -173,14 +174,16 @@ function tried to fill, and it accounts for **every** missing cell.
 ``` r
 
 result$qa
+#> # A tibble: 4 × 10
+#>   level  column    n_missing_before n_filled_self_ref n_filled_prefix_match
+#>   <chr>  <chr>                <int>             <int>                 <int>
+#> 1 admin0 adm0                     1                 0                     0
+#> 2 admin1 adm1                     0                 0                     0
+#> 3 admin2 adm2                     5                 1                     2
+#> 4 adm2   adm2_guid                5                 1                     2
+#> # ℹ 5 more variables: n_filled_reference <int>, n_filled_country_prefix <int>,
+#> #   n_ambiguous <int>, n_unresolved <int>, pct_resolved <dbl>
 ```
-
-| level | column | n_missing_before | n_filled_self_ref | n_filled_prefix_match | n_filled_reference | n_filled_country_prefix | n_ambiguous | n_unresolved | pct_resolved |
-|:---|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| admin0 | adm0 | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 1.0 |
-| admin1 | adm1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1.0 |
-| admin2 | adm2 | 5 | 1 | 2 | 0 | 0 | 1 | 2 | 0.6 |
-| adm2 | adm2_guid | 5 | 1 | 2 | 0 | 0 | 1 | 2 | 0.6 |
 
 Column by column:
 
@@ -210,14 +213,14 @@ result$qa |>
     n_unresolved,
     reconciles = n_missing_before == filled + n_unresolved
   )
+#> # A tibble: 4 × 5
+#>   column    n_missing_before filled n_unresolved reconciles
+#>   <chr>                <int>  <int>        <int> <lgl>     
+#> 1 adm0                     1      1            0 TRUE      
+#> 2 adm1                     0      0            0 TRUE      
+#> 3 adm2                     5      3            2 TRUE      
+#> 4 adm2_guid                5      3            2 TRUE
 ```
-
-| column    | n_missing_before | filled | n_unresolved | reconciles |
-|:----------|-----------------:|-------:|-------------:|:-----------|
-| adm0      |                1 |      1 |            0 | TRUE       |
-| adm1      |                0 |      0 |            0 | TRUE       |
-| adm2      |                5 |      3 |            2 | TRUE       |
-| adm2_guid |                5 |      3 |            2 | TRUE       |
 
 `n_ambiguous` is a **diagnostic, not a separate bucket**: an ambiguous
 cell is also counted in `n_unresolved` (it was missing and stayed
@@ -234,17 +237,17 @@ audit *what* it considered authoritative:
 ``` r
 
 result$ref$admin2
+#> # A tibble: 7 × 2
+#>   .epid_norm         adm2     
+#>   <chr>              <chr>    
+#> 1 AGO-LUA-CAC-24-002 CACUACO  
+#> 2 NIE-BOR-JER-23-007 JERE     
+#> 3 NIE-BOR-JER-24-021 JERE     
+#> 4 NIE-BOR-MMC-24-001 MAIDUGURI
+#> 5 NIE-BOR-MMC-24-014 MAIDUGURI
+#> 6 NIE-YOB-DAM-24-001 DAMATURU 
+#> 7 NIE-YOB-DAM-24-002 POTISKUM
 ```
-
-| .epid_norm         | adm2      |
-|:-------------------|:----------|
-| AGO-LUA-CAC-24-002 | CACUACO   |
-| NIE-BOR-JER-23-007 | JERE      |
-| NIE-BOR-JER-24-021 | JERE      |
-| NIE-BOR-MMC-24-001 | MAIDUGURI |
-| NIE-BOR-MMC-24-014 | MAIDUGURI |
-| NIE-YOB-DAM-24-001 | DAMATURU  |
-| NIE-YOB-DAM-24-002 | POTISKUM  |
 
 Each row is one EPID and the most recent non-blank value seen for it.
 This is the table that powers the `self_ref` step; inspecting it is the
@@ -328,12 +331,12 @@ polished::impute_geo_from_epid(
   verbose = FALSE
 )$data |>
   dplyr::select(epid, adm2, adm2_source)
+#> # A tibble: 2 × 3
+#>   epid               adm2      adm2_source
+#>   <chr>              <chr>     <fct>      
+#> 1 NIE-BOR-MMC-24-031 MAIDUGURI reference  
+#> 2 AGO-LUA-CAC-24-050 CACUACO   reference
 ```
-
-| epid               | adm2      | adm2_source |
-|:-------------------|:----------|:------------|
-| NIE-BOR-MMC-24-031 | MAIDUGURI | reference   |
-| AGO-LUA-CAC-24-050 | CACUACO   | reference   |
 
 ## Running it twice is safe
 
@@ -389,8 +392,8 @@ polished::epid_country_code("NIE-BOR-MMC-24-001")
 polished::epid_prefix("NIE-BOR-MMC-24-001", length = 11)
 #> [1] "NIE-BOR-MMC"
 polished::epid_strip_contact("NIE-BOR-MMC-24-001CC")
+#> # A tibble: 1 × 2
+#>   epid_base          contact_code
+#>   <chr>              <chr>       
+#> 1 NIE-BOR-MMC-24-001 CC
 ```
-
-| epid_base          | contact_code |
-|:-------------------|:-------------|
-| NIE-BOR-MMC-24-001 | CC           |

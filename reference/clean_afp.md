@@ -37,16 +37,21 @@ analytic variables AFP surveillance relies on:
 
 The raw POLIS `classification`, `polio_virus_types`,
 `vdpv_classifications`, `adequate_stool` and `paralysis_hot_case` fields
-are kept as-is alongside the derived columns. The business key `epid` +
-`adm0` is asserted as a tripwire: violations are flagged to QA, never
-dropped.
+are kept as-is alongside the derived columns. Records sharing the
+business key `epid` + `paralysis_onset_date` + `adm0` (the same case
+re-entered under a new POLIS Id) are collapsed to the latest by
+`last_update_date`; cases that share an EPID and country but differ in
+onset date are treated as distinct and kept. A tripwire then flags any
+`epid` + `adm0` still spanning multiple Ids to QA, never dropping it –
+so a genuine reclassification or a same-EPID onset conflict surfaces for
+review rather than vanishing.
 
 ## Usage
 
 ``` r
 clean_afp(
   data,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   impute_geo = TRUE,
   verbose = TRUE
@@ -63,10 +68,13 @@ clean_afp(
 
   A
   [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
-  object (default
-  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)).
-  Supply `cfg$synonyms` to remap merged EPIDs and `cfg$qa` to route
-  ambiguity flags.
+  object. Defaults to
+  [`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)
+  – the config most recently built by
+  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
+  this session – so a no-`cfg` call inherits the active session settings
+  rather than fresh defaults. Supply `cfg$synonyms` to remap merged
+  EPIDs and `cfg$qa` to route ambiguity flags.
 
 - shape:
 
@@ -103,13 +111,14 @@ clean_afp(
 
 ## Value
 
-A tibble of cleaned AFP records, one row per POLIS `id`, with columns
-ordered id -\> location -\> time -\> other. The canonical and derived
-columns (`year_onset`, `month_onset`, `age_months`, the `*_to_*`
-intervals, `onset_date_quality`, `timeliness` and the 60-day follow-up
-flags) are added only when their prerequisite source columns are present
-in `data`, so a trimmed input yields a correspondingly trimmed output
-rather than an error.
+A tibble of cleaned AFP records, one row per POLIS `id` (and at most one
+per `epid` + `paralysis_onset_date` + `adm0` business key after the
+duplicate collapse), with columns ordered id -\> location -\> time -\>
+other. The canonical and derived columns (`year_onset`, `month_onset`,
+`age_months`, the `*_to_*` intervals, `onset_date_quality`, `timeliness`
+and the 60-day follow-up flags) are added only when their prerequisite
+source columns are present in `data`, so a trimmed input yields a
+correspondingly trimmed output rather than an error.
 
 ## Examples
 
@@ -125,10 +134,10 @@ raw <- data.frame(
 )
 clean_afp(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [255ms]
+#> ✔ Standardised names on 3 rows [355ms]
 #> 
 #> ℹ Parsing dates and deriving onset/age/intervals/timeliness
-#> ✔ Parsed dates and derived onset/age/intervals/timeliness [36ms]
+#> ✔ Parsed dates and derived onset/age/intervals/timeliness [28ms]
 #> 
 #> ℹ Classifying virus type and case classification
 #> ✔ Classified virus type and case classification [21ms]
@@ -137,13 +146,13 @@ clean_afp(raw)
 #> ✔ Standardised admin names [15ms]
 #> 
 #> ℹ Recovering missing admin from the EPID
-#> ✔ Recovered admin for 0 cases from the EPID [14ms]
+#> ✔ Recovered admin for 0 cases from the EPID [19ms]
 #> 
 #> ℹ Enriching with country groupings and AFP flags
-#> ✔ Enriched with country groupings and AFP flags [15ms]
+#> ✔ Enriched with country groupings and AFP flags [14ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [71ms]
+#> ✔ Deduplicated by id and finalised [70ms]
 #> 
 #> ✔ Cleaned 2 AFP cases.
 #> # A tibble: 2 × 10

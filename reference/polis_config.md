@@ -15,11 +15,14 @@ Every field has a sensible default and can be overridden.
 polis_config(
   start_year = 2020,
   regions = c("AFRO", "AMRO", "EMRO", "EURO", "SEARO", "WPRO"),
-  folders = NULL,
   column_roles = NULL,
-  seed = 1234L,
   synonyms = NULL,
   qa = NULL,
+  population = NULL,
+  shape = NULL,
+  inputs = NULL,
+  output_dir = NULL,
+  cache_dir = NULL,
   parse_types = TRUE,
   drop_empty_cols = TRUE
 )
@@ -33,14 +36,11 @@ polis_config(
 
 - regions:
 
-  Valid WHO region codes used for optional region-scoped output folders
-  (default the six WHO regions).
-
-- folders:
-
-  Named list of pipeline folder names (not full paths). Override
-  individual entries to relocate outputs; unspecified entries keep
-  defaults.
+  WHO region codes the pipeline is scoped to. Cleaned rows are filtered
+  to these regions (on the `who_region` column) by
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md);
+  rows with no region value are kept. The default (all six WHO regions)
+  is a no-op that retains every row.
 
 - column_roles:
 
@@ -51,11 +51,6 @@ polis_config(
   [`order_columns()`](https://truenomad.github.io/polished/reference/order_columns.md)
   enforces id -\> location -\> time -\> other without hardcoding column
   names.
-
-- seed:
-
-  Integer seed for any clustering/sampling step, for reproducible runs
-  (default `1234`).
 
 - synonyms:
 
@@ -68,6 +63,57 @@ polis_config(
   Optional handle (path or list) where ambiguous-key flags are routed by
   [`flag_ambiguous()`](https://truenomad.github.io/polished/reference/flag_ambiguous.md).
   `NULL` (default) collects flags in-memory only.
+
+- population:
+
+  Optional under-15 population denominators used by
+  [`calc_polio_indicators()`](https://truenomad.github.io/polished/reference/calc_polio_indicators.md)
+  in
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md).
+  Either a data frame or a path to one (read via the file extension);
+  `NULL` (default) skips the rate indicators that need a denominator.
+
+- shape:
+
+  Optional **already-processed** district shape passed to every cleaner
+  as `shape =` for admin reconciliation (an `sf` polygon layer or a long
+  ADM2 attribute table, or a path to one). `NULL` (default) disables
+  shape-based admin recovery.
+
+- inputs:
+
+  The raw POLIS tables to clean, attached to the config so
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
+  can be called as `run_pipeline(cfg = cfg)` with no separate `inputs`
+  argument. One of: a **directory path** to `raw_*` files; a **named
+  list of file paths** (recognised names `afp`, `es`, `hum_spec`,
+  `activity`, `subactivity`, `lqas`, `im`); or a **named list of data
+  frames**. Paths are read on demand at run time – prefer them so the
+  config stays a lightweight, serialisable manifest (`cfg$inputs$afp` is
+  then the file path). `NULL` (default) means inputs are passed to
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
+  directly.
+
+- output_dir:
+
+  Optional directory to persist outputs to. When set,
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
+  writes the `polished_*` data files to its `data/` sub-directory and a
+  `checks_*` workbook per dataset to its `checks/` sub-directory. `NULL`
+  (default) returns the cleaned set without writing.
+
+- cache_dir:
+
+  Optional directory for the opt-in, content-addressed clean cache. When
+  set,
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
+  caches each cleaned stream (`afp`, `es`, `hum_spec`, `sia`) keyed on a
+  fingerprint of its source file (path + size + mtime), the relevant
+  config, and a per-cleaner logic version. On a later run with an
+  unchanged source, the cleaned table is read straight from the cache –
+  skipping both the raw read and the clean. Delete the directory (or its
+  `clean_*` files) to force a rebuild. `NULL` (default) disables
+  caching.
 
 - parse_types:
 
@@ -84,7 +130,9 @@ polis_config(
 
 ## Value
 
-An object of class `polis_config` (a named list).
+An object of class `polis_config` (a named list). Also registered as the
+session-active config (see
+[`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)).
 
 ## Examples
 

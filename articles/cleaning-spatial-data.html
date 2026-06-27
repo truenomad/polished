@@ -11,25 +11,40 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../lightswitch.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/Inter-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/JetBrains_Mono-0.4.10/font.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="cleaning-spatial-data_files/libs/quarto-html/popper.min.js"></script><script src="cleaning-spatial-data_files/libs/quarto-html/tippy.umd.min.js"></script><link href="cleaning-spatial-data_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="cleaning-spatial-data_files/libs/quarto-html/light-border.css" rel="stylesheet">
 <!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
 <meta property="og:title" content="Cleaning administrative spatial data">
 <meta property="og:image" content="https://truenomad.github.io/polished/logo.png">
+<script>
+  (function() {
+    try {
+      if (!localStorage.getItem('pkgdown-theme')) {
+        localStorage.setItem('pkgdown-theme', 'dark');
+      }
+      document.documentElement.dataset.bsTheme =
+        localStorage.getItem('pkgdown-theme');
+    } catch (e) {
+      document.documentElement.dataset.bsTheme = 'dark';
+    }
+  })();
+</script>
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">polished</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,22 +53,33 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/downloading-polis-data.html">Downloading POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
+    <li><a class="dropdown-item" href="../articles/end-to-end-pipeline.html">End-to-end pipeline</a></li>
+    <li><a class="dropdown-item" href="../articles/surveillance-indicators.html">Computing surveillance indicators</a></li>
+    <li><a class="dropdown-item" href="../articles/data-quality-checks.html">Data-quality checks</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
     <li><a class="dropdown-item" href="../articles/cleaning-spatial-data.html">Cleaning administrative spatial data</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/truenomad/polished/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
@@ -169,51 +195,13 @@
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">shp_adm2</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">adm1_name</span>, <span class="va">adm2_name</span>, <span class="va">guid</span>, <span class="va">enddate</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">adm1_name</th>
-<th style="text-align: left;">adm2_name</th>
-<th style="text-align: left;">guid</th>
-<th style="text-align: left;">enddate</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">D1</td>
-<td style="text-align: left;">g-d1</td>
-<td style="text-align: left;">9999-12-31</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">D2</td>
-<td style="text-align: left;">g-d2</td>
-<td style="text-align: left;">9999-12-31</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D3</td>
-<td style="text-align: left;">g-d3</td>
-<td style="text-align: left;">2020-12-31</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">g-d4</td>
-<td style="text-align: left;">9999-12-31</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">g-d4</td>
-<td style="text-align: left;">9999-12-31</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">adm1_name</span>, <span class="va">adm2_name</span>, <span class="va">guid</span>, <span class="va">enddate</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   adm1_name adm2_name guid    enddate</span></span>
+<span><span class="co">#&gt; 1     NORTH        D1 g-d1 9999-12-31</span></span>
+<span><span class="co">#&gt; 2     NORTH        D2 g-d2 9999-12-31</span></span>
+<span><span class="co">#&gt; 3     SOUTH        D3 g-d3 2020-12-31</span></span>
+<span><span class="co">#&gt; 4     SOUTH        D4 g-d4 9999-12-31</span></span>
+<span><span class="co">#&gt; 5     SOUTH        D4 g-d4 9999-12-31</span></span></code></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
@@ -226,51 +214,15 @@
 <span>  valid <span class="op">=</span> <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/valid.html" class="external-link">st_is_valid</a></span><span class="op">(</span><span class="va">shp_adm2</span><span class="op">)</span>,</span>
 <span>  multipart <span class="op">=</span> <span class="fu">is_multipart</span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">shp_adm2</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  open_ended <span class="op">=</span> <span class="fu">lubridate</span><span class="fu">::</span><span class="fu"><a href="https://lubridate.tidyverse.org/reference/year.html" class="external-link">year</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="va">shp_adm2</span><span class="op">$</span><span class="va">enddate</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="fl">9999</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">district</th>
-<th style="text-align: left;">valid</th>
-<th style="text-align: left;">multipart</th>
-<th style="text-align: left;">open_ended</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">D1</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">D2</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">D3</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 5 × 4</span></span>
+<span><span class="co">#&gt;   district valid multipart open_ended</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;    &lt;lgl&gt; &lt;lgl&gt;     &lt;lgl&gt;     </span></span>
+<span><span class="co">#&gt; 1 D1       TRUE  FALSE     TRUE      </span></span>
+<span><span class="co">#&gt; 2 D2       FALSE FALSE     TRUE      </span></span>
+<span><span class="co">#&gt; 3 D3       TRUE  TRUE      FALSE     </span></span>
+<span><span class="co">#&gt; 4 D4       TRUE  FALSE     TRUE      </span></span>
+<span><span class="co">#&gt; 5 D4       TRUE  FALSE     TRUE</span></span></code></pre></div>
 </div>
 <p><code>D2</code> is invalid (the bowtie); <code>D1</code> carries a hairline sliver hole and <code>D3</code> a tiny detached sliver part; <code>D4</code> is duplicated; and four of the five rows are open-ended (<code>enddate</code> year <code>9999</code>).</p>
 </section><section class="level2"><h2 id="one-call">One call<a class="anchor" aria-label="anchor" href="#one-call"></a>
@@ -341,53 +293,14 @@
 <span></span>
 <span><span class="va">clean_adm2</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">adm0</span>, <span class="va">adm1</span>, <span class="va">adm2</span>, <span class="va">adm2_guid</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">adm0</th>
-<th style="text-align: left;">adm1</th>
-<th style="text-align: left;">adm2</th>
-<th style="text-align: left;">adm2_guid</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">D1</td>
-<td style="text-align: left;">g-d1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">D2</td>
-<td style="text-align: left;">g-d2</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D3</td>
-<td style="text-align: left;">g-d3</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">g-d4</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D4</td>
-<td style="text-align: left;">g-d4</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">adm0</span>, <span class="va">adm1</span>, <span class="va">adm2</span>, <span class="va">adm2_guid</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    adm0  adm1 adm2 adm2_guid</span></span>
+<span><span class="co">#&gt; 1 ALPHA NORTH   D1      g-d1</span></span>
+<span><span class="co">#&gt; 2 ALPHA NORTH   D2      g-d2</span></span>
+<span><span class="co">#&gt; 3 ALPHA SOUTH   D3      g-d3</span></span>
+<span><span class="co">#&gt; 4 ALPHA SOUTH   D4      g-d4</span></span>
+<span><span class="co">#&gt; 5 ALPHA SOUTH   D4      g-d4</span></span>
+<span></span>
 <span><span class="co"># every geometry is valid after repair</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/valid.html" class="external-link">st_is_valid</a></span><span class="op">(</span><span class="va">clean_adm2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
@@ -399,7 +312,7 @@
 <li>a sentinel <strong><code>9999</code></strong> year is appended to every unit, so records whose year is unknown still match.</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">long_adm2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">out_dir</span>, <span class="st">"spatial_adm2_long_shape.rds"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># D3 closed in 2020; the open-ended districts run to the present + the 9999 key</span></span>
@@ -411,38 +324,17 @@
 <span>    last_real_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">active_year</span><span class="op">[</span><span class="va">active_year</span> <span class="op">!=</span> <span class="fl">9999</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>    has_sentinel <span class="op">=</span> <span class="fl">9999</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">active_year</span>,</span>
 <span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">adm2</th>
-<th style="text-align: right;">first_year</th>
-<th style="text-align: right;">last_real_year</th>
-<th style="text-align: left;">has_sentinel</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">D1</td>
-<td style="text-align: right;">2015</td>
-<td style="text-align: right;">2026</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">D3</td>
-<td style="text-align: right;">2015</td>
-<td style="text-align: right;">2026</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 4</span></span>
+<span><span class="co">#&gt;   adm2  first_year last_real_year has_sentinel</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;      &lt;int&gt;          &lt;int&gt; &lt;lgl&gt;       </span></span>
+<span><span class="co">#&gt; 1 D1          2015           2026 TRUE        </span></span>
+<span><span class="co">#&gt; 2 D3          2015           2026 TRUE</span></span></code></pre></div>
 </div>
 </details><details><summary><code>checks/</code> — what was flagged for review
 </summary><p>Problems are written to CSVs rather than silently dropped. The duplicated <code>D4</code> district, for instance, lands in a duplicate-name check:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">out_dir</span>, <span class="st">"checks"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "spatial_duplicate_adm2_guid.csv" "spatial_duplicate_adm2_name.csv"</span></span>
 <span><span class="co">#&gt; [3] "spatial_invalid_adm2_shapes.csv"</span></span>
@@ -451,30 +343,12 @@
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">out_dir</span>, <span class="st">"checks"</span>, <span class="st">"spatial_duplicate_adm2_name.csv"</span><span class="op">)</span>,</span>
 <span>  show_col_types <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">adm0</span>, <span class="va">adm1</span>, <span class="va">adm2</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">adm0</th>
-<th style="text-align: left;">adm1</th>
-<th style="text-align: left;">adm2</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D4</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D4</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">adm0</span>, <span class="va">adm1</span>, <span class="va">adm2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 3</span></span>
+<span><span class="co">#&gt;   adm0  adm1  adm2 </span></span>
+<span><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span><span class="co">#&gt; 1 ALPHA SOUTH D4   </span></span>
+<span><span class="co">#&gt; 2 ALPHA SOUTH D4</span></span></code></pre></div>
 </div>
 </details></section><section class="level2"><h2 id="geometry-repair">Geometry repair<a class="anchor" aria-label="anchor" href="#geometry-repair"></a>
 </h2>
@@ -521,7 +395,7 @@
 </div>
 <p>The two sliver steps are <strong>threshold-based</strong>: only artifacts smaller than <code>sliver_area</code> (default <code>1e4</code> m² = 1 hectare) are removed. A genuine enclave, lake or island above the threshold is left untouched, and no feature is ever emptied — each keeps at least its largest polygon. You can see all three repairs land on the district layer:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># D1 is the first feature; count its interior rings (holes)</span></span>
 <span><span class="va">d1_holes</span> <span class="op">&lt;-</span> \<span class="op">(</span><span class="va">layer</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_geometry</a></span><span class="op">(</span><span class="va">layer</span><span class="op">)</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="op">-</span> <span class="fl">1L</span></span>
 <span></span>
@@ -572,7 +446,7 @@
 </div>
 <p><code>layers</code> may also be a <strong>subset</strong> of <code>adm0</code> / <code>adm1</code> / <code>adm2</code> — only the levels you name are processed, so a single entry cleans one level:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># clean only the district layer</span></span>
 <span><span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/process_spatial.html">process_spatial</a></span><span class="op">(</span></span>
 <span>  input_path <span class="op">=</span> <span class="va">src_dir</span>,</span>
@@ -584,7 +458,7 @@
 </h2>
 <p>The year-expansion is also exported as <code><a href="../reference/create_long_shape.html">create_long_shape()</a></code>, useful when you already have a cleaned layer and just want the per-year table. It collapses each unit to a single validity window, then expands it:</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">provinces</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  adm0_guid <span class="op">=</span> <span class="st">"g-alpha"</span>, adm0 <span class="op">=</span> <span class="st">"ALPHA"</span>,</span>
 <span>  adm1_guid <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"g-an"</span>, <span class="st">"g-as"</span><span class="op">)</span>, adm1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NORTH"</span>, <span class="st">"SOUTH"</span><span class="op">)</span>,</span>
@@ -597,37 +471,19 @@
 <span>    years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">active_year</span><span class="op">)</span>, <span class="st">"–"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">active_year</span><span class="op">[</span><span class="va">active_year</span> <span class="op">!=</span> <span class="fl">9999</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    sentinel <span class="op">=</span> <span class="fl">9999</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">active_year</span>,</span>
 <span>    .groups <span class="op">=</span> <span class="st">"drop"</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">adm1</th>
-<th style="text-align: left;">years</th>
-<th style="text-align: left;">sentinel</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">2015–2026</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">2018–2026</td>
-<td style="text-align: left;">TRUE</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<span>  <span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 2 × 3</span></span>
+<span><span class="co">#&gt;   adm1  years     sentinel</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt; &lt;chr&gt;     &lt;lgl&gt;   </span></span>
+<span><span class="co">#&gt; 1 NORTH 2015–2026 TRUE    </span></span>
+<span><span class="co">#&gt; 2 SOUTH 2018–2026 TRUE</span></span></code></pre></div>
 </div>
 <p><code>NORTH</code> is open-ended (<code>9999</code>), so it runs from 2015 to the current year; <code>SOUTH</code> closed in 2021. Both gain the <code>9999</code> catch-all key.</p>
 </section><section class="level2"><h2 id="recovering-admin-geography-for-point-data">Recovering admin geography for point data<a class="anchor" aria-label="anchor" href="#recovering-admin-geography-for-point-data"></a>
 </h2>
 <p>The third exported helper, <code><a href="../reference/get_admin_info_from_coords.html">get_admin_info_from_coords()</a></code>, goes the other way: given points with longitude/latitude, it spatially joins them to a district layer and fills in any missing admin names and GUIDs. Points that fall on a boundary and match more than one district are dropped rather than guessed.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">points</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
 <span>  site <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"clinic-1"</span>, <span class="st">"clinic-2"</span>, <span class="st">"clinic-3"</span><span class="op">)</span>,</span>
 <span>  adm0 <span class="op">=</span> <span class="st">"ALPHA"</span>,</span>
@@ -640,39 +496,13 @@
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">polished</span><span class="fu">::</span><span class="fu"><a href="../reference/get_admin_info_from_coords.html">get_admin_info_from_coords</a></span><span class="op">(</span><span class="va">points</span>, <span class="va">clean_adm2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">site</span>, <span class="va">adm0</span>, <span class="va">adm1</span>, <span class="va">adm2</span><span class="op">)</span></span></code></pre></div>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table caption-top">
-<thead><tr class="header">
-<th style="text-align: left;">site</th>
-<th style="text-align: left;">adm0</th>
-<th style="text-align: left;">adm1</th>
-<th style="text-align: left;">adm2</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">clinic-1</td>
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">D1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">clinic-2</td>
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">SOUTH</td>
-<td style="text-align: left;">D3</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">clinic-3</td>
-<td style="text-align: left;">ALPHA</td>
-<td style="text-align: left;">NORTH</td>
-<td style="text-align: left;">D1</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">site</span>, <span class="va">adm0</span>, <span class="va">adm1</span>, <span class="va">adm2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 4</span></span>
+<span><span class="co">#&gt;   site     adm0  adm1  adm2 </span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;</span></span>
+<span><span class="co">#&gt; 1 clinic-1 ALPHA NORTH D1   </span></span>
+<span><span class="co">#&gt; 2 clinic-2 ALPHA SOUTH D3   </span></span>
+<span><span class="co">#&gt; 3 clinic-3 ALPHA NORTH D1</span></span></code></pre></div>
 </div>
 <p>Each clinic inherits the province and district of the polygon it falls inside — <code>adm1</code> and <code>adm2</code> were blank on the way in and are recovered from the cleaned boundary layer.</p>
 </section><section class="level2"><h2 id="parameters-at-a-glance">Parameters at a glance<a class="anchor" aria-label="anchor" href="#parameters-at-a-glance"></a>

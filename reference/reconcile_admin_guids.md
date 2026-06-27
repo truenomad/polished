@@ -13,11 +13,14 @@ and GUIDs). For each case:
     the shape is authoritative: missing/mismatched admin names and
     parent GUIDs are filled from it.
 
-2.  Otherwise, if the ADM0+ADM1+ADM2 names unambiguously identify one
+2.  Otherwise, if the ADM2 GUID matches the district in another year,
+    the most recent real boundary is adopted (`guid_match_other_year`).
+
+3.  Otherwise, if the ADM0+ADM1+ADM2 names unambiguously identify one
     district that year, its GUIDs are adopted
     (`guid_corrected_from_name`).
 
-3.  Otherwise the row is left unchanged and flagged `unresolved`.
+4.  Otherwise the row is left unchanged and flagged `unresolved`.
 
 GUIDs are compared case- and brace-insensitively (`{ABC}` == `abc`) and
 emitted lower-case without braces. A missing onset year matches the
@@ -76,8 +79,9 @@ reconcile_admin_guids(
 ## Value
 
 `data` with reconciled admin name/GUID columns and an added `geo_source`
-factor (`guid_match` / `guid_corrected_from_name` / `unresolved`). A
-`reconcile_qa` attribute carries per-country issue counts.
+factor (`guid_match` / `guid_match_other_year` /
+`guid_corrected_from_name` / `unresolved`). A `reconcile_qa` attribute
+carries per-country issue counts.
 
 ## Examples
 

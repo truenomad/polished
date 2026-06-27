@@ -52,16 +52,16 @@ names is shipped with the package and inspectable directly:
 ``` r
 
 head(polis_crosswalk()[, c("Table", "API_Name", "Snake_Name")])
+#> # A tibble: 6 × 3
+#>   Table    API_Name                                      Snake_Name             
+#>   <chr>    <chr>                                         <chr>                  
+#> 1 Activity ActivityAdminCoveragePercentage               activity_admin_coverag…
+#> 2 Activity ActivityParent_IM_HH_MissedChildrenPercentage activity_parent_im_hh_…
+#> 3 Activity ActivityParent_IM_OH_MissedChildrenPercentage activity_parent_im_oh_…
+#> 4 Activity ActivityParent_LqasFailPercentage             activity_parent_lqas_f…
+#> 5 Activity ActivityParent_LqasPassPercentage             activity_parent_lqas_p…
+#> 6 Activity Admin0ShapeId                                 admin0shape_id
 ```
-
-| Table | API_Name | Snake_Name |
-|:---|:---|:---|
-| Activity | ActivityAdminCoveragePercentage | activity_admin_coverage_percentage |
-| Activity | ActivityParent_IM_HH_MissedChildrenPercentage | activity_parent_im_hh_missed_children_percentage |
-| Activity | ActivityParent_IM_OH_MissedChildrenPercentage | activity_parent_im_oh_missed_children_percentage |
-| Activity | ActivityParent_LqasFailPercentage | activity_parent_lqas_fail_percentage |
-| Activity | ActivityParent_LqasPassPercentage | activity_parent_lqas_pass_percentage |
-| Activity | Admin0ShapeId | admin0shape_id |
 
 ## AFP cases: `clean_afp()`
 
@@ -100,12 +100,13 @@ cases[, c(
   "epid", "year_onset", "onset_to_notify", "onset_to_stool1",
   "timeliness", "classification_all", "risk_group"
 )]
+#> # A tibble: 2 × 7
+#>   epid  year_onset onset_to_notify onset_to_stool1 timeliness classification_all
+#>   <chr>      <dbl>           <dbl>           <dbl> <chr>      <chr>             
+#> 1 NIE-…       2024               3               6 Timely     WPV 1             
+#> 2 NIE-…       2024               3               7 Timely     NPAFP             
+#> # ℹ 1 more variable: risk_group <chr>
 ```
-
-| epid | year_onset | onset_to_notify | onset_to_stool1 | timeliness | classification_all | risk_group |
-|:---|---:|---:|---:|:---|:---|:---|
-| NIE-BOR-MMC-24-001 | 2024 | 3 | 6 | Timely | WPV 1 | Very High Risk |
-| NIE-BOR-JER-24-014 | 2024 | 3 | 7 | Timely | NPAFP | Very High Risk |
 
 The raw classification is decoded into the standard **WPV** / **cVDPV**
 / **aVDPV** / **iVDPV** vocabulary, so a single filter works across
@@ -114,11 +115,11 @@ every stream:
 ``` r
 
 cases[grepl("WPV|VDPV", cases$classification_all), c("epid", "classification_all")]
+#> # A tibble: 1 × 2
+#>   epid               classification_all
+#>   <chr>              <chr>             
+#> 1 NIE-BOR-MMC-24-001 WPV 1
 ```
-
-| epid               | classification_all |
-|:-------------------|:-------------------|
-| NIE-BOR-MMC-24-001 | WPV 1              |
 
 Supplying a cleaned district `shape` adds GUID reconciliation and
 coordinate / EPID-prefix admin recovery (see the *EPID geography* and
@@ -159,12 +160,12 @@ spec[, c(
   "specimen_id", "classification_all", "adequate",
   "collect_to_lab", "lab_to_culture"
 )]
+#> # A tibble: 2 × 5
+#>   specimen_id classification_all adequate collect_to_lab lab_to_culture
+#>   <chr>       <chr>                 <int>          <dbl>          <dbl>
+#> 1 S-1         cVDPV 2                   1              5             10
+#> 2 S-2         <NA>                      0              5             NA
 ```
-
-| specimen_id | classification_all | adequate | collect_to_lab | lab_to_culture |
-|:------------|:-------------------|---------:|---------------:|---------------:|
-| S-1         | cVDPV 2            |        1 |              5 |             10 |
-| S-2         | NA                 |        0 |              5 |             NA |
 
 ## Environmental samples: `clean_es()`
 
@@ -193,12 +194,12 @@ es[, c(
   "sample_id", "year_collection", "classification_all",
   "ev_detect", "npev", "risk_group"
 )]
+#> # A tibble: 2 × 6
+#>   sample_id year_collection classification_all ev_detect  npev risk_group    
+#>   <chr>               <dbl> <chr>                  <int> <int> <chr>         
+#> 1 E-1                  2024 cVDPV 2                    1     0 Very High Risk
+#> 2 E-2                  2024 NPEV                       1     1 Very High Risk
 ```
-
-| sample_id | year_collection | classification_all | ev_detect | npev | risk_group     |
-|:----------|----------------:|:-------------------|----------:|-----:|:---------------|
-| E-1       |            2024 | cVDPV 2            |         1 |    0 | Very High Risk |
-| E-2       |            2024 | NPEV               |         1 |    1 | Very High Risk |
 
 ## Immunisation campaigns: `clean_sia()`
 
@@ -228,11 +229,11 @@ subactivity <- data.frame(
 
 sia <- clean_sia(activity, subactivity, verbose = FALSE)
 sia[, c("id", "adm0", "year_start", "month_start", "vaccine_type")]
+#> # A tibble: 1 × 5
+#>      id adm0    year_start month_start vaccine_type
+#>   <dbl> <chr>        <dbl>       <dbl> <chr>       
+#> 1    10 NIGERIA       2024           3 bOPV
 ```
-
-|  id | adm0    | year_start | month_start | vaccine_type |
-|----:|:--------|-----------:|------------:|:-------------|
-|  10 | NIGERIA |       2024 |           3 | bOPV         |
 
 ## Poliovirus positives: `clean_virus()`
 
@@ -249,12 +250,12 @@ positives <- clean_virus(cases = cases, es = es, verbose = FALSE)
 positives[, c(
   "epid", "surveillance_type", "measurement", "classification_all", "report_date"
 )]
+#> # A tibble: 2 × 5
+#>   epid              surveillance_type measurement classification_all report_date
+#>   <chr>             <chr>             <chr>       <chr>              <date>     
+#> 1 NIE-BOR-MMC-24-0… human             WPV 1       WPV 1              2024-01-05 
+#> 2 E-1               environmental     cVDPV 2     cVDPV 2            NA
 ```
-
-| epid | surveillance_type | measurement | classification_all | report_date |
-|:---|:---|:---|:---|:---|
-| NIE-BOR-MMC-24-001 | human | WPV 1 | WPV 1 | 2024-01-05 |
-| E-1 | environmental | cVDPV 2 | cVDPV 2 | NA |
 
 Pass `separate_rows = TRUE` to split a co-detection
 (e.g. `WPV1andcVDPV 2`) into one row per serotype.
@@ -262,9 +263,10 @@ Pass `separate_rows = TRUE` to split a co-detection
 ## One call: `run_pipeline()`
 
 [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
-runs the per-stream cleaners over a named list of raw tables and returns
-the cleaned set, building the virus positives from the cleaned AFP/ES
-streams automatically.
+runs the per-stream cleaners over a named list of raw tables (`afp`,
+`es`, `hum_spec`, `activity`, `subactivity`) and returns the cleaned
+set, building the virus positives from the cleaned AFP/ES streams
+automatically.
 
 ``` r
 
@@ -276,9 +278,26 @@ names(cleaned)
 #> [1] "afp"   "es"    "virus"
 ```
 
-Each element is exactly what the matching `clean_*()` call produces
-above, so you can start with
-[`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
-and drop down to an individual cleaner whenever you need its
-stream-specific arguments (a `shape` for geography reconciliation,
-`sites` for ES site validation, and so on).
+Each cleaned element is exactly what the matching `clean_*()` call
+produces above. Two settings on `cfg` extend the run end to end:
+
+- a `shape` (an already-processed district layer) is passed to every
+  cleaner for admin reconciliation and geography recovery;
+- a `population` table (under-15 denominators) triggers the surveillance
+  indicator catalogue via
+  [`calc_polio_indicators()`](https://truenomad.github.io/polished/reference/calc_polio_indicators.md),
+  attached as `cleaned$indicators`.
+
+``` r
+
+cfg <- polis_config(
+  shape = "data/gpei_adm2_shape.rds",
+  population = "data/under15_pop.csv"
+)
+run_pipeline(list(afp = afp_raw, es = es_raw), cfg = cfg)
+```
+
+To run the whole thing from a folder of downloaded `raw_*` files
+straight to `polished_*` outputs (plus data-quality workbooks), use
+[`run_pipeline_dir()`](https://truenomad.github.io/polished/reference/run_pipeline_dir.md)
+— see the *End-to-end pipeline* article.

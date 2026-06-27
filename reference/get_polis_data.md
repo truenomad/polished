@@ -35,6 +35,7 @@ get_polis_data(
   log_file = NULL,
   keep_archives = 0L,
   force = FALSE,
+  prune_parts = TRUE,
   polis_api_key = Sys.getenv("POLIS_API_KEY"),
   quiet = FALSE
 )
@@ -46,8 +47,11 @@ get_polis_data(
 
   Optional character vector of table names (see
   [polis_tables_mapping](https://truenomad.github.io/polished/reference/polis_tables_mapping.md)
-  for the supported set). `NULL` (default) downloads all eight tables.
-  Unknown names abort with a list of valid names.
+  for the supported set, e.g. `"case"`, `"virus"`, `"population"`).
+  `NULL` (default) downloads every table in the catalogue. Unknown names
+  abort with a list of valid names. The `population` reference table has
+  no update date, so `min_date`/`max_date`/`region` do not apply to it –
+  it is pulled whole.
 
 - min_date:
 
@@ -73,7 +77,7 @@ get_polis_data(
 
 - polis_folder:
 
-  Root folder for cached data. Files land under `<polis_folder>/data/`.
+  Root folder for cached data. Files land under `<polis_folder>/`.
   Default `tools::R_user_dir("polished", which = "cache")` – the
   standard per-user cache location, persistent across sessions so
   incremental updates "just work". Pass an explicit path to keep data
@@ -105,13 +109,28 @@ get_polis_data(
 - keep_archives:
 
   When `> 0`, on each save also writes a timestamped copy under
-  `data/archive/` and prunes older copies. Default `0` (no archive).
+  `archive/` and prunes older copies. Default `0` (no archive).
 
 - force:
 
   If `TRUE`, deletes the `.parts/<table>/` directory and the canonical
   file for each selected table before running – forces a fresh full
   re-pull instead of resuming. Default `FALSE`.
+
+- prune_parts:
+
+  If `TRUE` (default), deletes the `.parts/<table>/` resume cache after
+  the canonical file has been written and verified. The canonical is a
+  complete, Id-deduped checkpoint, so the next run rebuilds the parts
+  from it (re-bucketing each row into its current `date_field` year).
+  This keeps the parts free of stale cross-year duplicate copies that
+  otherwise accumulate when a record's update date crosses a year
+  boundary between runs – which in turn keeps the "already up to date"
+  short-circuit honest – at the cost of re-splitting the canonical on
+  the next run. Incremental resume still works. Set to `FALSE` to retain
+  the parts for the fastest possible resume (at the risk of the parts
+  row count drifting above the true distinct total over many incremental
+  re-pulls).
 
 - polis_api_key:
 
@@ -125,21 +144,32 @@ get_polis_data(
 
 `NULL`, invisibly. `get_polis_data()` is called purely for its side
 effect: each selected table is written to
-`<polis_folder>/data/<table_name>.<ext>` (plus a `.parts/<table_name>/`
+`<polis_folder>/<table_name>.<ext>` (plus a `.parts/<table_name>/`
 resume cache). The data is never loaded into memory, so a
 multi-million-row pull cannot inflate your session. Read a table back
 from disk yourself when you need it, e.g.
-`readRDS(file.path(polis_folder, "data", "im.rds"))`.
+`readRDS(file.path(polis_folder, "im.rds"))`.
 
 ## Details
 
 **Cache layout.** Each table is fetched into a per-year part file under
-`<polis_folder>/data/.parts/<table_name>/year_YYYY.<ext>`, with a tiny
+`<polis_folder>/.parts/<stem>/year_YYYY.<ext>`, with a tiny
 `year_YYYY.meta.rds` sidecar capturing row count and min/max Id. After
 all years finish the parts are merged into the canonical
-`<polis_folder>/data/<table_name>.<ext>`. The part files are kept so the
-next call can resume per-year from `max(Id)` without re-fetching. To
-force a clean re-pull, pass `force = TRUE` or delete `.parts/`.
+`<polis_folder>/<stem>.<ext>`. The `<stem>` is the table's `raw_*` name
+(e.g. `case` is written as `raw_afp`; see
+[polis_tables_mapping](https://truenomad.github.io/polished/reference/polis_tables_mapping.md)),
+so the download and cleaning halves share one naming convention. By
+default (`prune_parts = TRUE`) the parts are deleted once the canonical
+is written and the next call rebuilds them from the canonical; pass
+`prune_parts = FALSE` to keep them on disk so the next call can resume
+per-year from `max(Id)` without the re-split. Either way the next call
+resumes per-year from `max(Id)` without re-fetching. To force a clean
+re-pull, pass `force = TRUE` or delete `.parts/`.
+
+Files written by older versions under the bare `<table_name>` name (e.g.
+`case.<ext>`) are renamed to their `raw_*` stem in place on the next run
+– no re-download.
 
 **Resume semantics.** The part files ARE the resume marker. If a
 previous run died (network blip, Ctrl-C, OOM), the next call picks up at
@@ -178,9 +208,9 @@ get_polis_data(tables = "im")
 
 # Read it back from disk when you need it
 cache <- tools::R_user_dir("polished", which = "cache")
-im <- readRDS(file.path(cache, "data", "im.rds"))
+im <- readRDS(file.path(cache, "im.rds"))
 
-# All eight tables in parallel into a project folder
+# The whole catalogue in parallel into a project folder
 get_polis_data(
   polis_folder = "data/polis",
   workers = parallel::detectCores() - 1L

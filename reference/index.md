@@ -19,6 +19,10 @@ directory of raw files).
 
 - [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
   : Build a POLIS pipeline configuration
+- [`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)
+  : The session-active POLIS configuration
+- [`print(`*`<polis_config>`*`)`](https://truenomad.github.io/polished/reference/print.polis_config.md)
+  : Print method for POLIS configuration
 - [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
   : Run the POLIS cleaning pipeline in memory
 - [`run_pipeline_dir()`](https://truenomad.github.io/polished/reference/run_pipeline_dir.md)
@@ -58,10 +62,13 @@ stream.
 ## Reference tables
 
 The packaged lookups the cleaners are driven by: the raw-to-canonical
-column crosswalk and the country grouping/risk reference.
+column crosswalk, the data dictionary (raw or cleaned schema) it backs,
+and the country grouping/risk reference.
 
 - [`polis_crosswalk()`](https://truenomad.github.io/polished/reference/polis_crosswalk.md)
   : POLIS column crosswalk
+- [`polis_dictionary()`](https://truenomad.github.io/polished/reference/polis_dictionary.md)
+  : POLIS data dictionary (raw or cleaned schema)
 - [`polis_country_lookup()`](https://truenomad.github.io/polished/reference/polis_country_lookup.md)
   : Country reference lookup shipped with the package
 
@@ -134,6 +141,8 @@ remapping, full-pull reconcile, and column type inference.
   everything else
 - [`polis_upsert()`](https://truenomad.github.io/polished/reference/polis_upsert.md)
   : Upsert by Id, keeping the latest record
+- [`collapse_business_key()`](https://truenomad.github.io/polished/reference/collapse_business_key.md)
+  : Collapse business-key duplicates, keeping the latest record
 - [`flag_ambiguous()`](https://truenomad.github.io/polished/reference/flag_ambiguous.md)
   : Flag (do not drop) rows whose business key spans multiple Ids
 - [`remap_synonyms()`](https://truenomad.github.io/polished/reference/remap_synonyms.md)
@@ -148,24 +157,38 @@ remapping, full-pull reconcile, and column type inference.
 
 ## Indicators
 
-Compute the standard polio surveillance indicators from a cleaned case
-table, and the catalogue of what is available.
+Compute the WHO POLIS surveillance indicator catalogue (NPAFP rate,
+stool adequacy, timeliness, dose history, environmental, virus, SIA and
+composite families) from cleaned case / ES / virus / SIA / lab tables.
+Call
+[`available_indicators()`](https://truenomad.github.io/polished/reference/available_indicators.md)
+to browse the catalogue, optionally by `family`.
 
 - [`calc_polio_indicators()`](https://truenomad.github.io/polished/reference/calc_polio_indicators.md)
-  : Calculate polio surveillance indicators (NPAFP rate, stool adequacy,
-  ...)
+  : Calculate polio surveillance indicators (the POLIS indicator
+  catalogue)
 - [`available_indicators()`](https://truenomad.github.io/polished/reference/available_indicators.md)
   : Dictionary of available polio surveillance indicators
 
-## Quality assurance
+## Data-quality checks
 
-Post-cleaning checks: the QA report over a processed folder, the check
-registry, per-column missingness, and ES site validation.
+Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs,
+out-of-range values and date-ordering problems straight from the cleaned
+tables, exported as a styled Excel workbook (one tab per check), plus
+the ES-specific quality helpers.
 
-- [`polis_qa_report()`](https://truenomad.github.io/polished/reference/polis_qa_report.md)
-  : Build a unified QA report from a preprocessing output folder
-- [`polis_qa_checks()`](https://truenomad.github.io/polished/reference/polis_qa_checks.md)
-  : Registry of known preprocessing QA artifacts
+- [`checks_afp()`](https://truenomad.github.io/polished/reference/checks_afp.md)
+  : Run AFP data-quality checks
+- [`checks_es()`](https://truenomad.github.io/polished/reference/checks_es.md)
+  : Run environmental-surveillance data-quality checks
+- [`checks_hum_spec()`](https://truenomad.github.io/polished/reference/checks_hum_spec.md)
+  : Run human-specimen data-quality checks
+- [`checks_sia()`](https://truenomad.github.io/polished/reference/checks_sia.md)
+  : Run SIA data-quality checks
+- [`checks_virus()`](https://truenomad.github.io/polished/reference/checks_virus.md)
+  : Run virus/positives data-quality checks
+- [`write_checks_excel()`](https://truenomad.github.io/polished/reference/write_checks_excel.md)
+  : Write a checks result to an Excel workbook
 - [`es_missingness()`](https://truenomad.github.io/polished/reference/es_missingness.md)
   : Summarise missingness in key ES surveillance variables
 - [`validate_es_sites()`](https://truenomad.github.io/polished/reference/validate_es_sites.md)
@@ -173,10 +196,30 @@ registry, per-column missingness, and ES site validation.
 
 ## Other surveillance processing
 
-Independent-monitoring (IM) and LQAS campaign-monitoring processors.
+Independent-monitoring (IM), LQAS campaign-monitoring, and SIA
+round-quality processors.
 
 - [`process_im()`](https://truenomad.github.io/polished/reference/process_im.md)
   : Process raw Independent Monitoring (IM) data into missed-children
   rates
 - [`process_lqas()`](https://truenomad.github.io/polished/reference/process_lqas.md)
   : Process raw LQAS lots into classifications and district pass rates
+- [`process_sia_quality()`](https://truenomad.github.io/polished/reference/process_sia_quality.md)
+  : Process the POLIS SIA campaign-quality tables (LQAS + IM)
+
+## Project workspace
+
+Set up a standard on-disk project (raw / processed / cache zones),
+stream the cleaning pipeline into it, and read partitioned slices back
+out.
+
+- [`init_polis_project()`](https://truenomad.github.io/polished/reference/init_polis_project.md)
+  : Create (or re-open) a data project
+- [`load_polished()`](https://truenomad.github.io/polished/reference/load_polished.md)
+  : Read a country / period slice of the polished outputs
+- [`project_path()`](https://truenomad.github.io/polished/reference/project_path.md)
+  : Build a path inside a project zone
+- [`clear_cache()`](https://truenomad.github.io/polished/reference/clear_cache.md)
+  : Clear a project's regenerable cache
+- [`print(`*`<polis_project>`*`)`](https://truenomad.github.io/polished/reference/print.polis_project.md)
+  : Print a polis_project

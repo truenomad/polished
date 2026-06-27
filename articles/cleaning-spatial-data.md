@@ -111,15 +111,13 @@ distinct districts, and a catalogue of problems:
 shp_adm2 |>
   sf::st_drop_geometry() |>
   dplyr::select(adm1_name, adm2_name, guid, enddate)
+#>   adm1_name adm2_name guid    enddate
+#> 1     NORTH        D1 g-d1 9999-12-31
+#> 2     NORTH        D2 g-d2 9999-12-31
+#> 3     SOUTH        D3 g-d3 2020-12-31
+#> 4     SOUTH        D4 g-d4 9999-12-31
+#> 5     SOUTH        D4 g-d4 9999-12-31
 ```
-
-| adm1_name | adm2_name | guid | enddate    |
-|:----------|:----------|:-----|:-----------|
-| NORTH     | D1        | g-d1 | 9999-12-31 |
-| NORTH     | D2        | g-d2 | 9999-12-31 |
-| SOUTH     | D3        | g-d3 | 2020-12-31 |
-| SOUTH     | D4        | g-d4 | 9999-12-31 |
-| SOUTH     | D4        | g-d4 | 9999-12-31 |
 
 ``` r
 
@@ -133,15 +131,15 @@ tibble::tibble(
   multipart = is_multipart(sf::st_geometry(shp_adm2)),
   open_ended = lubridate::year(as.Date(shp_adm2$enddate)) == 9999
 )
+#> # A tibble: 5 × 4
+#>   district valid multipart open_ended
+#>   <chr>    <lgl> <lgl>     <lgl>     
+#> 1 D1       TRUE  FALSE     TRUE      
+#> 2 D2       FALSE FALSE     TRUE      
+#> 3 D3       TRUE  TRUE      FALSE     
+#> 4 D4       TRUE  FALSE     TRUE      
+#> 5 D4       TRUE  FALSE     TRUE
 ```
-
-| district | valid | multipart | open_ended |
-|:---------|:------|:----------|:-----------|
-| D1       | TRUE  | FALSE     | TRUE       |
-| D2       | FALSE | FALSE     | TRUE       |
-| D3       | TRUE  | TRUE      | FALSE      |
-| D4       | TRUE  | FALSE     | TRUE       |
-| D4       | TRUE  | FALSE     | TRUE       |
 
 `D2` is invalid (the bowtie); `D1` carries a hairline sliver hole and
 `D3` a tiny detached sliver part; `D4` is duplicated; and four of the
@@ -211,18 +209,12 @@ clean_adm2 <- readRDS(file.path(out_dir, "spatial_global_adm2.rds"))
 clean_adm2 |>
   sf::st_drop_geometry() |>
   dplyr::select(adm0, adm1, adm2, adm2_guid)
-```
-
-| adm0  | adm1  | adm2 | adm2_guid |
-|:------|:------|:-----|:----------|
-| ALPHA | NORTH | D1   | g-d1      |
-| ALPHA | NORTH | D2   | g-d2      |
-| ALPHA | SOUTH | D3   | g-d3      |
-| ALPHA | SOUTH | D4   | g-d4      |
-| ALPHA | SOUTH | D4   | g-d4      |
-
-``` r
-
+#>    adm0  adm1 adm2 adm2_guid
+#> 1 ALPHA NORTH   D1      g-d1
+#> 2 ALPHA NORTH   D2      g-d2
+#> 3 ALPHA SOUTH   D3      g-d3
+#> 4 ALPHA SOUTH   D4      g-d4
+#> 5 ALPHA SOUTH   D4      g-d4
 
 # every geometry is valid after repair
 all(sf::st_is_valid(clean_adm2))
@@ -255,12 +247,12 @@ long_adm2 |>
     has_sentinel = 9999 %in% active_year,
     .groups = "drop"
   )
+#> # A tibble: 2 × 4
+#>   adm2  first_year last_real_year has_sentinel
+#>   <chr>      <int>          <int> <lgl>       
+#> 1 D1          2015           2026 TRUE        
+#> 2 D3          2015           2026 TRUE
 ```
-
-| adm2 | first_year | last_real_year | has_sentinel |
-|:-----|-----------:|---------------:|:-------------|
-| D1   |       2015 |           2026 | TRUE         |
-| D3   |       2015 |           2026 | TRUE         |
 
 `checks/` — what was flagged for review
 
@@ -278,12 +270,12 @@ readr::read_csv(
   show_col_types = FALSE
 ) |>
   dplyr::select(adm0, adm1, adm2)
+#> # A tibble: 2 × 3
+#>   adm0  adm1  adm2 
+#>   <chr> <chr> <chr>
+#> 1 ALPHA SOUTH D4   
+#> 2 ALPHA SOUTH D4
 ```
-
-| adm0  | adm1  | adm2 |
-|:------|:------|:-----|
-| ALPHA | SOUTH | D4   |
-| ALPHA | SOUTH | D4   |
 
 ## Geometry repair
 
@@ -375,12 +367,12 @@ polished::create_long_shape(provinces, level = "adm1") |>
     sentinel = 9999 %in% active_year,
     .groups = "drop"
   )
+#> # A tibble: 2 × 3
+#>   adm1  years     sentinel
+#>   <chr> <chr>     <lgl>   
+#> 1 NORTH 2015–2026 TRUE    
+#> 2 SOUTH 2018–2026 TRUE
 ```
-
-| adm1  | years     | sentinel |
-|:------|:----------|:---------|
-| NORTH | 2015–2026 | TRUE     |
-| SOUTH | 2018–2026 | TRUE     |
 
 `NORTH` is open-ended (`9999`), so it runs from 2015 to the current
 year; `SOUTH` closed in 2021. Both gain the `9999` catch-all key.
@@ -409,13 +401,13 @@ points <- tibble::tibble(
 
 polished::get_admin_info_from_coords(points, clean_adm2) |>
   dplyr::select(site, adm0, adm1, adm2)
+#> # A tibble: 3 × 4
+#>   site     adm0  adm1  adm2 
+#>   <chr>    <chr> <chr> <chr>
+#> 1 clinic-1 ALPHA NORTH D1   
+#> 2 clinic-2 ALPHA SOUTH D3   
+#> 3 clinic-3 ALPHA NORTH D1
 ```
-
-| site     | adm0  | adm1  | adm2 |
-|:---------|:------|:------|:-----|
-| clinic-1 | ALPHA | NORTH | D1   |
-| clinic-2 | ALPHA | SOUTH | D3   |
-| clinic-3 | ALPHA | NORTH | D1   |
 
 Each clinic inherits the province and district of the polygon it falls
 inside — `adm1` and `adm2` were blank on the way in and are recovered

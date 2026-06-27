@@ -57,7 +57,7 @@ a tripwire: violations are flagged to QA, never dropped.
 ``` r
 clean_human_spec(
   data,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   impute_geo = TRUE,
   cases = NULL,
@@ -75,9 +75,12 @@ clean_human_spec(
 
   A
   [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
-  object (default
-  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)).
-  Supply `cfg$qa` to route ambiguity flags.
+  object. Defaults to
+  [`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)
+  – the config most recently built by
+  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
+  this session – so a no-`cfg` call inherits the active session settings
+  rather than fresh defaults. Supply `cfg$qa` to route ambiguity flags.
 
 - shape:
 
@@ -143,13 +146,13 @@ raw <- data.frame(
 )
 clean_human_spec(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [32ms]
+#> ✔ Standardised names on 3 rows [24ms]
 #> 
 #> ℹ Parsing dates and deriving collection vars + lab intervals
-#> ✔ Parsed dates and derived collection vars + lab intervals [21ms]
+#> ✔ Parsed dates and derived collection vars + lab intervals [22ms]
 #> 
 #> ℹ Deriving virus classification and adequacy
-#> ✔ Derived virus classification and adequacy [18ms]
+#> ✔ Derived virus classification and adequacy [23ms]
 #> 
 #> ℹ Standardising admin names
 #> ✔ Standardised admin names [15ms]
@@ -158,10 +161,10 @@ clean_human_spec(raw)
 #> ✔ Recovered admin for 0 specimens from the EPID [14ms]
 #> 
 #> ℹ Enriching with country groupings
-#> ✔ Enriched with country groupings [19ms]
+#> ✔ Enriched with country groupings [15ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [24ms]
+#> ✔ Deduplicated by id and finalised [29ms]
 #> 
 #> ✔ Cleaned 2 specimens.
 #> # A tibble: 2 × 23

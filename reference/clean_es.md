@@ -46,14 +46,15 @@ The raw POLIS `virus_types`, `vdpv_classifications`, the per-serotype
 alongside the derived columns. The business key `sample_id` + `adm0`
 (the ES analogue of the AFP `epid` + `adm0` key, `sample_id` being the
 EPID-equivalent sample identifier) is asserted as a tripwire: violations
-are flagged to QA, never dropped.
+are flagged to QA, never dropped. (Unlike AFP, a sample can legitimately
+yield several virus detections, so this key is not collapsed.)
 
 ## Usage
 
 ``` r
 clean_es(
   data,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
   impute_geo = TRUE,
   sites = NULL,
@@ -71,9 +72,12 @@ clean_es(
 
   A
   [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
-  object (default
-  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)).
-  Supply `cfg$qa` to route ambiguity flags.
+  object. Defaults to
+  [`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)
+  – the config most recently built by
+  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
+  this session – so a no-`cfg` call inherits the active session settings
+  rather than fresh defaults. Supply `cfg$qa` to route ambiguity flags.
 
 - shape:
 
@@ -142,25 +146,25 @@ raw <- data.frame(
 )
 clean_es(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [26ms]
+#> ✔ Standardised names on 3 rows [22ms]
 #> 
 #> ℹ Parsing dates and deriving year/month of collection
-#> ✔ Parsed dates and derived year/month of collection [22ms]
+#> ✔ Parsed dates and derived year/month of collection [20ms]
 #> 
 #> ℹ Deriving virus-detection flags
-#> ✔ Derived virus-detection flags [22ms]
+#> ✔ Derived virus-detection flags [21ms]
 #> 
 #> ℹ Standardising admin names
-#> ✔ Standardised admin names [16ms]
+#> ✔ Standardised admin names [15ms]
 #> 
 #> ℹ Recovering missing admin from same-site samples
-#> ✔ Recovered admin for 0 samples from same-site records [15ms]
+#> ✔ Recovered admin for 0 samples from same-site records [14ms]
 #> 
 #> ℹ Enriching with country groupings
-#> ✔ Enriched with country groupings [15ms]
+#> ✔ Enriched with country groupings [14ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [24ms]
+#> ✔ Deduplicated by id and finalised [34ms]
 #> 
 #> ✔ Cleaned 2 ES samples.
 #> # A tibble: 2 × 20

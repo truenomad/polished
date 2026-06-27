@@ -1,17 +1,18 @@
-# polished: streamlined downloader and cleaner for WHO POLIS data
+# polished: download and clean WHO POLIS data
 
-Provides
+Downloads data from the WHO POLIS OData API and cleans it for analysis.
 [`get_polis_data()`](https://truenomad.github.io/polished/reference/get_polis_data.md)
-for incremental, parallel-friendly downloads from the POLIS OData API, a
-set of standalone cleaners
+handles the downloads (incremental, parallel-friendly), a set of
+standalone cleaners
 ([`clean_afp()`](https://truenomad.github.io/polished/reference/clean_afp.md),
 [`clean_es()`](https://truenomad.github.io/polished/reference/clean_es.md),
 [`clean_sia()`](https://truenomad.github.io/polished/reference/clean_sia.md),
 [`clean_virus()`](https://truenomad.github.io/polished/reference/clean_virus.md))
 wired together by
-[`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md),
-and EPID-driven recovery of missing administrative geography via
-[`impute_geo_from_epid()`](https://truenomad.github.io/polished/reference/impute_geo_from_epid.md).
+[`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
+produce the cleaned tables, and
+[`impute_geo_from_epid()`](https://truenomad.github.io/polished/reference/impute_geo_from_epid.md)
+recovers missing administrative geography from the EPID.
 
 ## NAMESPACE imports
 

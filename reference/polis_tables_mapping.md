@@ -16,8 +16,7 @@ A data.frame with one row per supported table and columns:
 
 - table_name:
 
-  Short identifier used by `tables = "..."` and as the canonical
-  filename stem.
+  Short identifier used by `tables = "..."`.
 
 - endpoint:
 
@@ -28,6 +27,12 @@ A data.frame with one row per supported table and columns:
 
   Column used for both the OData filter and the dedup tiebreaker.
 
+- file_stem:
+
+  Canonical on-disk filename stem (the `raw_*` name the downloaded table
+  is written under, e.g. `raw_afp` for `case`). The cleaning pipeline
+  reads these stems and writes `polished_*` outputs.
+
 ## Details
 
 Each `date_field` is the "update" column the package uses when
@@ -37,3 +42,7 @@ filter on this field catches every row in the table including pre-2000
 legacy records. The clinical/event columns (`CaseDate`, `VirusDate`,
 `CollectionDate`) are skipped because they contain pre-2000 legacy dates
 that fall outside typical user-supplied ranges.
+
+A `date_field` of `NA` marks a **reference table** (e.g. `population`)
+that carries no usable update date: it is pulled whole in a single
+Id-paginated pass, ignoring `min_date`/`max_date`/`region`.

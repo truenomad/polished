@@ -18,16 +18,18 @@ shared schema and tagged by source:
   the shared `WPV`/`cVDPV`/`aVDPV`/`iVDPV` vocabulary both cleaners
   emit;
 
-- the case/sample geography (`adm0`/`adm1`/`adm2` + GUIDs),
-  `latitude`/`longitude`, the event `virus_date` (paralysis onset for
-  cases, collection for ES) with `year_onset`/`month_onset`, and
-  `notification_date`;
+- the case/sample geography (`country_iso3code`, `adm0`/`adm1`/`adm2` +
+  GUIDs), `latitude`/`longitude`, the event `virus_date` (paralysis
+  onset for cases, collection for ES) with `year_onset`/`month_onset`,
+  and `notification_date`;
 
 - `report_date`: the VDPV classification-change date for VDPV records,
   the notification date for WPV records;
 
-- `emergence_group`, `nt_changes`, `virus_cluster`, and – when a
-  `nopv_emergence` reference is supplied – the novel-OPV2 flag `nopv2`.
+- `emergence_group`, `nt_changes`, `virus_cluster`, `virus_is_orphan`
+  (the orphan-isolate flag, `NA` for ES rows since POLIS carries it only
+  on cases), and – when a `nopv_emergence` reference is supplied – the
+  novel-OPV2 flag `nopv2`.
 
 ## Usage
 
@@ -35,7 +37,7 @@ shared schema and tagged by source:
 clean_virus(
   cases = NULL,
   es = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   nopv_emergence = NULL,
   separate_rows = FALSE,
   verbose = TRUE
@@ -60,8 +62,12 @@ clean_virus(
 
   A
   [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
-  object (default
-  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)).
+  object. Defaults to
+  [`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)
+  – the config most recently built by
+  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
+  this session – so a no-`cfg` call inherits the active session settings
+  rather than fresh defaults.
 
 - nopv_emergence:
 

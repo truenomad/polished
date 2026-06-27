@@ -48,9 +48,9 @@ Sys.setenv(POLIS_API_KEY = "your-key") # or set it in .Renviron
 # cache and nothing is returned
 polished::get_polis_data(tables = "im")
 
-# Read the table back from disk when you need it
+# Read the table back from disk when you need it (written under its raw_* name)
 cache <- tools::R_user_dir("polished", which = "cache")
-im <- readRDS(file.path(cache, "data", "im.rds"))
+im <- readRDS(file.path(cache, "raw_im.rds"))
 ```
 
 ## The table catalogue
@@ -63,25 +63,39 @@ build time, because it is just package data:
 ``` r
 
 polished::polis_tables_mapping
+#>                   table_name                endpoint     date_field
+#> 1                      virus                   Virus    UpdatedDate
+#> 2                       case                    Case LastUpdateDate
+#> 3             human_specimen             LabSpecimen LastUpdateDate
+#> 4       environmental_sample               EnvSample LastUpdateDate
+#> 5                   activity                Activity LastUpdateDate
+#> 6               sub_activity             SubActivity    UpdatedDate
+#> 7                       lqas                    Lqas          Start
+#> 8                         im                      Im    PublishDate
+#> 9        historized_synonyms      HistorizedSynonyms LastUpdateDate
+#> 10 historized_geoplace_names HistorizedGeoplaceNames LastUpdateDate
+#> 11                population              Population           <NA>
+#>                        file_stem
+#> 1                      raw_virus
+#> 2                        raw_afp
+#> 3                   raw_hum_spec
+#> 4                         raw_es
+#> 5                   raw_activity
+#> 6               raw_sub_activity
+#> 7                       raw_lqas
+#> 8                         raw_im
+#> 9        raw_historized_synonyms
+#> 10 raw_historized_geoplace_names
+#> 11                raw_population
 ```
 
-| table_name                | endpoint                | date_field     |
-|:--------------------------|:------------------------|:---------------|
-| virus                     | Virus                   | UpdatedDate    |
-| case                      | Case                    | LastUpdateDate |
-| human_specimen            | LabSpecimen             | LastUpdateDate |
-| environmental_sample      | EnvSample               | LastUpdateDate |
-| activity                  | Activity                | LastUpdateDate |
-| sub_activity              | SubActivity             | UpdatedDate    |
-| lqas                      | Lqas                    | Start          |
-| im                        | Im                      | PublishDate    |
-| historized_synonyms       | HistorizedSynonyms      | LastUpdateDate |
-| historized_geoplace_names | HistorizedGeoplaceNames | LastUpdateDate |
-
 Each row records the short `table_name` you pass to `tables =`, the
-OData `endpoint` it maps to, and the `date_field` used for both
-filtering and the duplicate-resolution tiebreak. An unknown name aborts
-with the list of valid ones, so a typo fails fast rather than fetching
+OData `endpoint` it maps to, the `date_field` used for both filtering
+and the duplicate-resolution tiebreak, and the `file_stem` the table is
+written under on disk. That stem is the `raw_*` name the cleaning
+pipeline reads (e.g. `case` is saved as `raw_afp`), so the download and
+cleaning halves share one naming convention. An unknown name aborts with
+the list of valid ones, so a typo fails fast rather than fetching
 nothing.
 
 ## Choosing what to fetch
@@ -112,13 +126,13 @@ than the year covering your bound.
 
 ## Where the data lives, and how resume works
 
-Every table is fetched into a per-year *part file* under the cache
-folder, with a tiny metadata sidecar, before being merged into one
-canonical file:
+Every table is fetched into a per-year *part file*, with a tiny metadata
+sidecar, before being merged into one canonical file written under the
+table’s `raw_*` stem:
 
-    <polis_folder>/data/
-    ├── im.rds                      # canonical, merged file you read
-    └── .parts/im/
+    <polis_folder>/
+    ├── raw_im.rds                  # canonical, merged file you read
+    └── .parts/raw_im/
         ├── year_2023.rds           # one part per calendar year
         ├── year_2023.meta.rds      # row count + Id range sidecar
         └── year_2024.rds
@@ -128,6 +142,11 @@ Id-range walk that flushes to its part after every 2000-row batch, so if
 a run dies mid-pull — a dropped connection, a Ctrl-C, an OOM — the next
 call picks up at `Id gt max(Id)` for each year. Worst-case lost work is
 the single in-flight batch.
+
+Files written by older versions under the bare table name
+(e.g. `case.rds`, `.parts/case/`) are renamed to their `raw_*` stem in
+place on the next run, so an existing cache is reused rather than
+re-downloaded.
 
 `polis_folder` defaults to
 `tools::R_user_dir("polished", which = "cache")`, the standard per-user
@@ -156,6 +175,13 @@ the full history once and only the delta thereafter.
 
 To force a clean re-pull instead of resuming, pass `force = TRUE` (this
 deletes the table’s parts and canonical file first).
+
+By default (`prune_parts = TRUE`) the per-year parts are deleted once
+the canonical file is written and verified; the next run rebuilds them
+from the canonical, which keeps the parts free of stale cross-year
+duplicates and keeps the “already up to date” short-circuit honest.
+Incremental resume still works. Pass `prune_parts = FALSE` to keep the
+parts on disk for the fastest possible resume (no re-split next run).
 
 ## Going faster with parallel workers
 
@@ -192,17 +218,18 @@ of rows, so returning that into memory on every call would be a footgun;
 instead the data stays on disk and you read back only the table you
 need, only when you need it.
 
-Each table lands at `<polis_folder>/data/<table_name>.<ext>`. Read one
-back with the matching reader for your `output_format`:
+Each table lands at `<polis_folder>/<file_stem>.<ext>` (the `raw_*` name
+from the catalogue). Read one back with the matching reader for your
+`output_format`:
 
 ``` r
 
 # default per-user cache location
 cache <- tools::R_user_dir("polished", which = "cache")
 
-case <- readRDS(file.path(cache, "data", "case.rds"))
+case <- readRDS(file.path(cache, "raw_afp.rds")) # `case` is saved as raw_afp
 # or, for other output formats:
-# arrow::read_parquet(file.path(cache, "data", "case.parquet"))
+# arrow::read_parquet(file.path(cache, "raw_afp.parquet"))
 ```
 
 Because the value is invisible, a bare `get_polis_data(...)` at the
@@ -240,7 +267,8 @@ completed cleanly and want to save the verification round-trip.
 
 | Argument | What it does |
 |----|----|
-| `keep_archives` | when `> 0`, also writes a timestamped copy under `data/archive/` on each save and prunes older copies beyond this many |
+| `keep_archives` | when `> 0`, also writes a timestamped copy under `archive/` on each save and prunes older copies beyond this many |
+| `prune_parts` | when `TRUE` (default), deletes the `.parts/` resume cache after the canonical is written and verified; rebuilt from the canonical next run |
 | `log_file` | path to a per-batch `.rds` log of what was fetched, when, and how many rows |
 | `quiet` | suppresses headers, progress bars, and the info alerts |
 | `polis_api_key` | the key; defaults to `Sys.getenv("POLIS_API_KEY")` |
@@ -257,13 +285,14 @@ administrative geography from the EPID:
 polished::get_polis_data(tables = "case")
 
 cache <- tools::R_user_dir("polished", which = "cache")
-cases <- readRDS(file.path(cache, "data", "case.rds"))
+cases <- readRDS(file.path(cache, "raw_afp.rds")) # `case` is saved as raw_afp
 
 cleaned <- polished::impute_geo_from_epid(cases)
 cleaned$qa # what was filled, and what was left unresolved
 ```
 
 See the *Recovering geography from EPIDs* vignette for that second step
-in detail, and
+in detail, the *End-to-end pipeline* article to go from a folder of
+`raw_*` files straight to `polished_*` outputs, and
 [`?get_polis_data`](https://truenomad.github.io/polished/reference/get_polis_data.md)
 for the complete argument reference.

@@ -12,8 +12,9 @@ do:
 - the sub-activity grain enriched with its parent campaign: the activity
   table is restricted to the sub-activity codes actually present, then
   joined onto each sub-activity by `sia_sub_activity_code` (parent
-  columns that clash with a sub-activity column take an `_activity`
-  suffix);
+  columns that clash take an `_activity` suffix; the redundant
+  geographic parent copies – region, ISO, admin name/GUID, shape id, IST
+  – are dropped);
 
 - every campaign/planning date parsed to `Date` and sanitised with the
   same "sensible date" rule (a value before `min_year` or in the future
@@ -29,7 +30,13 @@ do:
   uses it;
 
 - GUIDs emitted in the braced upper-case POLIS form and one row per
-  POLIS `id` (latest by `last_update_date`).
+  POLIS `id` (latest by `last_update_date`);
+
+- campaign rounds: within each district (`adm2_guid`) x `vaccine_type`,
+  sub-activities are ordered by `date_from` and split into rounds
+  wherever the gap to the previous campaign exceeds `round_gap_days`,
+  giving a sequential `round_num`; `max_round_date` / `last_campaign`
+  flag each district's most recent campaign.
 
 ## Usage
 
@@ -37,8 +44,12 @@ do:
 clean_sia(
   activity,
   subactivity = NULL,
-  cfg = polis_config(),
+  cfg = polis_active_config(),
   shape = NULL,
+  round_gap_days = 21L,
+  reference_date = Sys.Date(),
+  cache_dir = NULL,
+  cache_key = NULL,
   verbose = TRUE
 )
 ```
@@ -59,8 +70,12 @@ clean_sia(
 
   A
   [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
-  object (default
-  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)).
+  object. Defaults to
+  [`polis_active_config()`](https://truenomad.github.io/polished/reference/polis_active_config.md)
+  – the config most recently built by
+  [`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
+  this session – so a no-`cfg` call inherits the active session settings
+  rather than fresh defaults.
 
 - shape:
 
@@ -72,6 +87,38 @@ clean_sia(
   (expanded to its long form here). Default `NULL` (no shape-based
   recovery).
 
+- round_gap_days:
+
+  Maximum number of days between consecutive campaigns in the same
+  district and `vaccine_type` for them to count as one round; a larger
+  gap starts a new round. Default `21`.
+
+- reference_date:
+
+  Date treated as "today" when sanitising campaign dates: any parsed
+  date after it is nulled as a data-entry error (default
+  [`Sys.Date()`](https://rdrr.io/r/base/Sys.time.html)). It is part of
+  the cache key, so a run on a later day does not return a stale cached
+  table in which then-future dates are still `NA`. Pin it for
+  reproducible output.
+
+- cache_dir:
+
+  Optional directory for an opt-in, content-addressed cache. When set,
+  the cleaned table is written to (and on a later identical call read
+  back from) a `qs2` file whose name hashes every input that affects the
+  output (`activity`, `subactivity`, `cfg`, `shape`, `round_gap_days`,
+  `reference_date`); any change to an input recomputes and writes a new
+  entry. Default `NULL` (no caching).
+
+- cache_key:
+
+  Optional cheap stand-in for the raw tables in the cache key (e.g. a
+  download snapshot id). When supplied, the key is built from it instead
+  of hashing `activity`/`subactivity`, avoiding a full content hash of
+  large inputs; `cfg`, `shape` and `round_gap_days` still contribute.
+  Ignored unless `cache_dir` is set. Default `NULL` (hash the tables).
+
 - verbose:
 
   Emit cli progress messages for each phase. Default `TRUE`.
@@ -80,8 +127,8 @@ clean_sia(
 
 A tibble of cleaned SIA records, one row per POLIS `id`, with columns
 ordered id -\> location -\> time -\> other. Derived columns
-(`year_start`, `month_start`) are added only when their source columns
-are present.
+(`year_start`, `month_start`, `round_num`, `max_round_date`,
+`last_campaign`) are added only when their source columns are present.
 
 ## Examples
 
