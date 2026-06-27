@@ -388,6 +388,8 @@ clean_afp <- function(
       age_months,
       NA_real_
     )
+    # Drop the raw age sources now superseded by the canonical `age_months`.
+    data <- dplyr::select(data, -dplyr::any_of(age_sources))
   }
   data
 }

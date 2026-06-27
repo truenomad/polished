@@ -62,7 +62,8 @@ dataset and standardises it the same way \code{\link[=clean_afp]{clean_afp()}} /
 \item the sub-activity grain enriched with its parent campaign: the activity
 table is restricted to the sub-activity codes actually present, then joined
 onto each sub-activity by \code{sia_sub_activity_code} (parent columns that
-clash with a sub-activity column take an \verb{_activity} suffix);
+clash take an \verb{_activity} suffix; the redundant geographic parent copies
+-- region, ISO, admin name/GUID, shape id, IST -- are dropped);
 \item every campaign/planning date parsed to \code{Date} and sanitised with the
 same "sensible date" rule (a value before \code{min_year} or in the future is a
 data-entry error and set to \code{NA}); audit timestamps stay ISO strings for
