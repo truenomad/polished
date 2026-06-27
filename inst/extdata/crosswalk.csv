@@ -706,7 +706,6 @@ SubActivity,ChildrenImmunized,children_immunized,Immunized Population,Children i
 SubActivity,VaccineModifier,vaccine_modifier,,Vaccine modifier.,
 SubActivity,WastageFactor,wastage_factor,Wastage Factor,Wastage factor.,
 SubActivity,CalculatedTargetPopulation,calculated_target_population,Targeted Population,Calculated target population.,
-SubActivity,ActivityAdminCoveragePercentage,activity_admin_coverage_percentage,,Activity admin coverage percentage.,
 SubActivity,CalculatedDosages,calculated_dosages,Number of Doses,Calculated dosages.,
 SubActivity,UpdatedDate,updated_date,Sub-Activity Last Updated Date,Updated date.,
 SubActivity,UpdatedBy,updated_by,,Updated by.,
@@ -897,7 +896,7 @@ Case,,stool2_missing,,Stool 2 specimen missing,derived: TRUE when stool2collecti
 Case,,stool_missing,,Both stool specimens missing,derived: stool1_missing and stool2_missing
 Case,,vtype,,Decoded poliovirus type,"derived from polio_virus_types + vdpv_classifications; WPV nomenclature, c/a/i VDPV prefix"
 Case,,vtype_fixed,,Decoded poliovirus type (corrected),vtype with historical country corrections applied
-Case,,classification_all,,Fused analytic classification,"virus type (WPV/cVDPV/aVDPV/iVDPV) for positives else recoded classification (NPAFP/COMPATIBLE/NOT-AFP/PENDING/LAB PENDING/VAPP/UNKNOWN)"
+Case,,classification_all,,Fused analytic classification,virus type (WPV/cVDPV/aVDPV/iVDPV) for positives else recoded classification (NPAFP/COMPATIBLE/NOT-AFP/PENDING/LAB PENDING/VAPP/UNKNOWN)
 Case,,sabin1,,Sabin type 1 detected,derived: polio_virus_types contains VACCINE1
 Case,,sabin2,,Sabin type 2 detected,derived: polio_virus_types contains VACCINE2
 Case,,sabin3,,Sabin type 3 detected,derived: polio_virus_types contains VACCINE3
@@ -923,3 +922,40 @@ SubActivity,,month_start,,Month of campaign start,derived from date_from
 Virus,,year_onset,,Year of onset,derived from virus_date
 Virus,,month_onset,,Month of onset,derived from virus_date
 Virus,,surveillance_type,,Surveillance type,derived from case/ES linkage (human/environmental)
+EnvSample,,virus_type,,Normalised full virus-type list detected,derived: normalised virus-type list from the raw ES virus columns
+EnvSample,,nvaccine,,Novel OPV2 (nOPV2) detected,derived: nOPV2 detected flag
+EnvSample,,ev_detect,,Any poliovirus/enterovirus detected,derived: fused 'anything detected' flag (polio or enterovirus)
+LabSpecimen,,culture_to_itd,,Days from culture result to ITD result,derived: itd_result_date - culture_result_date
+LabSpecimen,,sent_to_seq_result,,Days from sent-for-sequencing to result,derived: seq_result_date - date_sent_for_sequencing
+SubActivity,,round_num,,Sequential SIA round index,derived: round index within district x vaccine type
+SubActivity,,max_round_date,,Most recent campaign date in district,derived: max campaign date per district
+SubActivity,,last_campaign,,Row is the district's most recent campaign,derived: TRUE on the latest campaign per district
+Virus,,report_date,,Report-date anchor for the positive,derived: onset/collection date anchor for the positive
+Virus,,measurement,,Virus classification label,"derived: positive classification (e.g. WPV 1, cVDPV 2)"
+Lqas,Year,year,,Campaign year,
+Lqas,ChildrenChecked,children_checked,,Children checked in the lot,
+Lqas,ChildrenFoundUnvaccinated,children_found_unvaccinated,,Children found unvaccinated in the lot,
+Lqas,,coverage,,Lot coverage,derived: 1 - children_found_unvaccinated / children_checked
+Lqas,,invalid,,Lot invalid flag,derived: TRUE when children_checked is not a valid multiple
+Lqas,,lqas2_polis,,POLIS 2-level LQAS class (normalised),derived: normalised Lqas2ClassificationName (Pass/Fail/INVALID)
+Lqas,,lqas3_polis,,POLIS 3-level LQAS class (normalised),derived: normalised Lqas3ClassificationName
+Lqas,,lqas2_derived,,Derived 2-level LQAS class,derived: 2-level class computed from coverage
+Lqas,,lqas3_derived,,Derived 3-level LQAS class,derived: 3-level class computed from coverage
+Lqas,,n_lots,,Number of lots in the district-year,derived: lot count per district-year
+Lqas,,n_pass_polis,,Lots passing (POLIS class),derived: count of POLIS-class passes
+Lqas,,n_fail_polis,,Lots failing (POLIS class),derived: count of POLIS-class fails
+Lqas,,n_invalid_polis,,Lots invalid (POLIS class),derived: count of POLIS-class invalids
+Lqas,,n_pass_derived,,Lots passing (derived class),derived: count of derived-class passes
+Lqas,,n_fail_derived,,Lots failing (derived class),derived: count of derived-class fails
+Lqas,,n_invalid_derived,,Lots invalid (derived class),derived: count of derived-class invalids
+Lqas,,pass_pct_polis,,Percent of valid lots passing (POLIS),derived: n_pass_polis / valid lots x 100
+Lqas,,pass_pct_derived,,Percent of valid lots passing (derived),derived: n_pass_derived / valid lots x 100
+Im,,year,,Campaign year,derived: year from activity_planned_date_from_year
+Im,,n_checked_inhouse,,In-house children checked,derived: sum of households_number_children_checked
+Im,,n_marked_inhouse,,In-house children marked,derived: sum of households_number_children_marked
+Im,,missed_frac_inhouse,,In-house missed fraction,derived: 1 - n_marked_inhouse / n_checked_inhouse
+Im,,n_checked_outhouse,,Out-of-house children checked,derived: sum of out_of_house_number_children_checked
+Im,,n_marked_outhouse,,Out-of-house children marked,derived: sum of out_of_house_number_children_marked
+Im,,missed_frac_outhouse,,Out-of-house missed fraction,derived: 1 - n_marked_outhouse / n_checked_outhouse (falls back to mean result)
+Im,,im_status_inhouse,,In-house IM validity status,derived: Valid/Invalid from in-house missed fraction
+Im,,im_status_outhouse,,Out-of-house IM validity status,derived: Valid/Invalid from out-of-house missed fraction
