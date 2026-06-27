@@ -1,10 +1,11 @@
-#' polished: streamlined downloader and cleaner for WHO POLIS data
+#' polished: download and clean WHO POLIS data
 #'
-#' Provides [get_polis_data()] for incremental, parallel-friendly downloads
-#' from the POLIS OData API, a set of standalone cleaners
-#' ([clean_afp()], [clean_es()], [clean_sia()], [clean_virus()]) wired
-#' together by [run_pipeline()], and EPID-driven recovery of missing
-#' administrative geography via [impute_geo_from_epid()].
+#' Downloads data from the WHO POLIS OData API and cleans it for analysis.
+#' [get_polis_data()] handles the downloads (incremental, parallel-friendly),
+#' a set of standalone cleaners ([clean_afp()], [clean_es()], [clean_sia()],
+#' [clean_virus()]) wired together by [run_pipeline()] produce the cleaned
+#' tables, and [impute_geo_from_epid()] recovers missing administrative
+#' geography from the EPID.
 #'
 #' @section NAMESPACE imports:
 #' `dplyr`'s set-operation generics (`setdiff`, `intersect`, `union`) are

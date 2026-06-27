@@ -10,11 +10,9 @@
 
 <!-- badges: end -->
 
-`polished` takes polio surveillance data from the WHO POLIS OData API all the way
-to analysis-ready outputs. One naming convention runs end to end: the downloader
-writes each table as `raw_*`, and the pipeline reads those `raw_*` inputs and
-writes `polished_*` outputs — clean tables, surveillance indicators, and
-data-quality reports.
+`polished` does two things: it downloads data from the WHO POLIS OData API, and
+it cleans that data for analysis. The downloader writes each table as `raw_*`;
+the pipeline reads those `raw_*` inputs and writes cleaned `polished_*` outputs.
 
 ## Installation
 
