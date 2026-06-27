@@ -3,12 +3,29 @@
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE*'
+      - '_pkgdown.yml'
+      - 'pkgdown/**'
+      - 'man/figures/**'
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE*'
+      - '_pkgdown.yml'
+      - 'pkgdown/**'
+      - 'man/figures/**'
 
 name: test-coverage.yaml
 
 permissions: read-all
+
+# Cancel a superseded run when a newer commit lands on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test-coverage:
