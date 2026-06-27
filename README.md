@@ -3,7 +3,7 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/truenomad/polished/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/truenomad/polished/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/truenomad/polished/graph/badge.svg)](https://app.codecov.io/gh/truenomad/polished)
+[![Codecov test coverage](https://codecov.io/gh/truenomad/polished/graph/badge.svg?token=bHamTc9ITd)](https://app.codecov.io/gh/truenomad/polished)
 [![lint](https://github.com/truenomad/polished/actions/workflows/lint.yaml/badge.svg)](https://github.com/truenomad/polished/actions/workflows/lint.yaml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![R >= 4.1.0](https://img.shields.io/badge/R-%3E%3D%204.1.0-blue.svg)](https://cran.r-project.org/)
