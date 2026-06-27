@@ -59,3 +59,36 @@ testthat::test_that("order_columns orders id -> location -> time -> other", {
     c("id", "adm0", "date_onset", "other")
   )
 })
+
+testthat::test_that("polis_dictionary returns raw vs clean schema views", {
+  raw <- polished::polis_dictionary("raw")
+  clean <- polished::polis_dictionary("clean")
+
+  # both are the same tidy 3-column dictionary: stream, column, label
+  testthat::expect_named(raw, c("data_type", "column_name", "label"))
+  testthat::expect_named(clean, c("data_type", "column_name", "label"))
+  # raw column_name is the API field (no blanks); clean is the canonical name
+  testthat::expect_true(all(!is.na(raw$column_name) & nzchar(raw$column_name)))
+
+  # clean carries derived + indicator columns the raw schema cannot
+  testthat::expect_true("measurement" %in% clean$column_name)
+  testthat::expect_true("npafp_rate" %in% clean$column_name)
+  # clean excludes the raw age sources the cleaner drops and the raw poliovirus
+  # fields outside the curated clean_virus() subset
+  testthat::expect_false(
+    any(
+      c("calculated_age_in_month", "person_age_in_months") %in%
+        clean$column_name
+    )
+  )
+  testthat::expect_false(
+    "pons_passage" %in% clean$column_name[clean$data_type == "Virus"]
+  )
+
+  # defaults to clean; filters by table; rejects an unknown type
+  testthat::expect_identical(polished::polis_dictionary(), clean)
+  testthat::expect_true(all(
+    polished::polis_dictionary("raw", table = "Case")$data_type == "Case"
+  ))
+  testthat::expect_error(polished::polis_dictionary("nope"))
+})

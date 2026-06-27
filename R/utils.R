@@ -1978,8 +1978,10 @@ polis_country_lookup <- function() {
 #' canonical `Snake_Name` used across cleaned datasets.
 #'
 #' @return A tibble with columns `Table`, `API_Name`, `Snake_Name`, `Web_Name`,
-#'   `Label`, `note`. Rows with a blank `API_Name` document columns the cleaners
-#'   *derive* (no raw POLIS source); `note` records how each is derived.
+#'   `Label`, `note`, `clean`. Rows with a blank `API_Name` document columns the
+#'   cleaners *derive* (no raw POLIS source); `note` records how each is derived.
+#'   `clean` is `TRUE` when the column is emitted in the cleaned output (`FALSE`
+#'   for raw fields dropped or not carried through by the cleaners).
 #'
 #' @examples
 #' head(polis_crosswalk())
@@ -1989,9 +1991,63 @@ polis_crosswalk <- function() {
   path <- .polis_extdata_path("crosswalk.csv")
   readr::read_csv(
     path,
-    col_types = readr::cols(.default = readr::col_character()),
+    col_types = readr::cols(
+      .default = readr::col_character(),
+      clean = readr::col_logical()
+    ),
     progress = FALSE
   )
+}
+
+#' POLIS data dictionary (raw or cleaned schema)
+#'
+#' Returns the packaged data dictionary as either the raw POLIS download schema
+#' or the cleaned-output schema. Both are views of the same [polis_crosswalk()].
+#'
+#' @param type Which dictionary to return:
+#'   \itemize{
+#'     \item `"clean"` (default) -- one row per column the cleaners emit (the
+#'       canonical `Snake_Name`s, including the derived and indicator columns).
+#'       Excludes raw fields the cleaners drop and the raw poliovirus columns
+#'       outside the curated [clean_virus()] subset.
+#'     \item `"raw"` -- one row per raw POLIS API column [get_polis_data()]
+#'       downloads, with the `Snake_Name` each is renamed to.
+#'   }
+#' @param table Optional POLIS source table(s) to keep (e.g. `"Case"`,
+#'   `"EnvSample"`). `NULL` (default) returns every table.
+#'
+#' @return A tibble with three columns: `data_type` (the POLIS source
+#'   table/stream the column belongs to, e.g. `"Case"`, `"EnvSample"`,
+#'   `"Indicators"`), `column_name` (the raw `API_Name` when `type = "raw"`, the
+#'   cleaned `Snake_Name` when `type = "clean"`) and `label` (the description).
+#'
+#' @seealso [polis_crosswalk()], the full raw-to-clean mapping this reads.
+#'
+#' @examples
+#' head(polis_dictionary("clean"))
+#' head(polis_dictionary("raw", table = "Case"))
+#'
+#' @export
+polis_dictionary <- function(type = c("clean", "raw"), table = NULL) {
+  type <- match.arg(type)
+  cw <- polis_crosswalk()
+  if (!is.null(table)) {
+    cw <- cw[cw$Table %in% table, , drop = FALSE]
+  }
+  # raw: the downloaded API column; clean: the canonical cleaned-output column.
+  if (type == "raw") {
+    cw <- cw[!is.na(cw$API_Name) & nzchar(cw$API_Name), , drop = FALSE]
+    column_name <- cw$API_Name
+  } else {
+    cw <- cw[cw$clean %in% TRUE, , drop = FALSE]
+    column_name <- cw$Snake_Name
+  }
+  dict_rows <- tibble::tibble(
+    data_type = cw$Table,
+    column_name = column_name,
+    label = cw$Label
+  )
+  dplyr::distinct(dict_rows)
 }
 
 #' Standardise POLIS column names
