@@ -19,20 +19,22 @@
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
 <meta property="og:title" content="Download and Clean WHO POLIS Data">
-<meta name="description" content="Downloads data from the WHO POLIS OData API and cleans it for analysis. Handles POLIS's Id-range pagination and year-aligned date filters, supports incremental updates with per-batch checkpointing and parallel year-fetching, and provides per-stream cleaners that produce analysis-ready tables.">
-<meta property="og:description" content="Downloads data from the WHO POLIS OData API and cleans it for analysis. Handles POLIS's Id-range pagination and year-aligned date filters, supports incremental updates with per-batch checkpointing and parallel year-fetching, and provides per-stream cleaners that produce analysis-ready tables.">
+<meta name="description" content="Retrieves and cleans poliovirus surveillance data from the World Health Organization Polio Information System (POLIS) API. Pulls POLIS tables into a local cache as raw_* files, working around the APIs Id-range pagination and year-aligned date filters with checkpointed, parallel, resumable fetching. An end-to-end pipeline then cleans those inputs into analysis-ready polished_*' tables, with optional surveillance indicators and data-quality checks.">
+<meta property="og:description" content="Retrieves and cleans poliovirus surveillance data from the World Health Organization Polio Information System (POLIS) API. Pulls POLIS tables into a local cache as raw_* files, working around the APIs Id-range pagination and year-aligned date filters with checkpointed, parallel, resumable fetching. An end-to-end pipeline then cleans those inputs into analysis-ready polished_*' tables, with optional surveillance indicators and data-quality checks.">
 <meta property="og:image" content="https://truenomad.github.io/polished/logo.png">
 <script>
+  // Default to the visitor's system appearance -- light during the day and
+  // dark at night on an auto-scheduled OS -- instead of forcing dark. A
+  // manual choice from the light/dark switch is still respected. The value
+  // is not persisted, so each visit re-follows the current system setting.
   (function() {
     try {
-      if (!localStorage.getItem('pkgdown-theme')) {
-        localStorage.setItem('pkgdown-theme', 'dark');
-      }
+      var saved = localStorage.getItem('pkgdown-theme');
+      var prefersDark = window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.dataset.bsTheme =
-        localStorage.getItem('pkgdown-theme');
-    } catch (e) {
-      document.documentElement.dataset.bsTheme = 'dark';
-    }
+        saved || (prefersDark ? 'dark' : 'light');
+    } catch (e) {}
   })();
 </script>
 </head>
@@ -96,7 +98,7 @@
 <!-- badges: start -->
 
 <!-- badges: end -->
-<p><code>polished</code> does two things: it downloads data from the WHO POLIS OData API, and it cleans that data for analysis. The downloader writes each table as <code>raw_*</code>; the pipeline reads those <code>raw_*</code> inputs and writes cleaned <code>polished_*</code> outputs.</p>
+<p><code>polished</code> retrieves and cleans poliovirus surveillance data from the WHO Polio Information System (POLIS). The downloader writes each table to a local cache as <code>raw_*</code>; an end-to-end pipeline then reads those <code>raw_*</code> inputs and writes cleaned, analysis-ready <code>polished_*</code> tables, with optional surveillance indicators and data-quality checks.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>

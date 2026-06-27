@@ -23,16 +23,18 @@
 <meta property="og:title" content="Downloading POLIS data">
 <meta property="og:image" content="https://truenomad.github.io/polished/logo.png">
 <script>
+  // Default to the visitor's system appearance -- light during the day and
+  // dark at night on an auto-scheduled OS -- instead of forcing dark. A
+  // manual choice from the light/dark switch is still respected. The value
+  // is not persisted, so each visit re-follows the current system setting.
   (function() {
     try {
-      if (!localStorage.getItem('pkgdown-theme')) {
-        localStorage.setItem('pkgdown-theme', 'dark');
-      }
+      var saved = localStorage.getItem('pkgdown-theme');
+      var prefersDark = window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.dataset.bsTheme =
-        localStorage.getItem('pkgdown-theme');
-    } catch (e) {
-      document.documentElement.dataset.bsTheme = 'dark';
-    }
+        saved || (prefersDark ? 'dark' : 'light');
+    } catch (e) {}
   })();
 </script>
 </head>
