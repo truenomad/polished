@@ -64,5 +64,5 @@ A `polis_project`: a list with `root` and one absolute path per zone
 ``` r
 proj <- init_polis_project(file.path(tempdir(), "polis_demo"), quiet = TRUE)
 proj$processed
-#> [1] "/tmp/RtmpUdKhHT/polis_demo/processed"
+#> [1] "/tmp/RtmpDGLbwk/polis_demo/processed"
 ```

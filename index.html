@@ -23,18 +23,27 @@
 <meta property="og:description" content="Retrieves and cleans poliovirus surveillance data from the World Health Organization Polio Information System (POLIS) API. Pulls POLIS tables into a local cache as raw_* files, working around the APIs Id-range pagination and year-aligned date filters with checkpointed, parallel, resumable fetching. An end-to-end pipeline then cleans those inputs into analysis-ready polished_*' tables, with optional surveillance indicators and data-quality checks.">
 <meta property="og:image" content="https://truenomad.github.io/polished/logo.png">
 <script>
-  // Default to the visitor's system appearance -- light during the day and
-  // dark at night on an auto-scheduled OS -- instead of forcing dark. A
-  // manual choice from the light/dark switch is still respected. The value
-  // is not persisted, so each visit re-follows the current system setting.
   (function() {
-    try {
-      var saved = localStorage.getItem('pkgdown-theme');
-      var prefersDark = window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.bsTheme =
-        saved || (prefersDark ? 'dark' : 'light');
-    } catch (e) {}
+    // light between 06:00 and 18:00 local time, dark otherwise
+    var hour = new Date().getHours();
+    var timeOfDay = (hour >= 6 && hour < 18) ? 'light' : 'dark';
+    var ls;
+    try { ls = window.localStorage; } catch (e) { ls = null; }
+    var userSet = ls && ls.getItem('pkgdown-theme-source') === 'user';
+    var stored = ls && ls.getItem('pkgdown-theme');
+    var theme = (userSet && stored) ? stored : timeOfDay;
+    if (ls && !userSet) ls.setItem('pkgdown-theme', timeOfDay);
+    document.documentElement.dataset.bsTheme = theme;
+    // any later change to data-bs-theme (via pkgdown's lightswitch)
+    // is an explicit user choice — remember it for next visit
+    new MutationObserver(function() {
+      var current = document.documentElement.dataset.bsTheme;
+      if (!current || !ls) return;
+      ls.setItem('pkgdown-theme', current);
+      ls.setItem('pkgdown-theme-source', 'user');
+    }).observe(document.documentElement, {
+      attributes: true, attributeFilter: ['data-bs-theme']
+    });
   })();
 </script>
 </head>
