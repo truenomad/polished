@@ -62,6 +62,8 @@ reference:
     raw files).
   contents:
   - polis_config
+  - polis_active_config
+  - print.polis_config
   - run_pipeline
   - run_pipeline_dir
 - title: Clean the surveillance streams
@@ -134,6 +136,7 @@ reference:
   - standardise_names
   - order_columns
   - polis_upsert
+  - collapse_business_key
   - flag_ambiguous
   - remap_synonyms
   - reconcile
@@ -177,8 +180,7 @@ reference:
     cleaning pipeline into it, and read partitioned slices back out.
   contents:
   - init_polis_project
-  - run_pipeline_project
-  - load_polis
+  - load_polished
   - project_path
   - clear_cache
   - print.polis_project
