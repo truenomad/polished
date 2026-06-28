@@ -19,7 +19,6 @@ URL: https://github.com/truenomad/polished, https://truenomad.github.io/polished
 BugReports: https://github.com/truenomad/polished/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0)
 Imports:
@@ -43,13 +42,16 @@ Suggests:
     data.table,
     digest,
     dtplyr,
+    exactextractr,
     fs,
     jsonlite,
     openxlsx,
     qs2,
     quarto,
     skimr,
+    terra,
     testthat (>= 3.0.0),
     withr
 VignetteBuilder: quarto
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

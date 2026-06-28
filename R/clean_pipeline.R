@@ -63,7 +63,16 @@ polis_active_config <- function() {
 #' @param population Optional under-15 population denominators used by
 #'   [calc_polio_indicators()] in [run_pipeline()]. Either a data frame or a
 #'   path to one (read via the file extension); `NULL` (default) skips the
-#'   rate indicators that need a denominator.
+#'   rate indicators that need a denominator -- unless a `population` *input* is
+#'   supplied, in which case [run_pipeline()] uses the adm2 table [clean_pop()]
+#'   produces as the denominator (so the pipeline makes its own).
+#' @param worldpop Optional named list (`all`, `u5`, `u15`) of WorldPop sources
+#'   passed to [clean_pop()] when a `population` input is present: each element a
+#'   directory of annual GeoTIFFs (zonal-summed to `shape`) or a pre-extracted
+#'   adm2-by-year table / path. `NULL` (default) runs the POLIS-only path.
+#' @param pop_years Calendar years to retain when cleaning population (POLIS
+#'   carries far-future projections). `NULL` (default) uses [clean_pop()]'s
+#'   default window.
 #' @param shape Optional **already-processed** district shape passed to every
 #'   cleaner as `shape =` for admin reconciliation (an `sf` polygon layer or a
 #'   long ADM2 attribute table, or a path to one). `NULL` (default) disables
@@ -110,6 +119,8 @@ polis_config <- function(
   synonyms = NULL,
   qa = NULL,
   population = NULL,
+  worldpop = NULL,
+  pop_years = NULL,
   shape = NULL,
   inputs = NULL,
   output_dir = NULL,
@@ -183,6 +194,8 @@ polis_config <- function(
       synonyms = synonyms,
       qa = qa,
       population = population,
+      worldpop = worldpop,
+      pop_years = pop_years,
       shape = shape,
       inputs = inputs,
       output_dir = output_dir,
@@ -214,6 +227,7 @@ print.polis_config <- function(x, ...) {
   cli::cli_text("Column-order groups: {.val {names(x$column_roles)}} -> other")
   cli::cli_text("Synonyms: {.val {!is.null(x$synonyms)}}")
   cli::cli_text("Population: {.val {!is.null(x$population)}}")
+  cli::cli_text("WorldPop: {.val {!is.null(x$worldpop)}}")
   cli::cli_text("Shape: {.val {!is.null(x$shape)}}")
   inputs_label <- .polis_inputs_label(x$inputs)
   cli::cli_text("Inputs: {.val {inputs_label}}")
@@ -779,6 +793,36 @@ run_pipeline <- function(
     }
   }
 
+  # ---- Population (foundational denominators) --------------------------------
+  # POLIS population reconciled against WorldPop and rolled up to adm0/adm1/adm2
+  # via clean_pop(). Foundational, so -- unlike the surveillance streams -- it is
+  # NOT region-scoped: denominators must exist for every district regardless of
+  # the configured region. Cached on the raw population + worldpop handles (the
+  # latter passes through .polis_resolve_ref unchanged). Its adm2 table feeds the
+  # indicators denominator below when cfg$population is unset.
+  if (!is.null(inputs$population)) {
+    cli::cli_h1("Cleaning population")
+    cleaned$pop <- .polis_clean_cached(
+      "pop",
+      list(population = inputs$population, worldpop = cfg$worldpop),
+      cfg,
+      .polis_clean_versions[["pop"]],
+      function(r) {
+        args <- list(
+          r$population,
+          cfg,
+          shape = shape_fn(),
+          worldpop = r$worldpop
+        )
+        if (!is.null(cfg$pop_years)) {
+          args$years <- cfg$pop_years
+        }
+        do.call(clean_pop, args)
+      },
+      refresh = refresh
+    )
+  }
+
   # ---- backfill admin GUIDs from cross-stream consensus ---------------------
   # A district's GUID may be present in one stream and blank in another; pool
   # the known GUIDs across all cleaned streams and fill the blanks (by admin
@@ -839,7 +883,13 @@ run_pipeline <- function(
       # cross-stream GUID backfill means any stream (incl. lqas/im) can alter the
       # afp/es GUIDs the indicators are computed from, so all sources are keyed.
       inputs = lapply(inputs, .polis_fingerprint),
-      population = .polis_fingerprint(cfg$population),
+      # the denominator is cfg$population when set, else the pop table the
+      # pipeline just produced; fingerprint whichever is used (no file read --
+      # cfg$population is path metadata, the produced denominator is in memory).
+      population = .polis_fingerprint(cfg$population) %||%
+        if (!is.null(cleaned$pop)) {
+          .polis_hash(.polis_pop_denominator(cleaned$pop))
+        },
       shape = .polis_fingerprint(cfg$shape),
       cfg = .polis_clean_cache_fields(cfg),
       scope = .polis_scope_key(cfg),
@@ -857,7 +907,8 @@ run_pipeline <- function(
             sia = cleaned$sia,
             virus = cleaned$virus,
             lab = cleaned$hum_spec,
-            population = population_fn(),
+            population = population_fn() %||%
+              .polis_pop_denominator(cleaned$pop),
             admin_units = .polio_admin_units_from_shape(shape_fn()),
             summary = FALSE
           )
@@ -887,6 +938,24 @@ run_pipeline <- function(
     return(invisible(cleaned))
   }
   cleaned
+}
+
+#' Extract the under-15 denominator from a clean_pop() result
+#'
+#' Pulls `(adm2_guid, year, u15_pop)` from the pop table the pipeline produced so
+#' it can stand in as the [calc_polio_indicators()] denominator when
+#' `cfg$population` is unset -- letting the pipeline make its own. Returns `NULL`
+#' when there is no pop output or it carries no `u15_pop`.
+#' @noRd
+.polis_pop_denominator <- function(pop) {
+  if (is.null(pop) || is.null(pop$adm2)) {
+    return(NULL)
+  }
+  a <- pop$adm2
+  if (!all(c("adm2_guid", "year", "u15_pop") %in% names(a))) {
+    return(NULL)
+  }
+  dplyr::distinct(dplyr::select(a, "adm2_guid", "year", "u15_pop"))
 }
 
 #' Write a pipeline result to disk: polished data + check workbooks
@@ -1230,7 +1299,8 @@ load_polished <- function(
   activity = "raw_activity",
   subactivity = "raw_sub_activity",
   lqas = "raw_lqas",
-  im = "raw_im"
+  im = "raw_im",
+  population = "raw_population"
 )
 .polis_input_exts <- c("qs2", "parquet", "rds", "csv")
 
@@ -1243,6 +1313,7 @@ load_polished <- function(
   sia = 1L,
   lqas = 1L,
   im = 1L,
+  pop = 1L,
   virus = 2L,
   indicators = 2L
 )
