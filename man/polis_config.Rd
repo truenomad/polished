@@ -11,6 +11,8 @@ polis_config(
   synonyms = NULL,
   qa = NULL,
   population = NULL,
+  worldpop = NULL,
+  pop_years = NULL,
   shape = NULL,
   inputs = NULL,
   output_dir = NULL,
@@ -42,7 +44,18 @@ by \code{\link[=flag_ambiguous]{flag_ambiguous()}}. \code{NULL} (default) collec
 \item{population}{Optional under-15 population denominators used by
 \code{\link[=calc_polio_indicators]{calc_polio_indicators()}} in \code{\link[=run_pipeline]{run_pipeline()}}. Either a data frame or a
 path to one (read via the file extension); \code{NULL} (default) skips the
-rate indicators that need a denominator.}
+rate indicators that need a denominator -- unless a \code{population} \emph{input} is
+supplied, in which case \code{\link[=run_pipeline]{run_pipeline()}} uses the adm2 table \code{\link[=clean_pop]{clean_pop()}}
+produces as the denominator (so the pipeline makes its own).}
+
+\item{worldpop}{Optional named list (\code{all}, \code{u5}, \code{u15}) of WorldPop sources
+passed to \code{\link[=clean_pop]{clean_pop()}} when a \code{population} input is present: each element a
+directory of annual GeoTIFFs (zonal-summed to \code{shape}) or a pre-extracted
+adm2-by-year table / path. \code{NULL} (default) runs the POLIS-only path.}
+
+\item{pop_years}{Calendar years to retain when cleaning population (POLIS
+carries far-future projections). \code{NULL} (default) uses \code{\link[=clean_pop]{clean_pop()}}'s
+default window.}
 
 \item{shape}{Optional \strong{already-processed} district shape passed to every
 cleaner as \verb{shape =} for admin reconciliation (an \code{sf} polygon layer or a

@@ -650,6 +650,230 @@ checks_hum_spec <- function(hum_spec, reference_date = Sys.Date()) {
   )
 }
 
+#' Run POLIS population data-quality checks
+#'
+#' Documents every POLIS-vs-WorldPop reconciliation issue [clean_pop()] found and
+#' how each was resolved, as a `checks_*` result ready for [write_checks_excel()].
+#' Unlike the other `checks_*()` functions it takes the **whole [clean_pop()]
+#' list** (it reads `$adm2` and the `$meta` audit), not a single table.
+#'
+#' @param pop The list returned by [clean_pop()] (`$adm0`/`$adm1`/`$adm2`/`$meta`).
+#' @param reference_date Unused; accepted for a uniform `checks_*()` signature.
+#'
+#' @return A named list: `summary` (one row per issue with `check`, `domain`,
+#'   `severity`, `n_flagged`, `description`) followed by the detail tables
+#'   (`conflicting_dups`, `age_violations`, `orphan_guids`, `ratio_outliers`,
+#'   `coverage_by_country`, `overrides`, `source_mix`). Pass it to
+#'   [write_checks_excel()].
+#'
+#' @seealso [clean_pop()].
+#' @examples
+#' pop_raw <- data.frame(
+#'   PlaceId = "g-1", PlaceDisplayName = "X", Year = 2020,
+#'   AgeGroupName = "0 to 15 years", Value = 1000, check.names = FALSE
+#' )
+#' checks_pop(clean_pop(pop_raw, years = 2020, verbose = FALSE))$summary
+#'
+#' @export
+checks_pop <- function(pop, reference_date = Sys.Date()) {
+  if (!is.list(pop) || is.null(pop$adm2) || is.null(pop$meta)) {
+    cli::cli_abort(
+      "{.arg pop} must be a {.fn clean_pop} result (with {.field adm2}/{.field meta})."
+    )
+  }
+  audit <- pop$meta$audit %||% dplyr::tibble()
+  adm2 <- pop$adm2
+  empty <- dplyr::tibble()
+
+  # 01: conflicting POLIS duplicates (same place-year, different values)
+  conflicting_dups <- pop$meta$dup_conflicts %||% empty
+
+  # 02: age-ordering breaches (u5 <= u15 <= all) reconciled to WorldPop
+  age_violations <- if ("age_order_bad" %in% names(adm2)) {
+    adm2 |>
+      dplyr::filter(age_order_bad) |>
+      dplyr::select(dplyr::any_of(c(
+        "who_region",
+        "country_iso3code",
+        "adm0",
+        "adm1",
+        "adm2",
+        "adm2_guid",
+        "year",
+        "u5_pop",
+        "u15_pop",
+        "all_pop",
+        "u5_pop_wp",
+        "u15_pop_wp",
+        "all_pop_wp"
+      )))
+  } else {
+    empty
+  }
+
+  # 03: orphan POLIS guids absent from the shape, + crosswalk outcome
+  orphan_guids <- pop$meta$orphan_xwalk %||% empty
+
+  # 04: POLIS values implausible vs WorldPop (severity = fold difference)
+  ratio_outliers <- if ("bad_vs_worldpop" %in% names(audit)) {
+    audit |>
+      dplyr::filter(bad_vs_worldpop) |>
+      dplyr::mutate(fold = round(pmax(wp_ratio, 1 / wp_ratio), 1)) |>
+      dplyr::arrange(dplyr::desc(fold)) |>
+      dplyr::select(dplyr::any_of(c(
+        "age_group",
+        "who_region",
+        "country_iso3code",
+        "adm0",
+        "adm1",
+        "adm2",
+        "adm2_guid",
+        "year",
+        "pop_polis",
+        "pop_wp",
+        "wp_ratio",
+        "fold",
+        "source"
+      )))
+  } else {
+    empty
+  }
+
+  # 05: coverage per country (districts: POLIS-sourced vs imputed)
+  coverage_by_country <- if (all(c("age_group", "source") %in% names(audit))) {
+    audit |>
+      dplyr::filter(age_group == "u15") |>
+      dplyr::summarise(
+        districts = dplyr::n_distinct(adm2_guid),
+        with_polis = dplyr::n_distinct(adm2_guid[source %in% "polis"]),
+        worldpop = dplyr::n_distinct(adm2_guid[source %in% "worldpop"]),
+        imputed_local = dplyr::n_distinct(
+          adm2_guid[source %in% c("district_trend", "adm1", "adm0")]
+        ),
+        .by = dplyr::any_of(c("who_region", "country_iso3code", "adm0"))
+      ) |>
+      dplyr::arrange(dplyr::desc(districts - with_polis))
+  } else {
+    empty
+  }
+
+  # 06: overrides = POLIS had a value but it was rejected / replaced
+  overrides <- if (all(c("source", "pop_polis") %in% names(audit))) {
+    audit |>
+      dplyr::filter(
+        source %in% c("worldpop", "district_trend", "adm1", "adm0"),
+        !is.na(pop_polis),
+        pop_polis > 0
+      ) |>
+      dplyr::arrange(age_group, dplyr::desc(n_votes)) |>
+      dplyr::select(dplyr::any_of(c(
+        "age_group",
+        "who_region",
+        "country_iso3code",
+        "adm0",
+        "adm1",
+        "adm2",
+        "adm2_guid",
+        "year",
+        "pop",
+        "source",
+        "pop_polis",
+        "pop_wp",
+        "wp_ratio",
+        "n_votes",
+        "bad_vs_worldpop",
+        "bad_vs_history",
+        "bad_vs_adm1"
+      )))
+  } else {
+    empty
+  }
+
+  # 07: chosen-source mix per age band
+  source_mix <- if (all(c("age_group", "source") %in% names(audit))) {
+    audit |>
+      dplyr::count(age_group, source) |>
+      dplyr::mutate(pct = round(100 * n / sum(n), 1), .by = age_group) |>
+      dplyr::arrange(age_group, dplyr::desc(n))
+  } else {
+    empty
+  }
+
+  summary <- dplyr::bind_rows(
+    .pop_check_row(
+      "conflicting_dups",
+      "warning",
+      nrow(conflicting_dups),
+      "POLIS place-years with >1 distinct value (collapsed to the median)"
+    ),
+    .pop_check_row(
+      "age_violations",
+      "warning",
+      nrow(age_violations),
+      "District-years where u5 <= u15 <= all was breached (reconciled to WorldPop)"
+    ),
+    .pop_check_row(
+      "orphan_guids",
+      "warning",
+      if ("xwalk_status" %in% names(orphan_guids)) {
+        sum(orphan_guids$xwalk_status != "resolved")
+      } else {
+        0L
+      },
+      "POLIS guids absent from the shape and not resolved by name crosswalk"
+    ),
+    .pop_check_row(
+      "ratio_outliers",
+      "info",
+      nrow(ratio_outliers),
+      "POLIS values implausible vs WorldPop (outside the ratio tolerance)"
+    ),
+    .pop_check_row(
+      "overrides",
+      "info",
+      nrow(overrides),
+      "Cells where a present POLIS value was rejected and imputed"
+    )
+  )
+
+  detail <- list(
+    conflicting_dups = conflicting_dups,
+    age_violations = age_violations,
+    orphan_guids = orphan_guids,
+    ratio_outliers = ratio_outliers,
+    coverage_by_country = coverage_by_country,
+    overrides = overrides,
+    source_mix = source_mix
+  )
+  detail <- detail[vapply(detail, function(x) nrow(x) > 0L, logical(1))]
+  c(list(summary = summary), detail)
+}
+
+# One population-check summary row in the shared checks summary shape.
+#' @noRd
+.pop_check_row <- function(check, severity, n_flagged, description) {
+  dplyr::tibble(
+    check = check,
+    domain = "population",
+    severity = severity,
+    n_flagged = as.integer(n_flagged),
+    description = description
+  )
+}
+
+utils::globalVariables(c(
+  "age_order_bad",
+  "bad_vs_worldpop",
+  "wp_ratio",
+  "fold",
+  "age_group",
+  "source",
+  "adm2_guid",
+  "pop_polis",
+  "n_votes",
+  "n"
+))
+
 # ---- excel export -----------------------------------------------------------
 
 #' Write a checks result to an Excel workbook
@@ -701,12 +925,20 @@ write_checks_excel <- function(checks, path) {
     es = checks_es,
     hum_spec = checks_hum_spec,
     sia = checks_sia,
-    virus = checks_virus
+    virus = checks_virus,
+    pop = checks_pop
   )
   written <- character(0)
   for (key in names(fns)) {
     data <- cleaned[[key]]
-    if (!is.data.frame(data) || nrow(data) == 0L) {
+    # pop is a list (adm0/adm1/adm2/meta), not a single frame; the rest are
+    # frames that must be non-empty to be worth a workbook.
+    ok <- if (key == "pop") {
+      is.list(data) && !is.null(data$adm2)
+    } else {
+      is.data.frame(data) && nrow(data) > 0L
+    }
+    if (!ok) {
       next
     }
     result <- fns[[key]](data, reference_date = reference_date)
