@@ -435,7 +435,7 @@ test_that(".pop_apply_validity keeps only the boundary valid each year", {
     startdate = as.Date(c("2010-01-01", "2019-07-01")),
     enddate = as.Date(c("2019-06-30", "2030-01-01"))
   )
-  out <- polished:::.pop_apply_validity(wide, shp, reference_date = Sys.Date())
+  out <- polished:::.pop_apply_validity(wide, shp)
   expect_equal(out$adm2_guid, "{G1B}") # retired boundary dropped for 2020
 })
 
@@ -443,10 +443,10 @@ test_that(".pop_apply_validity is a no-op without validity columns or shape", {
   wide <- tibble::tibble(adm2_guid = "{G1}", year = 2020L, u15_pop = 1L)
   shp_no_dates <- tibble::tibble(adm2_guid = "{G1}")
   expect_equal(
-    nrow(polished:::.pop_apply_validity(wide, shp_no_dates, Sys.Date())),
+    nrow(polished:::.pop_apply_validity(wide, shp_no_dates)),
     1L
   )
-  expect_identical(polished:::.pop_apply_validity(wide, NULL, Sys.Date()), wide)
+  expect_identical(polished:::.pop_apply_validity(wide, NULL), wide)
 })
 
 # ---- .pop_sum_or_na / .pop_rollup ------------------------------------------
