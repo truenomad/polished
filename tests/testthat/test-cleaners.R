@@ -733,6 +733,69 @@ testthat::test_that("clean_virus report_date is per-serotype after a co-detectio
   )
 })
 
+testthat::test_that(".polis_detections projects positives to core columns, in order", {
+  # scrambled order, with two non-core columns that must be dropped
+  virus <- tibble::tibble(
+    notification_date = as.Date("2024-01-09"),
+    adm2 = "MMC",
+    epid = "NIE-BOR-MMC-24-001",
+    virus_cluster = "C1",
+    adm0 = "NIGERIA",
+    vtype = "WPV 1",
+    surveillance_type = "human",
+    adm2_guid = "{G2}",
+    latitude = 11.8,
+    longitude = 13.1,
+    emergence_group = "NIE-BOS-1"
+  )
+  det <- polished:::.polis_detections(virus)
+  # only core columns survive, in .polis_detection_cols order
+  expected <- intersect(polished:::.polis_detection_cols, names(virus))
+  testthat::expect_identical(names(det), expected)
+  # non-core columns are dropped
+  testthat::expect_false(any(
+    c("notification_date", "virus_cluster") %in% names(det)
+  ))
+  # a pure projection: rows and values are unchanged (nothing recomputed)
+  testthat::expect_equal(nrow(det), nrow(virus))
+  testthat::expect_identical(det$epid, virus$epid)
+  testthat::expect_identical(det$vtype, virus$vtype)
+  testthat::expect_identical(det$adm2_guid, virus$adm2_guid)
+})
+
+testthat::test_that(".polis_detections keeps only the columns present", {
+  det <- polished:::.polis_detections(tibble::tibble(
+    epid = "A-1",
+    vtype = "WPV 1"
+  ))
+  testthat::expect_identical(names(det), c("epid", "vtype"))
+})
+
+testthat::test_that(".polis_detections composes on a real clean_virus() table", {
+  cases <- polished::clean_afp(
+    data.frame(
+      Id = 1,
+      Epid = "A-1",
+      LastUpdateDate = "2024-03-01",
+      ParalysisOnsetDate = "2024-01-02",
+      NotificationDate = "2024-01-09",
+      PolioVirusTypes = "WILD1",
+      Classification = "Confirmed (wild)",
+      Admin0Name = "NIGERIA",
+      check.names = FALSE
+    ),
+    verbose = FALSE
+  )
+  v <- polished::clean_virus(cases = cases, verbose = FALSE)
+  det <- polished:::.polis_detections(v)
+  testthat::expect_equal(nrow(det), nrow(v))
+  testthat::expect_true(all(
+    c("epid", "adm0", "surveillance_type", "vtype") %in% names(det)
+  ))
+  # every detection column reuses an existing positives-table name
+  testthat::expect_true(all(names(det) %in% names(v)))
+})
+
 testthat::test_that("clean_virus covers no-positive streams, df nOPV ref, and label/guard helpers", {
   # one stream has no positives -> its side collapses to NULL, the other survives
   cases_neg <- polished::clean_afp(
