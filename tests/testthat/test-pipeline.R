@@ -35,7 +35,8 @@ testthat::test_that("run_pipeline builds virus positives from cleaned cases", {
   out <- suppressMessages(
     polished::run_pipeline(list(afp = raw_afp_positive()))
   )
-  testthat::expect_setequal(names(out), c("afp", "virus"))
+  # positives also yield a lean "detections" view selected from the virus table
+  testthat::expect_setequal(names(out), c("afp", "virus", "detections"))
   # only the WPV case becomes a positive; it is tagged human
   testthat::expect_equal(nrow(out$virus), 1L)
   testthat::expect_equal(out$virus$measurement, "WPV 1")
@@ -43,6 +44,11 @@ testthat::test_that("run_pipeline builds virus positives from cleaned cases", {
     out$virus$surveillance_type[out$virus$epid == "A-1"],
     "human"
   )
+  # detections mirrors the positives row count with core, existing-named columns
+  testthat::expect_equal(nrow(out$detections), nrow(out$virus))
+  testthat::expect_true(all(
+    c("epid", "adm0", "surveillance_type", "vtype") %in% names(out$detections)
+  ))
 })
 
 testthat::test_that("run_pipeline rejects a non-list input", {

@@ -862,6 +862,9 @@ run_pipeline <- function(
     # only attach when there are positives, so a virus-free run stays trim
     if (nrow(virus) > 0) {
       cleaned$virus <- virus
+      # a lean, analyst-facing "detections" table: the core columns per
+      # poliovirus detection, selected (not recomputed) from the positives table.
+      cleaned$detections <- .polis_detections(virus)
     }
   }
 
