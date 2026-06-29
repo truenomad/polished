@@ -89,6 +89,14 @@ reference:
   - clean_es
   - clean_sia
   - clean_virus
+- title: Population denominators
+  desc: >
+    Clean the raw POLIS population reference into adm0/adm1/adm2 under-5 /
+    under-15 / all-ages denominators, optionally reconciled against WorldPop and
+    rolled up via boundary-validity windows. These feed the rate indicators when
+    no `population` is supplied to the pipeline directly.
+  contents:
+  - clean_pop
 - title: Virus classification
   desc: >
     The shared decoder that turns the raw POLIS virus fields into the standard
@@ -169,13 +177,15 @@ reference:
     Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs,
     out-of-range values and date-ordering problems straight from the cleaned
     tables, exported as a styled Excel workbook (one tab per check), plus the
-    ES-specific quality helpers.
+    ES-specific quality helpers. `checks_pop()` documents the POLIS-vs-WorldPop
+    population reconciliation instead.
   contents:
   - checks_afp
   - checks_es
   - checks_hum_spec
   - checks_sia
   - checks_virus
+  - checks_pop
   - write_checks_excel
   - es_missingness
   - validate_es_sites
