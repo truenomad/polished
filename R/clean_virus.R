@@ -343,3 +343,43 @@ clean_virus <- function(
   }
   tibble::as_tibble(rows_expanded)
 }
+
+# Core columns for the analyst-facing detections view, in
+# id -> surveillance -> geography -> coordinates -> virus -> dates order. These
+# reuse the existing positives-table column names; nothing is recomputed.
+#' @noRd
+.polis_detection_cols <- c(
+  "epid",
+  "surveillance_type",
+  "source",
+  "country_iso3code",
+  "adm0",
+  "adm1",
+  "adm2",
+  "adm0_guid",
+  "adm1_guid",
+  "adm2_guid",
+  "latitude",
+  "longitude",
+  "vtype",
+  "classification_all",
+  "emergence_group",
+  "nt_changes",
+  "virus_is_orphan",
+  "nopv2",
+  "virus_date",
+  "year_onset",
+  "month_onset",
+  "report_date"
+)
+
+#' Lean "detections" view of the virus positives table
+#'
+#' Projects a [clean_virus()] positives table down to the core per-detection
+#' columns an analyst needs (geography, coordinates, virus label, emergence
+#' group, dates), keeping only those present. A pure column selection -- no
+#' recomputation, and the existing column names are reused as-is.
+#' @noRd
+.polis_detections <- function(virus) {
+  dplyr::select(virus, dplyr::any_of(.polis_detection_cols))
+}
