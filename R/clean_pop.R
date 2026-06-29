@@ -50,6 +50,18 @@
 #' @param reference_date Date treated as "today" when deciding which boundary
 #'   versions are *current* for the orphan-GUID name crosswalk. Default
 #'   [Sys.Date()].
+#' @param pop_source Which population to use as the chosen `<age>_pop` value
+#'   (the denominator indicators read). One of:
+#'   \describe{
+#'     \item{`"reconciled"`}{(default) a trusted POLIS value, else WorldPop, else
+#'       the district -> province -> country ladder.}
+#'     \item{`"polis"`}{the POLIS value (gaps filled from the ladder; WorldPop is
+#'       ignored even if supplied) -- the full POLIS population.}
+#'     \item{`"worldpop"`}{the WorldPop value, else a POLIS value, else the
+#'       ladder.}
+#'   }
+#'   The output always keeps `<age>_pop_polis` and `<age>_pop_wp` alongside the
+#'   chosen `<age>_pop`, so every source stays inspectable whatever the mode.
 #' @param verbose Emit cli progress headers. Default `TRUE`.
 #'
 #' @return A named list:
@@ -87,8 +99,16 @@ clean_pop <- function(
   years = 2010:2027,
   thresholds = list(ratio_lo = 1 / 3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
   reference_date = Sys.Date(),
+  pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
 ) {
+  pop_source <- match.arg(pop_source)
+  if (pop_source == "worldpop" && is.null(worldpop)) {
+    cli::cli_warn(
+      "{.arg pop_source} is {.val worldpop} but no {.arg worldpop} was \\
+      supplied; falling back to POLIS values where present."
+    )
+  }
   th <- utils::modifyList(
     list(ratio_lo = 1 / 3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
     thresholds %||% list()
@@ -160,7 +180,12 @@ clean_pop <- function(
 
   # ---- 3. impute each age band -----------------------------------------------
   if (isTRUE(verbose)) {
-    cli::cli_h2("Reconciling POLIS against WorldPop and imputing gaps")
+    cli::cli_h2(switch(
+      pop_source,
+      reconciled = "Reconciling POLIS against WorldPop and imputing gaps",
+      polis = "Selecting POLIS population and imputing gaps",
+      worldpop = "Selecting WorldPop population and imputing gaps"
+    ))
   }
   imp <- lapply(names(age_map), function(a) {
     polis_a <- polis_dedup |>
@@ -179,7 +204,7 @@ clean_pop <- function(
     } else {
       dplyr::mutate(base, pop_wp = NA_real_)
     }
-    .pop_impute_age(base, th, a, has_parents)
+    .pop_impute_age(base, th, a, has_parents, pop_source)
   })
   names(imp) <- names(age_map)
   audit <- dplyr::bind_rows(imp)
@@ -558,12 +583,21 @@ clean_pop <- function(
 
 # Impute one age band. `base` is the district x year universe already joined to
 # pop_polis and pop_wp. Computes the three implausibility signals, then chooses a
-# value + provenance: a trusted POLIS value, else WorldPop, else the district's
-# own temporal median, else the province's typical district value that year, else
-# the country's. Everything that is not a trusted POLIS value is flagged
-# (`imputed = TRUE`).
+# value + provenance whose ranking depends on `pop_source`:
+#   "reconciled" - a trusted POLIS value, else WorldPop, else the admin ladder
+#   "polis"      - any positive POLIS value, else the admin ladder (no WorldPop)
+#   "worldpop"   - WorldPop, else a POLIS value, else the admin ladder
+# The admin ladder is the district's own temporal median, else the province's
+# typical district value that year, else the country's. Anything that is not the
+# preferred source for the mode is flagged (`imputed = TRUE`).
 #' @noRd
-.pop_impute_age <- function(base, th, age, has_parents) {
+.pop_impute_age <- function(
+  base,
+  th,
+  age,
+  has_parents,
+  pop_source = "reconciled"
+) {
   # a non-positive WorldPop value is not a usable denominator: treat it as
   # missing so it is neither compared against (no Inf ratio) nor chosen as the
   # value (no zero denominator reaching the indicators).
@@ -625,8 +659,15 @@ clean_pop <- function(
       polis_missing = is.na(polis_pos),
       polis_suspect = n_votes >= th$min_votes,
       source = dplyr::case_when(
-        !polis_missing & !polis_suspect ~ "polis",
-        !is.na(pop_wp) ~ "worldpop",
+        # "polis": trust any positive POLIS value (no WorldPop check)
+        pop_source == "polis" & !polis_missing ~ "polis",
+        # "worldpop": WorldPop first, then a POLIS value
+        pop_source == "worldpop" & !is.na(pop_wp) ~ "worldpop",
+        pop_source == "worldpop" & !polis_missing ~ "polis",
+        # "reconciled": a trusted POLIS value, then WorldPop
+        pop_source == "reconciled" & !polis_missing & !polis_suspect ~ "polis",
+        pop_source == "reconciled" & !is.na(pop_wp) ~ "worldpop",
+        # shared admin ladder fallback for every mode
         !is.na(dist_med) ~ "district_trend",
         !is.na(adm1_year_med) ~ "adm1",
         !is.na(adm0_year_med) ~ "adm0",

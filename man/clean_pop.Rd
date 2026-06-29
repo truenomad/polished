@@ -12,6 +12,7 @@ clean_pop(
   years = 2010:2027,
   thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
   reference_date = Sys.Date(),
+  pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
 )
 }
@@ -48,6 +49,19 @@ Default \code{2010:2027}.}
 \item{reference_date}{Date treated as "today" when deciding which boundary
 versions are \emph{current} for the orphan-GUID name crosswalk. Default
 \code{\link[=Sys.Date]{Sys.Date()}}.}
+
+\item{pop_source}{Which population to use as the chosen \verb{<age>_pop} value
+(the denominator indicators read). One of:
+\describe{
+\item{\code{"reconciled"}}{(default) a trusted POLIS value, else WorldPop, else
+the district -> province -> country ladder.}
+\item{\code{"polis"}}{the POLIS value (gaps filled from the ladder; WorldPop is
+ignored even if supplied) -- the full POLIS population.}
+\item{\code{"worldpop"}}{the WorldPop value, else a POLIS value, else the
+ladder.}
+}
+The output always keeps \verb{<age>_pop_polis} and \verb{<age>_pop_wp} alongside the
+chosen \verb{<age>_pop}, so every source stays inspectable whatever the mode.}
 
 \item{verbose}{Emit cli progress headers. Default \code{TRUE}.}
 }

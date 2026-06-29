@@ -97,6 +97,65 @@ test_that("clean_pop reconciles POLIS against WorldPop", {
   expect_equal(g3$u15_pop_source, "polis")
 })
 
+test_that("pop_source picks POLIS, WorldPop, or reconciled values", {
+  # one district whose POLIS bands stay order-consistent (so the age-order
+  # reconciliation never fires), but whose u15 is implausibly low vs WorldPop
+  # (80 vs 400) so "reconciled" rejects it while "polis" keeps it.
+  raw <- tibble::tibble(
+    PlaceId = "g1",
+    PlaceDisplayName = "DISTRICT A",
+    Year = 2020,
+    AgeGroupName = c("0 to 5 years", "0 to 15 years", "All ages"),
+    Value = c(70, 80, 350)
+  )
+  wp <- list(
+    u5 = tibble::tibble(adm2_guid = "{G1}", year = 2020, u5_pop = 160L),
+    u15 = tibble::tibble(adm2_guid = "{G1}", year = 2020, u15_pop = 400L),
+    all = tibble::tibble(adm2_guid = "{G1}", year = 2020, all_pop = 900L)
+  )
+  run <- function(src) {
+    clean_pop(
+      raw,
+      worldpop = wp,
+      years = 2020,
+      pop_source = src,
+      verbose = FALSE
+    )$adm2
+  }
+  # "polis": keeps the implausible POLIS value (order holds, no WorldPop swap)
+  p <- run("polis")
+  expect_equal(p$u15_pop, 80L)
+  expect_equal(p$u15_pop_source, "polis")
+  # "worldpop": takes WorldPop directly
+  w <- run("worldpop")
+  expect_equal(w$u15_pop, 400L)
+  expect_equal(w$u15_pop_source, "worldpop")
+  # "reconciled": rejects the suspect POLIS value for WorldPop
+  expect_equal(run("reconciled")$u15_pop_source, "worldpop")
+  # both source columns are always retained alongside the chosen value
+  expect_equal(p$u15_pop_polis, 80L)
+  expect_equal(p$u15_pop_wp, 400L)
+})
+
+test_that("pop_source 'worldpop' without a WorldPop input warns", {
+  expect_warning(
+    clean_pop(
+      pop_raw(),
+      shape = pop_shape(),
+      years = 2020:2021,
+      pop_source = "worldpop",
+      verbose = FALSE
+    ),
+    "falling back to POLIS"
+  )
+})
+
+test_that("polis_config validates and stores pop_source", {
+  expect_equal(polis_config(pop_source = "worldpop")$pop_source, "worldpop")
+  expect_equal(polis_config()$pop_source, "reconciled") # default
+  expect_error(polis_config(pop_source = "nope"))
+})
+
 test_that("clean_pop rolls up to adm1/adm0 by summing valid districts", {
   res <- clean_pop(
     pop_raw(),

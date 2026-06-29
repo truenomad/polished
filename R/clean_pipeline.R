@@ -73,6 +73,10 @@ polis_active_config <- function() {
 #' @param pop_years Calendar years to retain when cleaning population (POLIS
 #'   carries far-future projections). `NULL` (default) uses [clean_pop()]'s
 #'   default window.
+#' @param pop_source Which population [clean_pop()] uses as the denominator:
+#'   `"reconciled"` (default; trusted POLIS, else WorldPop, else the admin
+#'   ladder), `"polis"` (the full POLIS population, WorldPop ignored), or
+#'   `"worldpop"` (WorldPop, else POLIS, else the ladder). See [clean_pop()].
 #' @param shape Optional **already-processed** district shape passed to every
 #'   cleaner as `shape =` for admin reconciliation (an `sf` polygon layer or a
 #'   long ADM2 attribute table, or a path to one). `NULL` (default) disables
@@ -121,6 +125,7 @@ polis_config <- function(
   population = NULL,
   worldpop = NULL,
   pop_years = NULL,
+  pop_source = c("reconciled", "polis", "worldpop"),
   shape = NULL,
   inputs = NULL,
   output_dir = NULL,
@@ -138,6 +143,7 @@ polis_config <- function(
   if (!is.logical(drop_empty_cols) || length(drop_empty_cols) != 1) {
     cli::cli_abort("{.arg drop_empty_cols} must be a single logical.")
   }
+  pop_source <- match.arg(pop_source)
 
   # ---- column ordering convention -------------------------------------------
   # Groups are emitted in this order; columns within a group keep their original
@@ -196,6 +202,7 @@ polis_config <- function(
       population = population,
       worldpop = worldpop,
       pop_years = pop_years,
+      pop_source = pop_source,
       shape = shape,
       inputs = inputs,
       output_dir = output_dir,
@@ -228,6 +235,7 @@ print.polis_config <- function(x, ...) {
   cli::cli_text("Synonyms: {.val {!is.null(x$synonyms)}}")
   cli::cli_text("Population: {.val {!is.null(x$population)}}")
   cli::cli_text("WorldPop: {.val {!is.null(x$worldpop)}}")
+  cli::cli_text("Population source: {.val {x$pop_source %||% \"reconciled\"}}")
   cli::cli_text("Shape: {.val {!is.null(x$shape)}}")
   inputs_label <- .polis_inputs_label(x$inputs)
   cli::cli_text("Inputs: {.val {inputs_label}}")
@@ -806,6 +814,7 @@ run_pipeline <- function(
     # as of this date, so it is part of the cache key. Pin cfg$reference_date for
     # reproducible, cache-stable runs; otherwise it follows today's date.
     pop_ref_date <- cfg$reference_date %||% Sys.Date()
+    pop_src <- cfg$pop_source %||% "reconciled"
     cleaned$pop <- .polis_clean_cached(
       "pop",
       list(population = inputs$population, worldpop = cfg$worldpop),
@@ -817,7 +826,8 @@ run_pipeline <- function(
           cfg,
           shape = shape_fn(),
           worldpop = r$worldpop,
-          reference_date = pop_ref_date
+          reference_date = pop_ref_date,
+          pop_source = pop_src
         )
         if (!is.null(cfg$pop_years)) {
           args$years <- cfg$pop_years
@@ -825,7 +835,7 @@ run_pipeline <- function(
         do.call(clean_pop, args)
       },
       refresh = refresh,
-      extra = list(reference_date = pop_ref_date)
+      extra = list(reference_date = pop_ref_date, pop_source = pop_src)
     )
   }
 
