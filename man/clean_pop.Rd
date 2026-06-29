@@ -11,7 +11,8 @@ clean_pop(
   worldpop = NULL,
   years = 2010:2027,
   thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
-  reference_date = Sys.Date()
+  reference_date = Sys.Date(),
+  verbose = TRUE
 )
 }
 \arguments{

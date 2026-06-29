@@ -86,7 +86,8 @@ clean_pop <- function(
   worldpop = NULL,
   years = 2010:2027,
   thresholds = list(ratio_lo = 1 / 3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
-  reference_date = Sys.Date()
+  reference_date = Sys.Date(),
+  verbose = TRUE
 ) {
   th <- utils::modifyList(
     list(ratio_lo = 1 / 3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
@@ -101,7 +102,9 @@ clean_pop <- function(
   shape <- .polis_resolve_ref(shape)
 
   # ---- 1. normalise raw POLIS ------------------------------------------------
-  cli::cli_h2("Normalising raw POLIS population")
+  if (isTRUE(verbose)) {
+    cli::cli_h2("Normalising raw POLIS population")
+  }
   polis_long <- .pop_normalise_raw(population, age_map, years)
   # conflicting duplicate (place, year, age) rows, for the QA workbook
   dup_conflicts <- .pop_dup_conflicts(polis_long)
@@ -156,7 +159,9 @@ clean_pop <- function(
   )
 
   # ---- 3. impute each age band -----------------------------------------------
-  cli::cli_h2("Reconciling POLIS against WorldPop and imputing gaps")
+  if (isTRUE(verbose)) {
+    cli::cli_h2("Reconciling POLIS against WorldPop and imputing gaps")
+  }
   imp <- lapply(names(age_map), function(a) {
     polis_a <- polis_dedup |>
       dplyr::filter(age == a) |>
@@ -183,15 +188,19 @@ clean_pop <- function(
   wide <- .pop_widen_reconcile(imp, id_cols)
 
   # ---- 5. roll up to adm1 / adm0 via boundary-validity windows ---------------
-  cli::cli_h2("Rolling up to province and country")
-  adm2 <- .pop_apply_validity(wide, shp_geo, reference_date)
+  if (isTRUE(verbose)) {
+    cli::cli_h2("Rolling up to province and country")
+  }
+  adm2 <- .pop_apply_validity(wide, shp_geo)
   adm1 <- if (has_parents) .pop_rollup(adm2, .pop_adm1_by) else NULL
   adm0 <- if (has_parents) .pop_rollup(adm2, .pop_adm0_by) else NULL
 
-  cli::cli_alert_success(
-    "Cleaned population: {nrow(adm2)} adm2 row{?s} \\
-    across {dplyr::n_distinct(adm2$year)} year{?s}."
-  )
+  if (isTRUE(verbose)) {
+    cli::cli_alert_success(
+      "Cleaned population: {nrow(adm2)} adm2 row{?s} \\
+      across {dplyr::n_distinct(adm2$year)} year{?s}."
+    )
+  }
 
   list(
     adm0 = adm0,
@@ -259,12 +268,17 @@ clean_pop <- function(
   c_yr <- .pop_pick(population, c("Year", "year"))
   c_ag <- .pop_pick(population, c("AgeGroupName", "age_group_name"))
   c_va <- .pop_pick(population, c("Value", "value"))
-  rev_map <- stats::setNames(names(age_map), unname(age_map))
-  tibble::tibble(
+  # Match the age label tolerantly (case / spacing / punctuation), so e.g.
+  # "0 To 5 Years " still maps. Genuinely different wording (e.g. "0-15 years")
+  # will not match, which the zero-match guard below surfaces loudly.
+  norm <- function(x) gsub("[^a-z0-9]+", "", tolower(trimws(as.character(x))))
+  rev_map <- stats::setNames(names(age_map), norm(unname(age_map)))
+  raw_age <- as.character(population[[c_ag]])
+  out <- tibble::tibble(
     adm2_guid = .pop_brace_guid(population[[c_id]]),
     place_name = as.character(population[[c_nm]]),
     year = suppressWarnings(as.integer(population[[c_yr]])),
-    age = unname(rev_map[as.character(population[[c_ag]])]),
+    age = unname(rev_map[norm(raw_age)]),
     pop_polis = suppressWarnings(as.numeric(population[[c_va]]))
   ) |>
     dplyr::filter(
@@ -274,6 +288,18 @@ clean_pop <- function(
       year %in% years,
       !is.na(pop_polis)
     )
+  # A non-empty raw table that yields nothing means the age labels (or the year
+  # window) did not match. Fail loudly rather than return silent-empty
+  # denominators that would knock the base out of every population indicator.
+  if (nrow(out) == 0L && nrow(population) > 0L) {
+    seen <- unique(stats::na.omit(raw_age))
+    cli::cli_warn(c(
+      "No population rows matched the expected age groups \\
+      ({.val {unname(age_map)}}) within years {.val {range(years)}}.",
+      "i" = "Found {.field AgeGroupName} value{?s}: {.val {utils::head(seen, 8L)}}."
+    ))
+  }
+  out
 }
 
 # Place-years with >1 distinct POLIS value (the median is what dedup keeps).
@@ -534,6 +560,14 @@ clean_pop <- function(
 # (`imputed = TRUE`).
 #' @noRd
 .pop_impute_age <- function(base, th, age, has_parents) {
+  # a non-positive WorldPop value is not a usable denominator: treat it as
+  # missing so it is neither compared against (no Inf ratio) nor chosen as the
+  # value (no zero denominator reaching the indicators).
+  base$pop_wp <- dplyr::if_else(
+    !is.na(base$pop_wp) & base$pop_wp > 0,
+    base$pop_wp,
+    NA_real_
+  )
   has_wp <- any(!is.na(base$pop_wp))
   d <- base |>
     dplyr::mutate(
@@ -656,12 +690,19 @@ clean_pop <- function(
         (!is.na(u15_pop) & !is.na(all_pop) & u15_pop > all_pop) |
         (!is.na(u5_pop) & !is.na(all_pop) & u5_pop > all_pop)
     )
+  # Only reconcile a breach when all three bands have a WorldPop value: swapping
+  # the whole nested set to one source keeps it internally consistent. A partial
+  # swap could leave the ordering still broken and would override an otherwise
+  # good POLIS value, so those rows are left as-is (still flagged age_order_bad).
+  fix <- wide$age_order_bad &
+    !is.na(wide$u5_pop_wp) &
+    !is.na(wide$u15_pop_wp) &
+    !is.na(wide$all_pop_wp)
   for (age in c("u5", "u15", "all")) {
     pop_c <- paste0(age, "_pop")
     wp_c <- paste0(age, "_pop_wp")
     src_c <- paste0(age, "_pop_source")
     imp_c <- paste0(age, "_pop_imputed")
-    fix <- wide$age_order_bad & !is.na(wide[[wp_c]])
     wide[[src_c]][fix] <- "worldpop"
     wide[[imp_c]][fix] <- TRUE
     wide[[pop_c]][fix] <- wide[[wp_c]][fix]
@@ -707,7 +748,7 @@ clean_pop <- function(
 # guids double-counts. For each year keep the guid whose validity window spans
 # mid-year; the set valid in any one year tiles the country with no overlap.
 #' @noRd
-.pop_apply_validity <- function(wide, shp_geo, reference_date) {
+.pop_apply_validity <- function(wide, shp_geo) {
   if (
     is.null(shp_geo) ||
       !all(c("startdate", "enddate") %in% names(shp_geo))

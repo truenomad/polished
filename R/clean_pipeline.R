@@ -802,6 +802,10 @@ run_pipeline <- function(
   # indicators denominator below when cfg$population is unset.
   if (!is.null(inputs$population)) {
     cli::cli_h1("Cleaning population")
+    # clean_pop()'s orphan-GUID crosswalk depends on which boundaries are current
+    # as of this date, so it is part of the cache key. Pin cfg$reference_date for
+    # reproducible, cache-stable runs; otherwise it follows today's date.
+    pop_ref_date <- cfg$reference_date %||% Sys.Date()
     cleaned$pop <- .polis_clean_cached(
       "pop",
       list(population = inputs$population, worldpop = cfg$worldpop),
@@ -812,14 +816,16 @@ run_pipeline <- function(
           r$population,
           cfg,
           shape = shape_fn(),
-          worldpop = r$worldpop
+          worldpop = r$worldpop,
+          reference_date = pop_ref_date
         )
         if (!is.null(cfg$pop_years)) {
           args$years <- cfg$pop_years
         }
         do.call(clean_pop, args)
       },
-      refresh = refresh
+      refresh = refresh,
+      extra = list(reference_date = pop_ref_date)
     )
   }
 
@@ -1494,14 +1500,18 @@ load_polished <- function(
   cfg,
   version,
   compute,
-  refresh = FALSE
+  refresh = FALSE,
+  extra = NULL
 ) {
   key_parts <- list(
     name = name,
     inputs = lapply(handles, .polis_fingerprint),
     shape = .polis_fingerprint(cfg$shape),
     cfg = .polis_clean_cache_fields(cfg),
-    version = version
+    version = version,
+    # any extra run inputs a stream's output depends on beyond its handles
+    # (e.g. the population reference date), so the cache reflects them too
+    extra = extra
   )
   .polis_cache_run(
     name,
