@@ -146,13 +146,13 @@ raw <- data.frame(
 )
 clean_human_spec(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [23ms]
+#> ✔ Standardised names on 3 rows [22ms]
 #> 
 #> ℹ Parsing dates and deriving collection vars + lab intervals
-#> ✔ Parsed dates and derived collection vars + lab intervals [20ms]
+#> ✔ Parsed dates and derived collection vars + lab intervals [19ms]
 #> 
 #> ℹ Deriving virus classification and adequacy
-#> ✔ Derived virus classification and adequacy [22ms]
+#> ✔ Derived virus classification and adequacy [20ms]
 #> 
 #> ℹ Standardising admin names
 #> ✔ Standardised admin names [14ms]
@@ -164,7 +164,7 @@ clean_human_spec(raw)
 #> ✔ Enriched with country groupings [14ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [28ms]
+#> ✔ Deduplicated by id and finalised [27ms]
 #> 
 #> ✔ Cleaned 2 specimens.
 #> # A tibble: 2 × 23
