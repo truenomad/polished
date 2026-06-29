@@ -156,6 +156,10 @@
 <td>The per-stream cleaners: standardise names, sanitise dates, derive analytic variables, reconcile geography, dedup to one row per POLIS id.</td>
 </tr>
 <tr>
+<td><code><a href="reference/clean_pop.html">clean_pop()</a></code></td>
+<td>Clean the POLIS population reference into adm0/adm1/adm2 under-5 / under-15 / all-ages denominators, optionally reconciled against WorldPop and rolled up by boundary validity; the rate-indicator base.</td>
+</tr>
+<tr>
 <td><code><a href="reference/impute_geo_from_epid.html">impute_geo_from_epid()</a></code></td>
 <td>Recover missing administrative geography from the EPID through an ordered, provenance-stamped cascade — fills only blank cells, never fabricates on ambiguity.</td>
 </tr>

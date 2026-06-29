@@ -48,6 +48,16 @@ already-cleaned AFP and ES outputs.
 - [`clean_virus()`](https://truenomad.github.io/polished/reference/clean_virus.md)
   : Build the POLIS virus (positives) dataset from cleaned cases and ES
 
+## Population denominators
+
+Clean the raw POLIS population reference into adm0/adm1/adm2 under-5 /
+under-15 / all-ages denominators, optionally reconciled against WorldPop
+and rolled up via boundary-validity windows. These feed the rate
+indicators when no `population` is supplied to the pipeline directly.
+
+- [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)
+  : Clean POLIS population and (optionally) reconcile against WorldPop
+
 ## Virus classification
 
 The shared decoder that turns the raw POLIS virus fields into the
@@ -176,6 +186,8 @@ Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs,
 out-of-range values and date-ordering problems straight from the cleaned
 tables, exported as a styled Excel workbook (one tab per check), plus
 the ES-specific quality helpers.
+[`checks_pop()`](https://truenomad.github.io/polished/reference/checks_pop.md)
+documents the POLIS-vs-WorldPop population reconciliation instead.
 
 - [`checks_afp()`](https://truenomad.github.io/polished/reference/checks_afp.md)
   : Run AFP data-quality checks
@@ -187,6 +199,8 @@ the ES-specific quality helpers.
   : Run SIA data-quality checks
 - [`checks_virus()`](https://truenomad.github.io/polished/reference/checks_virus.md)
   : Run virus/positives data-quality checks
+- [`checks_pop()`](https://truenomad.github.io/polished/reference/checks_pop.md)
+  : Run POLIS population data-quality checks
 - [`write_checks_excel()`](https://truenomad.github.io/polished/reference/write_checks_excel.md)
   : Write a checks result to an Excel workbook
 - [`es_missingness()`](https://truenomad.github.io/polished/reference/es_missingness.md)

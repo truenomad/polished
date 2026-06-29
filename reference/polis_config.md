@@ -19,6 +19,8 @@ polis_config(
   synonyms = NULL,
   qa = NULL,
   population = NULL,
+  worldpop = NULL,
+  pop_years = NULL,
   shape = NULL,
   inputs = NULL,
   output_dir = NULL,
@@ -71,7 +73,27 @@ polis_config(
   in
   [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md).
   Either a data frame or a path to one (read via the file extension);
-  `NULL` (default) skips the rate indicators that need a denominator.
+  `NULL` (default) skips the rate indicators that need a denominator –
+  unless a `population` *input* is supplied, in which case
+  [`run_pipeline()`](https://truenomad.github.io/polished/reference/run_pipeline.md)
+  uses the adm2 table
+  [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)
+  produces as the denominator (so the pipeline makes its own).
+
+- worldpop:
+
+  Optional named list (`all`, `u5`, `u15`) of WorldPop sources passed to
+  [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)
+  when a `population` input is present: each element a directory of
+  annual GeoTIFFs (zonal-summed to `shape`) or a pre-extracted
+  adm2-by-year table / path. `NULL` (default) runs the POLIS-only path.
+
+- pop_years:
+
+  Calendar years to retain when cleaning population (POLIS carries
+  far-future projections). `NULL` (default) uses
+  [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)'s
+  default window.
 
 - shape:
 

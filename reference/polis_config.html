@@ -90,6 +90,8 @@ clean_es(), clean_virus(), clean_sia()) and the orchestrator
 <span>  synonyms <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  qa <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  population <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  worldpop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  inputs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -136,7 +138,22 @@ by <code><a href="flag_ambiguous.html">flag_ambiguous()</a></code>. <code>NULL</
 <dd><p>Optional under-15 population denominators used by
 <code><a href="calc_polio_indicators.html">calc_polio_indicators()</a></code> in <code><a href="run_pipeline.html">run_pipeline()</a></code>. Either a data frame or a
 path to one (read via the file extension); <code>NULL</code> (default) skips the
-rate indicators that need a denominator.</p></dd>
+rate indicators that need a denominator – unless a <code>population</code> <em>input</em> is
+supplied, in which case <code><a href="run_pipeline.html">run_pipeline()</a></code> uses the adm2 table <code><a href="clean_pop.html">clean_pop()</a></code>
+produces as the denominator (so the pipeline makes its own).</p></dd>
+
+
+<dt id="arg-worldpop">worldpop<a class="anchor" aria-label="anchor" href="#arg-worldpop"></a></dt>
+<dd><p>Optional named list (<code>all</code>, <code>u5</code>, <code>u15</code>) of WorldPop sources
+passed to <code><a href="clean_pop.html">clean_pop()</a></code> when a <code>population</code> input is present: each element a
+directory of annual GeoTIFFs (zonal-summed to <code>shape</code>) or a pre-extracted
+adm2-by-year table / path. <code>NULL</code> (default) runs the POLIS-only path.</p></dd>
+
+
+<dt id="arg-pop-years">pop_years<a class="anchor" aria-label="anchor" href="#arg-pop-years"></a></dt>
+<dd><p>Calendar years to retain when cleaning population (POLIS
+carries far-future projections). <code>NULL</code> (default) uses <code><a href="clean_pop.html">clean_pop()</a></code>'s
+default window.</p></dd>
 
 
 <dt id="arg-shape">shape<a class="anchor" aria-label="anchor" href="#arg-shape"></a></dt>

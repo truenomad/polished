@@ -181,6 +181,22 @@
         </dt>
         <dd>Build the POLIS virus (positives) dataset from cleaned cases and ES</dd>
       </dl></div><div class="section level2">
+      <h2 id="population-denominators">Population denominators<a class="anchor" aria-label="anchor" href="#population-denominators"></a></h2>
+
+      <div class="section-desc"><p>Clean the raw POLIS population reference into adm0/adm1/adm2 under-5 / under-15 / all-ages denominators, optionally reconciled against WorldPop and rolled up via boundary-validity windows. These feed the rate indicators when no <code>population</code> is supplied to the pipeline directly.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="clean_pop.html">clean_pop()</a></code>
+
+        </dt>
+        <dd>Clean POLIS population and (optionally) reconcile against WorldPop</dd>
+      </dl></div><div class="section level2">
       <h2 id="virus-classification">Virus classification<a class="anchor" aria-label="anchor" href="#virus-classification"></a></h2>
 
       <div class="section-desc"><p>The shared decoder that turns the raw POLIS virus fields into the standard WPV / cVDPV / aVDPV / iVDPV vocabulary used across every stream.</p></div>
@@ -477,7 +493,7 @@
       </dl></div><div class="section level2">
       <h2 id="data-quality-checks">Data-quality checks<a class="anchor" aria-label="anchor" href="#data-quality-checks"></a></h2>
 
-      <div class="section-desc"><p>Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs, out-of-range values and date-ordering problems straight from the cleaned tables, exported as a styled Excel workbook (one tab per check), plus the ES-specific quality helpers.</p></div>
+      <div class="section-desc"><p>Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs, out-of-range values and date-ordering problems straight from the cleaned tables, exported as a styled Excel workbook (one tab per check), plus the ES-specific quality helpers. <code><a href="../reference/checks_pop.html">checks_pop()</a></code> documents the POLIS-vs-WorldPop population reconciliation instead.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -518,6 +534,13 @@
 
         </dt>
         <dd>Run virus/positives data-quality checks</dd>
+
+        <dt>
+
+          <code><a href="checks_pop.html">checks_pop()</a></code>
+
+        </dt>
+        <dd>Run POLIS population data-quality checks</dd>
 
         <dt>
 

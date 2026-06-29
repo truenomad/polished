@@ -36,6 +36,7 @@ polis_config(start_year = 2018)
 #> "core_dates", "classification", "indicators", and "dates" -> other
 #> Synonyms: FALSE
 #> Population: FALSE
+#> WorldPop: FALSE
 #> Shape: FALSE
 #> Inputs: "<none>"
 #> Output dir: "<none>"

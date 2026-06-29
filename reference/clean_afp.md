@@ -134,25 +134,25 @@ raw <- data.frame(
 )
 clean_afp(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [287ms]
+#> ✔ Standardised names on 3 rows [196ms]
 #> 
 #> ℹ Parsing dates and deriving onset/age/intervals/timeliness
-#> ✔ Parsed dates and derived onset/age/intervals/timeliness [26ms]
+#> ✔ Parsed dates and derived onset/age/intervals/timeliness [28ms]
 #> 
 #> ℹ Classifying virus type and case classification
-#> ✔ Classified virus type and case classification [18ms]
+#> ✔ Classified virus type and case classification [26ms]
 #> 
 #> ℹ Standardising admin names
-#> ✔ Standardised admin names [14ms]
+#> ✔ Standardised admin names [15ms]
 #> 
 #> ℹ Recovering missing admin from the EPID
-#> ✔ Recovered admin for 0 cases from the EPID [17ms]
+#> ✔ Recovered admin for 0 cases from the EPID [13ms]
 #> 
 #> ℹ Enriching with country groupings and AFP flags
-#> ✔ Enriched with country groupings and AFP flags [18ms]
+#> ✔ Enriched with country groupings and AFP flags [15ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [65ms]
+#> ✔ Deduplicated by id and finalised [72ms]
 #> 
 #> ✔ Cleaned 2 AFP cases.
 #> # A tibble: 2 × 10
