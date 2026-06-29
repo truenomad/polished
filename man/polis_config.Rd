@@ -13,6 +13,7 @@ polis_config(
   population = NULL,
   worldpop = NULL,
   pop_years = NULL,
+  pop_source = c("reconciled", "polis", "worldpop"),
   shape = NULL,
   inputs = NULL,
   output_dir = NULL,
@@ -56,6 +57,11 @@ adm2-by-year table / path. \code{NULL} (default) runs the POLIS-only path.}
 \item{pop_years}{Calendar years to retain when cleaning population (POLIS
 carries far-future projections). \code{NULL} (default) uses \code{\link[=clean_pop]{clean_pop()}}'s
 default window.}
+
+\item{pop_source}{Which population \code{\link[=clean_pop]{clean_pop()}} uses as the denominator:
+\code{"reconciled"} (default; trusted POLIS, else WorldPop, else the admin
+ladder), \code{"polis"} (the full POLIS population, WorldPop ignored), or
+\code{"worldpop"} (WorldPop, else POLIS, else the ladder). See \code{\link[=clean_pop]{clean_pop()}}.}
 
 \item{shape}{Optional \strong{already-processed} district shape passed to every
 cleaner as \verb{shape =} for admin reconciliation (an \code{sf} polygon layer or a
