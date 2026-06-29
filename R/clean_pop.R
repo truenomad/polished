@@ -196,9 +196,13 @@ clean_pop <- function(
   adm0 <- if (has_parents) .pop_rollup(adm2, .pop_adm0_by) else NULL
 
   if (isTRUE(verbose)) {
+    n_adm2 <- nrow(adm2)
+    n_yr <- dplyr::n_distinct(adm2$year)
+    adm2_fmt <- .polis_big_num(n_adm2)
+    yr_fmt <- .polis_big_num(n_yr)
     cli::cli_alert_success(
-      "Cleaned population: {nrow(adm2)} adm2 row{?s} \\
-      across {dplyr::n_distinct(adm2$year)} year{?s}."
+      "Cleaned population: {adm2_fmt} adm2 {cli::qty(n_adm2)}row{?s} \\
+      across {yr_fmt} {cli::qty(n_yr)}year{?s}."
     )
   }
 
@@ -740,7 +744,13 @@ clean_pop <- function(
 # silently reported as zero).
 #' @noRd
 .pop_sum_or_na <- function(x) {
-  if (all(is.na(x))) NA_integer_ else as.integer(sum(x, na.rm = TRUE))
+  # population totals can exceed the 32-bit integer range at large aggregations,
+  # so sum as double rather than coercing to integer (which NA-overflows and
+  # warns "NAs introduced by coercion to integer range").
+  if (all(is.na(x))) {
+    return(NA_real_)
+  }
+  sum(as.numeric(x), na.rm = TRUE)
 }
 
 # Keep only the boundary valid each year. The shape is time-versioned: a district
