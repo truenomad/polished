@@ -173,6 +173,25 @@ no_pop$long[no_pop$long$indicator %in% c("npafp_count", "npafp_rate"), c("indica
 #> 1 npafp_count    12
 ```
 
+### Choosing the population source
+
+When the end-to-end pipeline builds the denominator itself from a raw
+POLIS population table (via
+[`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)),
+you choose **which** population it uses with `pop_source` on
+[`polis_config()`](https://truenomad.github.io/polished/reference/polis_config.md)
+(or directly on `clean_pop(pop_source =)`):
+
+- `"reconciled"` (default): a trusted POLIS value, else WorldPop, else a
+  district / province / country fallback.
+- `"polis"`: the full POLIS population (WorldPop is ignored even if
+  supplied).
+- `"worldpop"`: the WorldPop value, else POLIS, else the fallback.
+
+Whatever the mode, the cleaned population keeps `<age>_pop_polis` and
+`<age>_pop_wp` next to the chosen `<age>_pop`, so the three sources stay
+comparable.
+
 See
 [`?calc_polio_indicators`](https://truenomad.github.io/polished/reference/calc_polio_indicators.md)
 for the full argument set — the column-name overrides, the

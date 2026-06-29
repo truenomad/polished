@@ -63,7 +63,7 @@ too:
 ``` r
 
 names(cleaned)
-#> [1] "afp"   "virus"
+#> [1] "afp"        "virus"      "detections"
 ```
 
 ## Reconciliation and indicators via `polis_config()`
@@ -119,7 +119,7 @@ cfg <- polis_config(
 )
 out <- run_pipeline(cfg = cfg)
 names(out)
-#> [1] "afp"   "virus"
+#> [1] "afp"        "virus"      "detections"
 ```
 
 Read a country/period slice of the `polished_*` outputs back with

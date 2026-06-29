@@ -21,6 +21,7 @@ polis_config(
   population = NULL,
   worldpop = NULL,
   pop_years = NULL,
+  pop_source = c("reconciled", "polis", "worldpop"),
   shape = NULL,
   inputs = NULL,
   output_dir = NULL,
@@ -94,6 +95,16 @@ polis_config(
   far-future projections). `NULL` (default) uses
   [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)'s
   default window.
+
+- pop_source:
+
+  Which population
+  [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md)
+  uses as the denominator: `"reconciled"` (default; trusted POLIS, else
+  WorldPop, else the admin ladder), `"polis"` (the full POLIS
+  population, WorldPop ignored), or `"worldpop"` (WorldPop, else POLIS,
+  else the ladder). See
+  [`clean_pop()`](https://truenomad.github.io/polished/reference/clean_pop.md).
 
 - shape:
 

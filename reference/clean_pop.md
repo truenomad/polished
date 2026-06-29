@@ -20,6 +20,7 @@ clean_pop(
   years = 2010:2027,
   thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
   reference_date = Sys.Date(),
+  pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
 )
 ```
@@ -77,6 +78,29 @@ clean_pop(
   Date treated as "today" when deciding which boundary versions are
   *current* for the orphan-GUID name crosswalk. Default
   [`Sys.Date()`](https://rdrr.io/r/base/Sys.time.html).
+
+- pop_source:
+
+  Which population to use as the chosen `<age>_pop` value (the
+  denominator indicators read). One of:
+
+  `"reconciled"`
+
+  :   (default) a trusted POLIS value, else WorldPop, else the district
+      -\> province -\> country ladder.
+
+  `"polis"`
+
+  :   the POLIS value (gaps filled from the ladder; WorldPop is ignored
+      even if supplied) – the full POLIS population.
+
+  `"worldpop"`
+
+  :   the WorldPop value, else a POLIS value, else the ladder.
+
+  The output always keeps `<age>_pop_polis` and `<age>_pop_wp` alongside
+  the chosen `<age>_pop`, so every source stays inspectable whatever the
+  mode.
 
 - verbose:
 

@@ -37,6 +37,7 @@ polis_config(start_year = 2018)
 #> Synonyms: FALSE
 #> Population: FALSE
 #> WorldPop: FALSE
+#> Population source: "reconciled"
 #> Shape: FALSE
 #> Inputs: "<none>"
 #> Output dir: "<none>"

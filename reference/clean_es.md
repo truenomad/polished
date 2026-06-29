@@ -146,25 +146,25 @@ raw <- data.frame(
 )
 clean_es(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [17ms]
+#> ✔ Standardised names on 3 rows [22ms]
 #> 
 #> ℹ Parsing dates and deriving year/month of collection
-#> ✔ Parsed dates and derived year/month of collection [16ms]
+#> ✔ Parsed dates and derived year/month of collection [22ms]
 #> 
 #> ℹ Deriving virus-detection flags
-#> ✔ Derived virus-detection flags [13ms]
+#> ✔ Derived virus-detection flags [18ms]
 #> 
 #> ℹ Standardising admin names
-#> ✔ Standardised admin names [15ms]
+#> ✔ Standardised admin names [22ms]
 #> 
 #> ℹ Recovering missing admin from same-site samples
-#> ✔ Recovered admin for 0 samples from same-site records [10ms]
+#> ✔ Recovered admin for 0 samples from same-site records [14ms]
 #> 
 #> ℹ Enriching with country groupings
-#> ✔ Enriched with country groupings [11ms]
+#> ✔ Enriched with country groupings [16ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [18ms]
+#> ✔ Deduplicated by id and finalised [25ms]
 #> 
 #> ✔ Cleaned 2 ES samples.
 #> # A tibble: 2 × 20

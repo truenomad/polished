@@ -275,7 +275,7 @@ cleaned <- run_pipeline(
   cfg = cfg
 )
 names(cleaned)
-#> [1] "afp"   "es"    "virus"
+#> [1] "afp"        "es"         "virus"      "detections"
 ```
 
 Each cleaned element is exactly what the matching `clean_*()` call

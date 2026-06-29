@@ -92,6 +92,7 @@ clean_es(), clean_virus(), clean_sia()) and the orchestrator
 <span>  population <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  worldpop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pop_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pop_source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"reconciled"</span>, <span class="st">"polis"</span>, <span class="st">"worldpop"</span><span class="op">)</span>,</span>
 <span>  shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  inputs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -154,6 +155,13 @@ adm2-by-year table / path. <code>NULL</code> (default) runs the POLIS-only path.
 <dd><p>Calendar years to retain when cleaning population (POLIS
 carries far-future projections). <code>NULL</code> (default) uses <code><a href="clean_pop.html">clean_pop()</a></code>'s
 default window.</p></dd>
+
+
+<dt id="arg-pop-source">pop_source<a class="anchor" aria-label="anchor" href="#arg-pop-source"></a></dt>
+<dd><p>Which population <code><a href="clean_pop.html">clean_pop()</a></code> uses as the denominator:
+<code>"reconciled"</code> (default; trusted POLIS, else WorldPop, else the admin
+ladder), <code>"polis"</code> (the full POLIS population, WorldPop ignored), or
+<code>"worldpop"</code> (WorldPop, else POLIS, else the ladder). See <code><a href="clean_pop.html">clean_pop()</a></code>.</p></dd>
 
 
 <dt id="arg-shape">shape<a class="anchor" aria-label="anchor" href="#arg-shape"></a></dt>

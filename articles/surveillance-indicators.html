@@ -238,8 +238,20 @@
 <span><span class="co">#&gt;   &lt;chr&gt;       &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 npafp_count    12</span></span></code></pre></div>
 </div>
+<section class="level3"><h3 id="choosing-the-population-source">Choosing the population source<a class="anchor" aria-label="anchor" href="#choosing-the-population-source"></a>
+</h3>
+<p>When the end-to-end pipeline builds the denominator itself from a raw POLIS population table (via <code><a href="../reference/clean_pop.html">clean_pop()</a></code>), you choose <strong>which</strong> population it uses with <code>pop_source</code> on <code><a href="../reference/polis_config.html">polis_config()</a></code> (or directly on <code>clean_pop(pop_source =)</code>):</p>
+<ul>
+<li>
+<code>"reconciled"</code> (default): a trusted POLIS value, else WorldPop, else a district / province / country fallback.</li>
+<li>
+<code>"polis"</code>: the full POLIS population (WorldPop is ignored even if supplied).</li>
+<li>
+<code>"worldpop"</code>: the WorldPop value, else POLIS, else the fallback.</li>
+</ul>
+<p>Whatever the mode, the cleaned population keeps <code>&lt;age&gt;_pop_polis</code> and <code>&lt;age&gt;_pop_wp</code> next to the chosen <code>&lt;age&gt;_pop</code>, so the three sources stay comparable.</p>
 <p>See <code><a href="../reference/calc_polio_indicators.html">?calc_polio_indicators</a></code> for the full argument set — the column-name overrides, the classification vocabularies, and every threshold.</p>
-</section><script id="quarto-html-after-body" type="application/javascript">
+</section></section><script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);

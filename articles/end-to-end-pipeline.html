@@ -183,7 +183,7 @@
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">cleaned</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "afp"   "virus"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "afp"        "virus"      "detections"</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="reconciliation-and-indicators-via-polis_config">Reconciliation and indicators via <code>polis_config()</code>
 <a class="anchor" aria-label="anchor" href="#reconciliation-and-indicators-via-polis_config"></a>
@@ -221,7 +221,7 @@
 <span><span class="op">)</span></span>
 <span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/run_pipeline.html">run_pipeline</a></span><span class="op">(</span>cfg <span class="op">=</span> <span class="va">cfg</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "afp"   "virus"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "afp"        "virus"      "detections"</span></span></code></pre></div>
 </div>
 <p>Read a country/period slice of the <code>polished_*</code> outputs back with <code><a href="../reference/load_polished.html">load_polished()</a></code> — it defaults <code>output_dir</code> to the active config, so no arguments are needed beyond the filter:</p>
 <div class="cell">
