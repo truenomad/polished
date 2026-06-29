@@ -129,8 +129,11 @@ clean_virus <- function(
 
   if (isTRUE(verbose)) {
     cli::cli_progress_done()
-    n_fmt <- .polis_big_num(nrow(out))
-    cli::cli_alert_success("Built {n_fmt} poliovirus positive{?s}.")
+    n <- nrow(out)
+    n_fmt <- .polis_big_num(n)
+    cli::cli_alert_success(
+      "Built {n_fmt} poliovirus {cli::qty(n)}positive{?s}."
+    )
   }
   out
 }
