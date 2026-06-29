@@ -871,7 +871,9 @@ utils::globalVariables(c(
   "adm2_guid",
   "pop_polis",
   "n_votes",
-  "n"
+  "n",
+  "districts",
+  "with_polis"
 ))
 
 # ---- excel export -----------------------------------------------------------
