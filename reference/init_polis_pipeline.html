@@ -110,6 +110,7 @@ shapefile, extracts WorldPop, and runs <code><a href="run_pipeline.html">run_pip
 <span>  write_scripts <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  gitignore <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  renv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -157,6 +158,15 @@ of <code>"reconciled"</code>, <code>"polis"</code>, <code>"worldpop"</code>. Def
 exist. Default <code>FALSE</code> – existing files are kept (and skipped with a note),
 so re-running on a live project never clobbers it. Directory creation is
 always idempotent.</p></dd>
+
+
+<dt id="arg-renv">renv<a class="anchor" aria-label="anchor" href="#arg-renv"></a></dt>
+<dd><p>Set up <code>renv</code> in the project for reproducible package versions.
+When <code>TRUE</code> (and the optional <code>renv</code> package is installed) the scaffold runs
+<code><a href="https://rstudio.github.io/renv/reference/scaffold.html" class="external-link">renv::scaffold()</a></code> – writing <code>renv/activate.R</code>, a starter <code>renv.lock</code>, and
+wiring the generated <code>.Rprofile</code> to load it – so a later <code><a href="https://rstudio.github.io/renv/reference/snapshot.html" class="external-link">renv::snapshot()</a></code>
+pins your versions and collaborators reproduce them with <code><a href="https://rstudio.github.io/renv/reference/restore.html" class="external-link">renv::restore()</a></code>.
+Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>

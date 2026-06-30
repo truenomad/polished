@@ -214,6 +214,41 @@ names(afg)
 defaults `output_dir` to the active config, so once the `.Rprofile` has
 run no path argument is needed — just the filter.
 
+## Reproducible package versions with `renv`
+
+Pass `renv = TRUE` to wire the project for
+[renv](https://rstudio.github.io/renv/), so everyone installs the
+**same** package versions:
+
+``` r
+
+init_polis_pipeline("my_project", regions = "EMRO", renv = TRUE)
+```
+
+That runs
+[`renv::scaffold()`](https://rstudio.github.io/renv/reference/scaffold.html)
+— writing `renv/activate.R`, a starter `renv.lock`, and a single clean
+autoloader line in the generated `.Rprofile`
+(`source("renv/activate.R")`, no duplicate). The reproducibility loop is
+then:
+
+1.  install the packages the scripts need (`polished`, `sntutils`, `sf`,
+    `qs2`, `terra`, `exactextractr`, …);
+2.  [`renv::snapshot()`](https://rstudio.github.io/renv/reference/snapshot.html)
+    — pins those exact versions into `renv.lock` (renv finds them from
+    the `pkg::fun` calls in `2a` / `2b` and the `.Rprofile`);
+3.  commit `renv.lock`;
+4.  a collaborator runs
+    [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html)
+    to reproduce the library exactly.
+
+With `renv = FALSE` (the default) the `.Rprofile` still carries a
+*guarded* autoloader —
+`if (file.exists("renv/activate.R")) source("renv/activate.R")` — so the
+project is renv-ready: run
+[`renv::init()`](https://rstudio.github.io/renv/reference/init.html)
+yourself later and nothing else in the scaffold changes.
+
 ## Conventions baked in
 
 - **Idempotent.** Re-running never clobbers an edited `.Rprofile` or

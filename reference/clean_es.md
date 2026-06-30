@@ -152,7 +152,7 @@ clean_es(raw)
 #> ✔ Parsed dates and derived year/month of collection [19ms]
 #> 
 #> ℹ Deriving virus-detection flags
-#> ✔ Derived virus-detection flags [16ms]
+#> ✔ Derived virus-detection flags [17ms]
 #> 
 #> ℹ Standardising admin names
 #> ✔ Standardised admin names [18ms]

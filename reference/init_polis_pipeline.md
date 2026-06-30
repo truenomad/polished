@@ -25,6 +25,7 @@ init_polis_pipeline(
   write_scripts = TRUE,
   gitignore = TRUE,
   overwrite = FALSE,
+  renv = FALSE,
   quiet = FALSE
 )
 ```
@@ -72,6 +73,19 @@ init_polis_pipeline(
   Default `FALSE` – existing files are kept (and skipped with a note),
   so re-running on a live project never clobbers it. Directory creation
   is always idempotent.
+
+- renv:
+
+  Set up `renv` in the project for reproducible package versions. When
+  `TRUE` (and the optional `renv` package is installed) the scaffold
+  runs
+  [`renv::scaffold()`](https://rstudio.github.io/renv/reference/scaffold.html)
+  – writing `renv/activate.R`, a starter `renv.lock`, and wiring the
+  generated `.Rprofile` to load it – so a later
+  [`renv::snapshot()`](https://rstudio.github.io/renv/reference/snapshot.html)
+  pins your versions and collaborators reproduce them with
+  [`renv::restore()`](https://rstudio.github.io/renv/reference/restore.html).
+  Default `FALSE`.
 
 - quiet:
 

@@ -106,13 +106,13 @@ out <- run_pipeline(list(afp = afp))
 #> 
 #> ── Cleaning AFP cases ──────────────────────────────────────────────────────────
 #> ℹ Standardising names on 1 rows
-#> ✔ Standardised names on 1 rows [19ms]
+#> ✔ Standardised names on 1 rows [18ms]
 #> 
 #> ℹ Parsing dates and deriving onset/age/intervals/timeliness
 #> ✔ Parsed dates and derived onset/age/intervals/timeliness [18ms]
 #> 
 #> ℹ Classifying virus type and case classification
-#> ✔ Classified virus type and case classification [13ms]
+#> ✔ Classified virus type and case classification [19ms]
 #> 
 #> ℹ Standardising admin names
 #> ✔ Standardised admin names [13ms]

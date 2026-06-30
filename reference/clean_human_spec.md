@@ -149,13 +149,13 @@ clean_human_spec(raw)
 #> ✔ Standardised names on 3 rows [22ms]
 #> 
 #> ℹ Parsing dates and deriving collection vars + lab intervals
-#> ✔ Parsed dates and derived collection vars + lab intervals [23ms]
+#> ✔ Parsed dates and derived collection vars + lab intervals [24ms]
 #> 
 #> ℹ Deriving virus classification and adequacy
 #> ✔ Derived virus classification and adequacy [16ms]
 #> 
 #> ℹ Standardising admin names
-#> ✔ Standardised admin names [15ms]
+#> ✔ Standardised admin names [14ms]
 #> 
 #> ℹ Recovering missing admin from the EPID
 #> ✔ Recovered admin for 0 specimens from the EPID [14ms]
