@@ -8,8 +8,9 @@ articles:
   downloading-polis-data: downloading-polis-data.html
   end-to-end-pipeline: end-to-end-pipeline.html
   epid-geo-cleaning: epid-geo-cleaning.html
+  pipeline-project-scaffold: pipeline-project-scaffold.html
   surveillance-indicators: surveillance-indicators.html
-last_built: 2026-06-29T15:46Z
+last_built: 2026-06-30T05:45Z
 urls:
   reference: https://truenomad.github.io/polished/reference
   article: https://truenomad.github.io/polished/articles

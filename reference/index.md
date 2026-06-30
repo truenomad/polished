@@ -223,10 +223,16 @@ round-quality processors.
 
 ## Project workspace
 
-Set up a standard on-disk project (raw / processed / cache zones),
-stream the cleaning pipeline into it, and read partitioned slices back
+Scaffold a project on disk — either the full domain-numbered pipeline
+([`init_polis_pipeline()`](https://truenomad.github.io/polished/reference/init_polis_pipeline.md),
+with a wired `.Rprofile` and download/process scripts) or the lighter
+generic zones
+([`init_polis_project()`](https://truenomad.github.io/polished/reference/init_polis_project.md))
+— stream the cleaning pipeline into it, and read partitioned slices back
 out.
 
+- [`init_polis_pipeline()`](https://truenomad.github.io/polished/reference/init_polis_pipeline.md)
+  : Scaffold a full polished pipeline project
 - [`init_polis_project()`](https://truenomad.github.io/polished/reference/init_polis_project.md)
   : Create (or re-open) a data project
 - [`load_polished()`](https://truenomad.github.io/polished/reference/load_polished.md)

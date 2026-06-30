@@ -43,6 +43,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/downloading-polis-data.html">Downloading POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/end-to-end-pipeline.html">End-to-end pipeline</a></li>
+    <li><a class="dropdown-item" href="../articles/pipeline-project-scaffold.html">Scaffolding a pipeline project</a></li>
     <li><a class="dropdown-item" href="../articles/surveillance-indicators.html">Computing surveillance indicators</a></li>
     <li><a class="dropdown-item" href="../articles/data-quality-checks.html">Data-quality checks</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
@@ -595,7 +596,7 @@
       </dl></div><div class="section level2">
       <h2 id="project-workspace">Project workspace<a class="anchor" aria-label="anchor" href="#project-workspace"></a></h2>
 
-      <div class="section-desc"><p>Set up a standard on-disk project (raw / processed / cache zones), stream the cleaning pipeline into it, and read partitioned slices back out.</p></div>
+      <div class="section-desc"><p>Scaffold a project on disk — either the full domain-numbered pipeline (<code><a href="../reference/init_polis_pipeline.html">init_polis_pipeline()</a></code>, with a wired <code>.Rprofile</code> and download/process scripts) or the lighter generic zones (<code><a href="../reference/init_polis_project.html">init_polis_project()</a></code>) — stream the cleaning pipeline into it, and read partitioned slices back out.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -603,6 +604,13 @@
 
 
       <dl><dt>
+
+          <code><a href="init_polis_pipeline.html">init_polis_pipeline()</a></code>
+
+        </dt>
+        <dd>Scaffold a full polished pipeline project</dd>
+
+        <dt>
 
           <code><a href="init_polis_project.html">init_polis_project()</a></code>
 

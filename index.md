@@ -26,6 +26,16 @@ run_pipeline_dir("data/polis", "data/processed")
 #   -> polished_afp.*, polished_es.*, polished_virus.*  + checks_*.xlsx workbooks
 ```
 
+For a complete, reproducible project — the `01_data` domain layout, a
+wired `.Rprofile` (the `cfg` manifest), and runnable download + process
+scripts — in one call:
+
+``` r
+
+# scaffolds the whole pipeline project, then run 2a (download) and 2b (process)
+init_polis_pipeline("my_project", regions = "EMRO")
+```
+
 ## Key functions
 
 | Function | Purpose |
@@ -37,7 +47,8 @@ run_pipeline_dir("data/polis", "data/processed")
 | [`impute_geo_from_epid()`](https://truenomad.github.io/polished/reference/impute_geo_from_epid.md) | Recover missing administrative geography from the EPID through an ordered, provenance-stamped cascade — fills only blank cells, never fabricates on ambiguity. |
 | [`calc_polio_indicators()`](https://truenomad.github.io/polished/reference/calc_polio_indicators.md) | Compute the WHO POLIS indicator catalogue (NPAFP rate, stool adequacy, timeliness, dose, ES, virus, SIA, composite families) from the cleaned tables. |
 | [`checks_afp()`](https://truenomad.github.io/polished/reference/checks_afp.md) … [`write_checks_excel()`](https://truenomad.github.io/polished/reference/write_checks_excel.md) | Per-stream data-quality checks exported as a styled Excel workbook, one tab per check. |
-| [`init_polis_project()`](https://truenomad.github.io/polished/reference/init_polis_project.md) | Set up a standard raw / processed / cache project workspace and stream the pipeline into it. |
+| [`init_polis_pipeline()`](https://truenomad.github.io/polished/reference/init_polis_pipeline.md) | Scaffold a full pipeline project in one call — the `01_data` domain layout, a wired `.Rprofile` (the `cfg` manifest), a `.gitignore`, and runnable download / process scripts. |
+| [`init_polis_project()`](https://truenomad.github.io/polished/reference/init_polis_project.md) | Set up a lighter raw / processed / cache project workspace and stream the pipeline into it. |
 
 See the [vignettes](https://truenomad.github.io/polished/) and each
 function’s help page
