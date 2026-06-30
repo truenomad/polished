@@ -199,9 +199,12 @@ reference:
   - process_sia_quality
 - title: Project workspace
   desc: >
-    Set up a standard on-disk project (raw / processed / cache zones), stream the
+    Scaffold a project on disk — either the full domain-numbered pipeline
+    (`init_polis_pipeline()`, with a wired `.Rprofile` and download/process
+    scripts) or the lighter generic zones (`init_polis_project()`) — stream the
     cleaning pipeline into it, and read partitioned slices back out.
   contents:
+  - init_polis_pipeline
   - init_polis_project
   - load_polished
   - project_path
@@ -215,6 +218,7 @@ articles:
   - downloading-polis-data
   - cleaning-polis-data
   - end-to-end-pipeline
+  - pipeline-project-scaffold
   - surveillance-indicators
   - data-quality-checks
   - epid-geo-cleaning
