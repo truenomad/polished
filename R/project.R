@@ -184,3 +184,197 @@ clear_cache <- function(project, quiet = FALSE) {
   }
   invisible(project)
 }
+
+# =============================================================================
+# Pipeline project scaffold: the opinionated layout this package is built around
+# =============================================================================
+
+#' Scaffold a full polished pipeline project
+#'
+#' Creates the domain-numbered data-pipeline layout this package is built around
+#' (`01_data/` domains, `02_scripts/`, `03_outputs/`) and writes a wired
+#' `.Rprofile` (the `cfg` manifest), a `.gitignore`, and starter
+#' `2a_download_data.R` / `2b_process_data.R` scripts. Everything the generated
+#' `cfg` points at exists on disk, so after dropping the WHO polio GDB layers in
+#' `01_data/1a_shapefiles/raw/`, sourcing `2a` then `2b` runs the whole
+#' download -> clean pipeline (downloads POLIS streams + WorldPop, processes the
+#' shapefile, extracts WorldPop, and runs [run_pipeline()] over every stream).
+#'
+#' Distinct from [init_polis_project()], which scaffolds a lighter generic
+#' `raw/processed/validation/cache/logs` layout.
+#'
+#' @param root Path to the project root (created recursively if absent).
+#' @param regions WHO region codes the pipeline is scoped to, written into the
+#'   generated `cfg`. Default `"EMRO"`.
+#' @param start_year Earliest onset/collection year to retain. Default `2020`.
+#' @param pop_years Calendar years for the population / WorldPop step. Default
+#'   `2010:2027`.
+#' @param pop_source Population denominator preference for [polis_config()], one
+#'   of `"reconciled"`, `"polis"`, `"worldpop"`. Default `"reconciled"`.
+#' @param domains Which `01_data` domains to create: any of `"shapefiles"`,
+#'   `"population"`, `"polis"`, `"vaccination"`. Default all four.
+#' @param write_rprofile,write_scripts,gitignore Whether to write the wired
+#'   `.Rprofile`, the starter `02_scripts/`, and the `.gitignore`. Default
+#'   `TRUE`.
+#' @param overwrite Overwrite `.Rprofile` / scripts / `.gitignore` that already
+#'   exist. Default `FALSE` -- existing files are kept (and skipped with a note),
+#'   so re-running on a live project never clobbers it. Directory creation is
+#'   always idempotent.
+#' @param quiet Suppress the success message. Default `FALSE`.
+#'
+#' @return Invisibly, a list with `root` and the absolute `dirs` created.
+#'
+#' @seealso [init_polis_project()], [polis_config()], [run_pipeline()].
+#' @examples
+#' proj <- init_polis_pipeline(
+#'   file.path(tempdir(), "polio_pipeline"), regions = "EMRO", quiet = TRUE
+#' )
+#' file.exists(file.path(proj$root, ".Rprofile"))
+#'
+#' @export
+init_polis_pipeline <- function(
+  root,
+  regions = "EMRO",
+  start_year = 2020,
+  pop_years = 2010:2027,
+  pop_source = c("reconciled", "polis", "worldpop"),
+  domains = c("shapefiles", "population", "polis", "vaccination"),
+  write_rprofile = TRUE,
+  write_scripts = TRUE,
+  gitignore = TRUE,
+  overwrite = FALSE,
+  quiet = FALSE
+) {
+  if (!is.character(root) || length(root) != 1L || !nzchar(root)) {
+    cli::cli_abort("{.arg root} must be a single non-empty path.")
+  }
+  pop_source <- match.arg(pop_source)
+  domains <- match.arg(
+    domains,
+    c("shapefiles", "population", "polis", "vaccination"),
+    several.ok = TRUE
+  )
+
+  root <- .polis_project_root(root)
+  dir.create(root, recursive = TRUE, showWarnings = FALSE)
+  root <- normalizePath(root, winslash = "/", mustWork = TRUE)
+
+  dirs <- .polis_pipeline_dirs(domains)
+  for (d in dirs) {
+    dir.create(file.path(root, d), recursive = TRUE, showWarnings = FALSE)
+  }
+  # rprojroot sentinel so here::here() in the generated .Rprofile resolves
+  # deterministically even before the project is a git repo / RStudio project.
+  here_file <- file.path(root, ".here")
+  if (!file.exists(here_file)) {
+    file.create(here_file)
+  }
+
+  subs <- list(
+    REGIONS = paste(deparse(regions), collapse = " "),
+    START_YEAR = format(as.integer(start_year)),
+    POP_YEARS = paste(deparse(pop_years), collapse = " "),
+    POP_SOURCE = deparse(pop_source)
+  )
+  if (isTRUE(write_rprofile)) {
+    .polis_write_template(
+      "Rprofile",
+      file.path(root, ".Rprofile"),
+      subs,
+      overwrite
+    )
+  }
+  if (isTRUE(write_scripts)) {
+    sdir <- file.path(root, "02_scripts")
+    .polis_write_template(
+      "2a_download_data.R",
+      file.path(sdir, "2a_download_data.R"),
+      subs,
+      overwrite
+    )
+    .polis_write_template(
+      "2b_process_data.R",
+      file.path(sdir, "2b_process_data.R"),
+      subs,
+      overwrite
+    )
+  }
+  if (isTRUE(gitignore)) {
+    .polis_write_template(
+      "gitignore",
+      file.path(root, ".gitignore"),
+      subs,
+      overwrite
+    )
+  }
+
+  if (!isTRUE(quiet)) {
+    cli::cli_alert_success(
+      "Pipeline project ready at {.file {root}} ({length(dirs)} director{?y/ies})."
+    )
+    cli::cli_text(
+      "Next: drop the WHO polio GDB layers in \\
+      {.file 01_data/1a_shapefiles/raw}, then source \\
+      {.file 02_scripts/2a_download_data.R} and {.file 2b_process_data.R}."
+    )
+  }
+  invisible(list(root = root, dirs = file.path(root, dirs)))
+}
+
+# The directory set for the chosen 01_data domains, plus the always-present
+# 02_scripts / 03_outputs. Paths are relative to the project root.
+#' @noRd
+.polis_pipeline_dirs <- function(domains) {
+  d <- c("02_scripts", "03_outputs/plots", "03_outputs/tables")
+  if ("shapefiles" %in% domains) {
+    d <- c(d, "01_data/1a_shapefiles/raw", "01_data/1a_shapefiles/processed")
+  }
+  if ("population" %in% domains) {
+    d <- c(
+      d,
+      "01_data/1b_population/worldpop/raw/all",
+      "01_data/1b_population/worldpop/raw/u5",
+      "01_data/1b_population/worldpop/raw/u15",
+      "01_data/1b_population/worldpop/processed",
+      "01_data/1b_population/polis_pop/raw",
+      "01_data/1b_population/polis_pop/processed"
+    )
+  }
+  if ("polis" %in% domains) {
+    d <- c(
+      d,
+      "01_data/1c_polis/raw",
+      "01_data/1c_polis/processed/data",
+      "01_data/1c_polis/processed/checks",
+      "01_data/1c_polis/processed/cache"
+    )
+  }
+  if ("vaccination" %in% domains) {
+    d <- c(d, "01_data/1d_vaccination/raw", "01_data/1d_vaccination/processed")
+  }
+  d
+}
+
+# Read a packaged template, substitute {{TOKEN}} placeholders, write it out.
+# Existing files are left untouched unless `overwrite = TRUE`, so re-scaffolding
+# a live project never clobbers an edited .Rprofile / script.
+#' @noRd
+.polis_write_template <- function(name, dest, subs, overwrite = FALSE) {
+  if (file.exists(dest) && !isTRUE(overwrite)) {
+    cli::cli_alert_info(
+      "{.file {basename(dest)}} exists -- keeping it (use {.code overwrite = TRUE})."
+    )
+    return(invisible(dest))
+  }
+  src <- system.file("templates", name, package = "polished")
+  if (!nzchar(src) || !file.exists(src)) {
+    cli::cli_abort("Template {.val {name}} not found in the installed package.")
+  }
+  txt <- readLines(src, warn = FALSE)
+  for (k in names(subs)) {
+    txt <- gsub(paste0("{{", k, "}}"), subs[[k]], txt, fixed = TRUE)
+  }
+  dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
+  writeLines(txt, dest)
+  invisible(dest)
+}

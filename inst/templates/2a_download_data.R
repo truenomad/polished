@@ -1,0 +1,85 @@
+##################  Download all GPEI raw data  ###############################
+# Paths come from the project manifest in .Rprofile (pop_raw / wp_raw /
+# polis_raw). NOTE: the raw WHO polio GDB shapefile layers are NOT downloaded
+# here -- drop them into 01_data/1a_shapefiles/raw/ manually.
+
+cli::cli_h1("Download all GPEI raw data")
+
+# analysis year window; WorldPop age-band rasters start at 2015
+pop_years <- {
+  {
+    POP_YEARS
+  }
+}
+wp_years <- pop_years[pop_years >= 2015]
+
+# Polis population (reference table) -------------------------------------------
+if (!file.exists(file.path(pop_raw, "raw_population.qs2"))) {
+  polished::get_polis_data(
+    polis_folder = pop_raw,
+    tables = "population",
+    output_format = "qs2",
+    workers = 11
+  )
+} else {
+  cli::cli_alert_info("polis population already downloaded -- skipping")
+}
+
+# WorldPop rasters: u15 (0-14), u5 (0-4) age bands + total -----------------------
+download_age_band <- function(sub, age_range) {
+  out_dir <- file.path(wp_raw, sub)
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  prefix <- sprintf("global_total_%02d_%02d_", age_range[1], age_range[2])
+  have <- list.files(out_dir, pattern = paste0(prefix, "\\d{4}\\.tif$"))
+  if (!all(paste0(prefix, wp_years, ".tif") %in% have)) {
+    sntutils::download_worldpop_age_band(
+      country_codes = "global",
+      years = wp_years,
+      age_range = age_range,
+      out_dir = out_dir
+    )
+  } else {
+    cli::cli_alert_info("worldpop {sub} already downloaded -- skipping")
+  }
+}
+download_age_band("u15", c(0, 14))
+download_age_band("u5", c(0, 4))
+
+all_dir <- file.path(wp_raw, "all")
+dir.create(all_dir, recursive = TRUE, showWarnings = FALSE)
+# total population is available for the full window (not just 2015+)
+if (
+  length(list.files(all_dir, pattern = "global_pop_.*\\.tif$")) <
+    length(pop_years)
+) {
+  sntutils::download_worldpop(
+    country_codes = "global",
+    years = pop_years,
+    dest_dir = all_dir
+  )
+} else {
+  cli::cli_alert_info("worldpop total-pop already downloaded -- skipping")
+}
+
+# Polis surveillance streams ---------------------------------------------------
+polished::get_polis_data(
+  polis_folder = polis_raw,
+  tables = c(
+    "case",
+    "human_specimen",
+    "environmental_sample",
+    "activity",
+    "sub_activity",
+    "im",
+    "lqas"
+  ),
+  output_format = "qs2",
+  workers = 11,
+  log_file = NULL
+)
+
+invisible(gc())
+cli::cli_rule(
+  left = "All downloads complete",
+  right = format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+)

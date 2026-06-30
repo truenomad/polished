@@ -1,0 +1,161 @@
+---
+title: "Scaffolding a pipeline project"
+vignette: >
+  %\VignetteIndexEntry{Scaffolding a pipeline project}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    df-print: default
+knitr:
+  opts_chunk:
+    collapse: true
+    comment: "#>"
+    message: false
+    warning: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(polished)
+```
+
+A real POLIS analysis is more than one `run_pipeline()` call: it has raw
+downloads, processed shapefiles, WorldPop rasters, a population reconciliation,
+and the cleaned `polished_*` outputs — each with a conventional home on disk, and
+a `cfg` that ties them together. `init_polis_pipeline()` stamps out that whole
+project in one call: the directory layout, a wired `.Rprofile`, a `.gitignore`,
+and runnable `2a_download_data.R` / `2b_process_data.R` starter scripts.
+
+It is the heavier sibling of `init_polis_project()`:
+
+| | `init_polis_project()` | `init_polis_pipeline()` |
+|---|---|---|
+| Layout | generic `raw/processed/validation/cache/logs` zones | domain-numbered `01_data` (shapefiles / population / polis / vaccination), `02_scripts`, `03_outputs` |
+| Writes a `.Rprofile`? | no | yes — the `cfg` manifest |
+| Writes starter scripts? | no | yes — download + process |
+| Use it when | you just need tidy zones for one stream | you want the full reproducible download → clean pipeline |
+
+## One call
+
+```{r}
+#| label: scaffold
+root <- file.path(tempdir(), "polio_pipeline")
+
+init_polis_pipeline(
+  root,
+  regions    = c("EMRO", "AFRO"), # WHO regions the pipeline is scoped to
+  start_year = 2015,
+  pop_years  = 2010:2027,
+  pop_source = "reconciled"       # "reconciled" | "polis" | "worldpop"
+)
+```
+
+## The layout it produces
+
+```{r}
+#| label: tree
+cat(sub(root, "<project>", list.dirs(root), fixed = TRUE), sep = "\n")
+```
+
+Each `01_data` domain has a `raw/` (inputs) and `processed/` (derived) half:
+
+| Domain | Holds | Produced by |
+|---|---|---|
+| `1a_shapefiles` | WHO polio GDB layers → `spatial_global_adm{0,1,2}.qs2` | `process_spatial()` (2b) |
+| `1b_population/worldpop` | annual rasters → extracted adm2 tables | 2a download + 2b extract |
+| `1b_population/polis_pop` | `raw_population.qs2` → cleaned denominators | `get_polis_data()` + `clean_pop()` |
+| `1c_polis` | `raw_*.qs2` → `polished_*.qs2` (+ `checks/`, `cache/`) | `get_polis_data()` + `run_pipeline()` |
+| `1d_vaccination` | coverage rasters (optional downstream models) | your own scripts |
+
+Pass `domains =` to scaffold a subset (e.g. `c("shapefiles", "polis")`).
+
+## The wired `.Rprofile`
+
+The generated `.Rprofile` is the project **manifest** — the data-directory roots
+are defined once as the single source of truth, and `cfg` is built from them, so
+the scripts and the cleaners share exactly the same paths:
+
+```{r}
+#| label: rprofile
+cat(readLines(file.path(root, ".Rprofile")), sep = "\n")
+```
+
+The four knobs you passed to `init_polis_pipeline()` are interpolated into the
+`polis_config()` call, so editing them later is just editing the `.Rprofile`:
+
+- **`regions`** — scopes the surveillance streams (AFP/ES/SIA/…). Population is
+  *foundational* and stays global regardless.
+- **`start_year`** — earliest onset/collection year retained.
+- **`pop_years`** — the population/WorldPop window.
+- **`pop_source`** — which value `clean_pop()` chooses as `<age>_pop`:
+  `"reconciled"` (POLIS, with WorldPop fallback on missing/implausible values),
+  `"polis"` (POLIS only), or `"worldpop"` (WorldPop only). All three of
+  `_pop` / `_pop_polis` / `_pop_wp` are always kept, so this only changes the
+  default column — you can pick a different denominator downstream without
+  re-running.
+
+Because `cfg` is built outside any `if (interactive())` guard (and behind a
+`requireNamespace()` check), it is available both in RStudio and under
+`Rscript`, so the starter scripts run headless.
+
+## The starter scripts
+
+```{r}
+#| label: scripts
+list.files(file.path(root, "02_scripts"))
+```
+
+`2a_download_data.R` pulls **every** input: the POLIS population reference, the
+seven POLIS surveillance tables (`get_polis_data()`), and the WorldPop rasters
+(`sntutils::download_worldpop*`). Only missing files are (re)fetched. The raw WHO
+polio GDB shapefile layers are the one thing it does **not** download — drop
+those into `01_data/1a_shapefiles/raw/` yourself.
+
+`2b_process_data.R` runs in three sections, in order:
+
+1. **Spatial** — `process_spatial()` cleans the GDB layers to
+   `spatial_global_adm2.qs2` (everything else keys off it).
+2. **WorldPop** — sums the annual rasters to adm2 tables (cached on disk;
+   re-extracted only if missing), which `clean_pop()` then consumes.
+3. **POLIS** — `run_pipeline(cfg = cfg)` cleans every stream (AFP / ES / SIA /
+   LQAS / IM / virus / indicators **and** population via `clean_pop()`) and
+   writes `polished_*` outputs plus `checks_*` workbooks.
+
+## Running it end to end
+
+```{r}
+#| label: run
+#| eval: false
+# 0. drop the WHO polio GDB layers into 01_data/1a_shapefiles/raw/
+# 1. download every input
+source("02_scripts/2a_download_data.R")
+# 2. process: shapefile -> worldpop extract -> run_pipeline over all streams
+source("02_scripts/2b_process_data.R")
+# 3. read a country / period slice of the cleaned outputs back
+afg <- load_polished(country = "AFG")
+names(afg)
+```
+
+`load_polished()` defaults `output_dir` to the active config, so once the
+`.Rprofile` has run no path argument is needed — just the filter.
+
+## Conventions baked in
+
+- **Idempotent.** Re-running never clobbers an edited `.Rprofile` or script;
+  existing files are kept unless you pass `overwrite = TRUE`. Directory creation
+  is always safe to repeat.
+- **`.here` sentinel.** A `.here` marker is written so `here::here()` in the
+  `.Rprofile` resolves to the project root even before it is a git repo or
+  RStudio project.
+- **Sensitive raw data stays out of git.** The generated `.gitignore` excludes
+  `01_data/**/raw/` — raw POLIS tables are individual-level line-lists (and
+  large), so they should not be committed. Re-download them with `2a` instead.
+- **One source of truth for paths.** The `.Rprofile` defines the roots; the
+  scripts and `cfg` reference them, so there is never a second, drifting copy.
+
+For a lighter, single-stream workspace (no `.Rprofile`, no scripts) see
+`init_polis_project()` and the *End-to-end pipeline* article.
