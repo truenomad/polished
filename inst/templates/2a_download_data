@@ -6,11 +6,7 @@
 cli::cli_h1("Download all GPEI raw data")
 
 # analysis year window; WorldPop age-band rasters start at 2015
-pop_years <- {
-  {
-    POP_YEARS
-  }
-}
+pop_years <- {{POP_YEARS}}
 wp_years <- pop_years[pop_years >= 2015]
 
 # Polis population (reference table) -------------------------------------------

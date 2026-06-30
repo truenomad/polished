@@ -44,6 +44,7 @@ Suggests:
     dtplyr,
     exactextractr,
     fs,
+    here,
     jsonlite,
     openxlsx,
     qs2,
