@@ -352,7 +352,7 @@
 <li>
 <strong>Idempotent.</strong> Re-running never clobbers an edited <code>.Rprofile</code> or script; existing files are kept unless you pass <code>overwrite = TRUE</code>. Directory creation is always safe to repeat.</li>
 <li>
-<strong><code>.here</code> sentinel.</strong> A <code>.here</code> marker is written so <code>here::here()</code> in the <code>.Rprofile</code> resolves to the project root even before it is a git repo or RStudio project.</li>
+<strong><code>.here</code> sentinel.</strong> A <code>.here</code> marker is written so <code><a href="https://here.r-lib.org/reference/here.html" class="external-link">here::here()</a></code> in the <code>.Rprofile</code> resolves to the project root even before it is a git repo or RStudio project.</li>
 <li>
 <strong>Sensitive raw data stays out of git.</strong> The generated <code>.gitignore</code> excludes <code>01_data/**/raw/</code> — raw POLIS tables are individual-level line-lists (and large), so they should not be committed. Re-download them with <code>2a</code> instead.</li>
 <li>

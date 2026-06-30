@@ -155,10 +155,10 @@ clean_human_spec(raw)
 #> ✔ Derived virus classification and adequacy [16ms]
 #> 
 #> ℹ Standardising admin names
-#> ✔ Standardised admin names [14ms]
+#> ✔ Standardised admin names [15ms]
 #> 
 #> ℹ Recovering missing admin from the EPID
-#> ✔ Recovered admin for 0 specimens from the EPID [13ms]
+#> ✔ Recovered admin for 0 specimens from the EPID [14ms]
 #> 
 #> ℹ Enriching with country groupings
 #> ✔ Enriched with country groupings [14ms]

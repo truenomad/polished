@@ -219,9 +219,10 @@ run no path argument is needed — just the filter.
 - **Idempotent.** Re-running never clobbers an edited `.Rprofile` or
   script; existing files are kept unless you pass `overwrite = TRUE`.
   Directory creation is always safe to repeat.
-- **`.here` sentinel.** A `.here` marker is written so `here::here()` in
-  the `.Rprofile` resolves to the project root even before it is a git
-  repo or RStudio project.
+- **`.here` sentinel.** A `.here` marker is written so
+  [`here::here()`](https://here.r-lib.org/reference/here.html) in the
+  `.Rprofile` resolves to the project root even before it is a git repo
+  or RStudio project.
 - **Sensitive raw data stays out of git.** The generated `.gitignore`
   excludes `01_data/**/raw/` — raw POLIS tables are individual-level
   line-lists (and large), so they should not be committed. Re-download

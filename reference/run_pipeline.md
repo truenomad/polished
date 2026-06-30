@@ -118,7 +118,7 @@ out <- run_pipeline(list(afp = afp))
 #> ✔ Standardised admin names [13ms]
 #> 
 #> ℹ Recovering missing admin from the EPID
-#> ✔ Recovered admin for 0 cases from the EPID [14ms]
+#> ✔ Recovered admin for 0 cases from the EPID [13ms]
 #> 
 #> ℹ Enriching with country groupings and AFP flags
 #> ✔ Enriched with country groupings and AFP flags [14ms]

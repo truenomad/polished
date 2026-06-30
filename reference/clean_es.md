@@ -146,7 +146,7 @@ raw <- data.frame(
 )
 clean_es(raw)
 #> ℹ Standardising names on 3 rows
-#> ✔ Standardised names on 3 rows [21ms]
+#> ✔ Standardised names on 3 rows [20ms]
 #> 
 #> ℹ Parsing dates and deriving year/month of collection
 #> ✔ Parsed dates and derived year/month of collection [19ms]
