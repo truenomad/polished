@@ -90,6 +90,34 @@ test_that("init_polis_pipeline does not clobber existing files without overwrite
   expect_gt(length(readLines(file.path(root, ".Rprofile"))), 1L)
 })
 
+test_that("renv = FALSE keeps the guarded autoloader (renv-ready, not required)", {
+  root <- withr::local_tempdir()
+  init_polis_pipeline(root, quiet = TRUE)
+  rp <- readLines(file.path(root, ".Rprofile"))
+  expect_true(any(grepl(
+    'if (file.exists("renv/activate.R")) source("renv/activate.R")',
+    rp,
+    fixed = TRUE
+  )))
+  expect_false(dir.exists(file.path(root, "renv")))
+})
+
+test_that("renv = TRUE sets up renv with a single, clean autoloader", {
+  skip_if_not_installed("renv")
+  root <- withr::local_tempdir()
+  suppressMessages(init_polis_pipeline(root, renv = TRUE, quiet = TRUE))
+
+  expect_true(file.exists(file.path(root, "renv/activate.R")))
+  expect_true(file.exists(file.path(root, "renv.lock")))
+
+  rp <- readLines(file.path(root, ".Rprofile"))
+  # exactly one renv autoloader (no duplicate), guarded line gone, manifest kept
+  expect_equal(sum(grepl('source("renv/activate.R")', rp, fixed = TRUE)), 1L)
+  expect_false(any(grepl('file.exists("renv/activate.R")', rp, fixed = TRUE)))
+  expect_true(any(grepl("polis_config", rp, fixed = TRUE)))
+  expect_silent(parse(file.path(root, ".Rprofile")))
+})
+
 test_that("init_polis_pipeline rejects a bad root and bad pop_source", {
   expect_error(init_polis_pipeline(character(0), quiet = TRUE), "root")
   expect_error(

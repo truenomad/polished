@@ -220,6 +220,12 @@ clear_cache <- function(project, quiet = FALSE) {
 #'   exist. Default `FALSE` -- existing files are kept (and skipped with a note),
 #'   so re-running on a live project never clobbers it. Directory creation is
 #'   always idempotent.
+#' @param renv Set up `renv` in the project for reproducible package versions.
+#'   When `TRUE` (and the optional `renv` package is installed) the scaffold runs
+#'   [renv::scaffold()] -- writing `renv/activate.R`, a starter `renv.lock`, and
+#'   wiring the generated `.Rprofile` to load it -- so a later `renv::snapshot()`
+#'   pins your versions and collaborators reproduce them with `renv::restore()`.
+#'   Default `FALSE`.
 #' @param quiet Suppress the success message. Default `FALSE`.
 #'
 #' @return Invisibly, a list with `root` and the absolute `dirs` created.
@@ -243,6 +249,7 @@ init_polis_pipeline <- function(
   write_scripts = TRUE,
   gitignore = TRUE,
   overwrite = FALSE,
+  renv = FALSE,
   quiet = FALSE
 ) {
   if (!is.character(root) || length(root) != 1L || !nzchar(root)) {
@@ -256,6 +263,11 @@ init_polis_pipeline <- function(
   )
 
   root <- .polis_project_root(root)
+  # whether a (user-authored) .Rprofile already exists, captured BEFORE renv
+  # scaffolding can drop a placeholder one -- so re-running never clobbers a
+  # real one but the renv placeholder is always replaced by our manifest.
+  rprofile_path <- file.path(root, ".Rprofile")
+  rprofile_pre <- file.exists(rprofile_path)
   dir.create(root, recursive = TRUE, showWarnings = FALSE)
   root <- normalizePath(root, winslash = "/", mustWork = TRUE)
 
@@ -270,18 +282,40 @@ init_polis_pipeline <- function(
     file.create(here_file)
   }
 
+  # Optional renv setup. renv::scaffold() writes renv/activate.R + a starter
+  # renv.lock and prepends an autoloader to .Rprofile; we then write our manifest
+  # .Rprofile (overwriting that placeholder) with an unguarded source() line.
+  do_renv <- isTRUE(renv)
+  if (do_renv && !requireNamespace("renv", quietly = TRUE)) {
+    cli::cli_alert_warning(
+      "{.pkg renv} is not installed; skipping renv setup. Install it and \\
+      re-run with {.code renv = TRUE} for reproducible package versions."
+    )
+    do_renv <- FALSE
+  }
+  if (do_renv) {
+    renv::scaffold(project = root)
+  }
+
   subs <- list(
     REGIONS = paste(deparse(regions), collapse = " "),
     START_YEAR = format(as.integer(start_year)),
     POP_YEARS = paste(deparse(pop_years), collapse = " "),
-    POP_SOURCE = deparse(pop_source)
+    POP_SOURCE = deparse(pop_source),
+    RENV_SOURCE = if (do_renv) {
+      'source("renv/activate.R")'
+    } else {
+      'if (file.exists("renv/activate.R")) source("renv/activate.R")'
+    }
   )
   if (isTRUE(write_rprofile)) {
+    # replace the renv placeholder .Rprofile on a fresh project, but still keep a
+    # genuinely pre-existing (user-edited) one unless overwrite = TRUE.
     .polis_write_template(
       "Rprofile",
-      file.path(root, ".Rprofile"),
+      rprofile_path,
       subs,
-      overwrite
+      overwrite || (do_renv && !rprofile_pre)
     )
   }
   if (isTRUE(write_scripts)) {
@@ -319,6 +353,12 @@ init_polis_pipeline <- function(
       {.file 01_data/1a_shapefiles/raw}, then source \\
       {.file 02_scripts/2a_download_data.R} and {.file 2b_process_data.R}."
     )
+    if (do_renv) {
+      cli::cli_text(
+        "renv is set up: install your packages, then {.run renv::snapshot()} to \\
+        pin them (collaborators reproduce with {.run renv::restore()})."
+      )
+    }
   }
   invisible(list(root = root, dirs = file.path(root, dirs)))
 }

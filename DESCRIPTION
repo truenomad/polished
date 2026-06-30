@@ -49,6 +49,7 @@ Suggests:
     openxlsx,
     qs2,
     quarto,
+    renv,
     skimr,
     terra,
     testthat (>= 3.0.0),
