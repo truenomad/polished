@@ -286,14 +286,16 @@ init_polis_pipeline <- function(
   }
   if (isTRUE(write_scripts)) {
     sdir <- file.path(root, "02_scripts")
+    # template sources have no .R extension (so air / lintr / the format hook
+    # leave their {{...}} placeholders alone); the written scripts are .R.
     .polis_write_template(
-      "2a_download_data.R",
+      "2a_download_data",
       file.path(sdir, "2a_download_data.R"),
       subs,
       overwrite
     )
     .polis_write_template(
-      "2b_process_data.R",
+      "2b_process_data",
       file.path(sdir, "2b_process_data.R"),
       subs,
       overwrite
