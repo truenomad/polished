@@ -42,6 +42,9 @@ one call:
 ```r
 # scaffolds the whole pipeline project, then run 2a (download) and 2b (process)
 init_polis_pipeline("my_project", regions = "EMRO")
+
+# add renv = TRUE to pin package versions (renv::snapshot / restore) for collaborators
+init_polis_pipeline("my_project", regions = "EMRO", renv = TRUE)
 ```
 
 ## Key functions

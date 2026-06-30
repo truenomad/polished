@@ -3,7 +3,7 @@
 # and the 02_scripts/. Edit `regions` / `start_year` / `pop_years` /
 # `pop_source` to taste.
 
-if (file.exists("renv/activate.R")) source("renv/activate.R")
+{{RENV_SOURCE}}
 
 if (
   requireNamespace("polished", quietly = TRUE) &&

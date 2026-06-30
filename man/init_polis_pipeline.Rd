@@ -15,6 +15,7 @@ init_polis_pipeline(
   write_scripts = TRUE,
   gitignore = TRUE,
   overwrite = FALSE,
+  renv = FALSE,
   quiet = FALSE
 )
 }
@@ -43,6 +44,13 @@ of \code{"reconciled"}, \code{"polis"}, \code{"worldpop"}. Default \code{"reconc
 exist. Default \code{FALSE} -- existing files are kept (and skipped with a note),
 so re-running on a live project never clobbers it. Directory creation is
 always idempotent.}
+
+\item{renv}{Set up \code{renv} in the project for reproducible package versions.
+When \code{TRUE} (and the optional \code{renv} package is installed) the scaffold runs
+\code{\link[renv:scaffold]{renv::scaffold()}} -- writing \code{renv/activate.R}, a starter \code{renv.lock}, and
+wiring the generated \code{.Rprofile} to load it -- so a later \code{renv::snapshot()}
+pins your versions and collaborators reproduce them with \code{renv::restore()}.
+Default \code{FALSE}.}
 
 \item{quiet}{Suppress the success message. Default \code{FALSE}.}
 }
