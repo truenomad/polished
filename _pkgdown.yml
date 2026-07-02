@@ -219,6 +219,7 @@ articles:
   - cleaning-polis-data
   - end-to-end-pipeline
   - pipeline-project-scaffold
+  - pipeline-structure
   - surveillance-indicators
   - data-quality-checks
   - epid-geo-cleaning
