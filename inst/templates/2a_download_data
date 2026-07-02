@@ -1,9 +1,9 @@
-##################  Download all GPEI raw data  ###############################
+##################  Download all GPEI raw + pop data  ###############################
 # Paths come from the project manifest in .Rprofile (pop_raw / wp_raw /
 # polis_raw). NOTE: the raw WHO polio GDB shapefile layers are NOT downloaded
 # here -- drop them into 01_data/1a_shapefiles/raw/ manually.
 
-cli::cli_h1("Download all GPEI raw data")
+cli::cli_h1("Download all GPEI raw + pop data")
 
 # analysis year window; WorldPop age-band rasters start at 2015
 pop_years <- {{POP_YEARS}}

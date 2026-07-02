@@ -1,5 +1,29 @@
 # polished 0.2.0
 
+* Added `clean_pop()`, the POLIS population cleaner: it turns the raw population
+  reference into adm0/adm1/adm2 under-5 / under-15 / all-ages denominators,
+  optionally reconciled against a WorldPop input and rolled up by boundary
+  validity. This is the base for the rate indicators. `checks_pop()` and a
+  `checks_pop` workbook tab add its per-stream data-quality checks.
+* `polis_config()` and `clean_pop()` gain `pop_source` to choose the
+  `<age>_pop` denominator: `"reconciled"` (default — a trusted POLIS value,
+  else WorldPop, else the district -> province -> country ladder), `"polis"`,
+  or `"worldpop"`. The chosen value keeps `<age>_pop_polis` and `<age>_pop_wp`
+  alongside it so every source stays inspectable.
+* Added `init_polis_pipeline()`, a full pipeline-project scaffold: the
+  domain-numbered layout (`01_data`, `02_scripts`, `03_outputs`), a wired
+  `.Rprofile` carrying the `cfg` manifest, a `.gitignore`, and runnable
+  download / process scripts, so the project runs end to end once the boundary
+  layers are dropped in. `renv = TRUE` pins package versions for collaborators.
+  It is distinct from the lighter `init_polis_project()`.
+* `run_pipeline()` now emits a lean `detections` table alongside `virus` — a
+  per-detection projection of the positives table (epid, adm0-adm2 + adm2 GUID,
+  latitude/longitude, the virus label, vtype, emergence group, surveillance
+  type/source, and dates) that recomputes nothing.
+* Added `polis_dictionary()`, a data dictionary for the raw and cleaned tables.
+* Added citation metadata: a `CITATION.cff` (GitHub's "Cite this repository")
+  and `inst/CITATION`, so `citation("polished")` returns a proper reference.
+
 # polished 0.1.0
 
 * Initial development version.
