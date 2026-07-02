@@ -286,7 +286,7 @@ init_polis_pipeline <- function(
   # renv.lock and prepends an autoloader to .Rprofile; we then write our manifest
   # .Rprofile (overwriting that placeholder) with an unguarded source() line.
   do_renv <- isTRUE(renv)
-  if (do_renv && !requireNamespace("renv", quietly = TRUE)) {
+  if (do_renv && !.polis_renv_available()) {
     cli::cli_alert_warning(
       "{.pkg renv} is not installed; skipping renv setup. Install it and \\
       re-run with {.code renv = TRUE} for reproducible package versions."
@@ -395,6 +395,14 @@ init_polis_pipeline <- function(
     d <- c(d, "01_data/1d_vaccination/raw", "01_data/1d_vaccination/processed")
   }
   d
+}
+
+# Is the optional renv package available to scaffold with? Wrapped in its own
+# helper so a test can stub it and exercise the "renv missing" branch without
+# renv having to be absent from the library.
+#' @noRd
+.polis_renv_available <- function() {
+  requireNamespace("renv", quietly = TRUE)
 }
 
 # Read a packaged template, substitute {{TOKEN}} placeholders, write it out.
