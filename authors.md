@@ -8,7 +8,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/truenomad/polished/blob/main/DESCRIPTION)
+[`inst/CITATION`](https://github.com/truenomad/polished/blob/main/inst/CITATION)
 
 Yusuf M (2026). *polished: Download and Clean WHO POLIS Data*. R package
 version 0.1.0, <https://github.com/truenomad/polished>.

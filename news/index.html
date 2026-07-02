@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">polished</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,6 +72,9 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="polished-020">polished 0.2.0<a class="anchor" aria-label="anchor" href="#polished-020"></a></h2><p class="text-muted">CRAN release: 2020-09-29</p>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="polished-010">polished 0.1.0<a class="anchor" aria-label="anchor" href="#polished-010"></a></h2><p class="text-muted">CRAN release: 2020-07-01</p>
 <ul><li>Initial development version.</li>
 <li>Unified <code>raw_*</code> / <code>polished_*</code> naming end to end: <code><a href="../reference/get_polis_data.html">get_polis_data()</a></code> writes each table under its <code>raw_*</code> stem (new <code>file_stem</code> column on <code>polis_tables_mapping</code>) and migrates files written under the old bare table name in place on the next run (no re-download). <code><a href="../reference/run_pipeline_dir.html">run_pipeline_dir()</a></code> reads <code>raw_*</code> inputs and writes <code>polished_*</code> outputs, with each output’s format following its source file.</li>
@@ -85,7 +88,8 @@
 <code><a href="../reference/get_polis_data.html">get_polis_data()</a></code> now supports the <code>population</code> reference table. It carries no usable update date, so it is pulled whole in a single Id-paginated pass with no date/region filter (<code>date_field = NA</code> in <code>polis_tables_mapping</code>). Note: the endpoint/field still need a live-API sanity check before relying on it.</li>
 <li>Added the EPID-driven geography cleaner: <code><a href="../reference/impute_geo_from_epid.html">impute_geo_from_epid()</a></code> plus the <code><a href="../reference/epid_split.html">epid_split()</a></code> / <code><a href="../reference/epid_country_code.html">epid_country_code()</a></code> / <code><a href="../reference/epid_prefix.html">epid_prefix()</a></code> / <code><a href="../reference/epid_strip_contact.html">epid_strip_contact()</a></code> parsers, the <code><a href="../reference/build_admin_ref.html">build_admin_ref()</a></code> / <code><a href="../reference/build_prefix_ref.html">build_prefix_ref()</a></code> reference builders, and <code><a href="../reference/resolve_epid_country.html">resolve_epid_country()</a></code>.</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

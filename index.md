@@ -58,6 +58,23 @@ function’s help page
 (e.g. [`?get_polis_data`](https://truenomad.github.io/polished/reference/get_polis_data.md))
 for usage and data-formatting requirements.
 
+## Citation
+
+To cite `polished` in publications, run `citation("polished")` in R, or
+use:
+
+> Yusuf, Mohamed A. (2026). *polished: Download and Clean WHO POLIS
+> Data*. R package version 0.1.0.
+> <https://github.com/truenomad/polished>
+
+    @Manual{polished,
+      title  = {polished: Download and Clean WHO POLIS Data},
+      author = {Mohamed A. Yusuf},
+      year   = {2026},
+      note   = {R package version 0.1.0},
+      url    = {https://github.com/truenomad/polished},
+    }
+
 ## License
 
 MIT © Mohamed A. Yusuf. See

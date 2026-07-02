@@ -106,13 +106,13 @@ out <- run_pipeline(list(afp = afp))
 #> 
 #> ── Cleaning AFP cases ──────────────────────────────────────────────────────────
 #> ℹ Standardising names on 1 rows
-#> ✔ Standardised names on 1 rows [18ms]
+#> ✔ Standardised names on 1 rows [19ms]
 #> 
 #> ℹ Parsing dates and deriving onset/age/intervals/timeliness
-#> ✔ Parsed dates and derived onset/age/intervals/timeliness [18ms]
+#> ✔ Parsed dates and derived onset/age/intervals/timeliness [20ms]
 #> 
 #> ℹ Classifying virus type and case classification
-#> ✔ Classified virus type and case classification [19ms]
+#> ✔ Classified virus type and case classification [20ms]
 #> 
 #> ℹ Standardising admin names
 #> ✔ Standardised admin names [13ms]
@@ -124,7 +124,7 @@ out <- run_pipeline(list(afp = afp))
 #> ✔ Enriched with country groupings and AFP flags [14ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [16ms]
+#> ✔ Deduplicated by id and finalised [17ms]
 #> 
 #> ✔ Cleaned 1 AFP cases.
 #> ! "afp": no year_onset column; year filter skipped.

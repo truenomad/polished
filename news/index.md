@@ -1,5 +1,9 @@
 # Changelog
 
+## polished 0.2.0
+
+CRAN release: 2020-09-29
+
 ## polished 0.1.0
 
 CRAN release: 2020-07-01
