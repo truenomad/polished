@@ -21,3 +21,4 @@
 ^vignettes/[.]quarto$
 ^vignettes/.*_files$
 ^example_script\.R$
+^CITATION\.cff$
