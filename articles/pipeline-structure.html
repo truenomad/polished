@@ -325,7 +325,10 @@ body { overflow-x: hidden; }
   margin: 0;
   background: none;
   border: none;
-  color: var(--fg);
+  /* plain code (identifiers, args, operators) sits a touch lighter than the
+     IDE chrome --fg so it pops against the black editor background; comments
+     (.cm), strings (.st) and namespace prefixes (.pk) override this below */
+  color: #e8e8e8;
   font-family: inherit;
   font-size: 13px;
   line-height: 1.55;
