@@ -10,6 +10,8 @@
   pipeline](https://truenomad.github.io/polished/articles/end-to-end-pipeline.md):
 - [Scaffolding a pipeline
   project](https://truenomad.github.io/polished/articles/pipeline-project-scaffold.md):
+- [Pipeline
+  structure](https://truenomad.github.io/polished/articles/pipeline-structure.md):
 - [Computing surveillance
   indicators](https://truenomad.github.io/polished/articles/surveillance-indicators.md):
 - [Data-quality

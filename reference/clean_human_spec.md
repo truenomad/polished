@@ -149,22 +149,22 @@ clean_human_spec(raw)
 #> ✔ Standardised names on 3 rows [23ms]
 #> 
 #> ℹ Parsing dates and deriving collection vars + lab intervals
-#> ✔ Parsed dates and derived collection vars + lab intervals [45ms]
+#> ✔ Parsed dates and derived collection vars + lab intervals [21ms]
 #> 
 #> ℹ Deriving virus classification and adequacy
 #> ✔ Derived virus classification and adequacy [18ms]
 #> 
 #> ℹ Standardising admin names
-#> ✔ Standardised admin names [15ms]
+#> ✔ Standardised admin names [17ms]
 #> 
 #> ℹ Recovering missing admin from the EPID
-#> ✔ Recovered admin for 0 specimens from the EPID [14ms]
+#> ✔ Recovered admin for 0 specimens from the EPID [41ms]
 #> 
 #> ℹ Enriching with country groupings
-#> ✔ Enriched with country groupings [15ms]
+#> ✔ Enriched with country groupings [16ms]
 #> 
 #> ℹ Deduplicating by id and finalising
-#> ✔ Deduplicated by id and finalised [30ms]
+#> ✔ Deduplicated by id and finalised [26ms]
 #> 
 #> ✔ Cleaned 2 specimens.
 #> # A tibble: 2 × 23

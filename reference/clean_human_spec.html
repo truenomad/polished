@@ -112,6 +112,7 @@ violations are flagged to QA, never dropped."><meta property="og:image" content=
     <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/end-to-end-pipeline.html">End-to-end pipeline</a></li>
     <li><a class="dropdown-item" href="../articles/pipeline-project-scaffold.html">Scaffolding a pipeline project</a></li>
+    <li><a class="dropdown-item" href="../articles/pipeline-structure.html">Pipeline structure</a></li>
     <li><a class="dropdown-item" href="../articles/surveillance-indicators.html">Computing surveillance indicators</a></li>
     <li><a class="dropdown-item" href="../articles/data-quality-checks.html">Data-quality checks</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
@@ -263,22 +264,22 @@ trimmed output rather than an error.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Standardised names on 3 rows <span style="color: #B2B2B2;">[23ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Parsing dates and deriving collection vars + lab intervals</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Parsed dates and derived collection vars + lab intervals <span style="color: #B2B2B2;">[45ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Parsed dates and derived collection vars + lab intervals <span style="color: #B2B2B2;">[21ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Deriving virus classification and adequacy</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Derived virus classification and adequacy <span style="color: #B2B2B2;">[18ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Standardising admin names</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Standardised admin names <span style="color: #B2B2B2;">[15ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Standardised admin names <span style="color: #B2B2B2;">[17ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Recovering missing admin from the EPID</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Recovered admin for 0 specimens from the EPID <span style="color: #B2B2B2;">[14ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Recovered admin for 0 specimens from the EPID <span style="color: #B2B2B2;">[41ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Enriching with country groupings</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Enriched with country groupings <span style="color: #B2B2B2;">[15ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Enriched with country groupings <span style="color: #B2B2B2;">[16ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Deduplicating by id and finalising</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Deduplicated by id and finalised <span style="color: #B2B2B2;">[30ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Deduplicated by id and finalised <span style="color: #B2B2B2;">[26ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Cleaned 2 specimens.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 2 × 23</span></span>

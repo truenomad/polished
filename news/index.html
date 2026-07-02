@@ -44,6 +44,7 @@
     <li><a class="dropdown-item" href="../articles/cleaning-polis-data.html">Cleaning POLIS data</a></li>
     <li><a class="dropdown-item" href="../articles/end-to-end-pipeline.html">End-to-end pipeline</a></li>
     <li><a class="dropdown-item" href="../articles/pipeline-project-scaffold.html">Scaffolding a pipeline project</a></li>
+    <li><a class="dropdown-item" href="../articles/pipeline-structure.html">Pipeline structure</a></li>
     <li><a class="dropdown-item" href="../articles/surveillance-indicators.html">Computing surveillance indicators</a></li>
     <li><a class="dropdown-item" href="../articles/data-quality-checks.html">Data-quality checks</a></li>
     <li><a class="dropdown-item" href="../articles/epid-geo-cleaning.html">Recovering geography from EPIDs</a></li>
@@ -73,7 +74,15 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="polished-020">polished 0.2.0<a class="anchor" aria-label="anchor" href="#polished-020"></a></h2><p class="text-muted">CRAN release: 2020-09-29</p>
-</div>
+<ul><li>Added <code><a href="../reference/clean_pop.html">clean_pop()</a></code>, the POLIS population cleaner: it turns the raw population reference into adm0/adm1/adm2 under-5 / under-15 / all-ages denominators, optionally reconciled against a WorldPop input and rolled up by boundary validity. This is the base for the rate indicators. <code><a href="../reference/checks_pop.html">checks_pop()</a></code> and a <code>checks_pop</code> workbook tab add its per-stream data-quality checks.</li>
+<li>
+<code><a href="../reference/polis_config.html">polis_config()</a></code> and <code><a href="../reference/clean_pop.html">clean_pop()</a></code> gain <code>pop_source</code> to choose the <code>&lt;age&gt;_pop</code> denominator: <code>"reconciled"</code> (default — a trusted POLIS value, else WorldPop, else the district -&gt; province -&gt; country ladder), <code>"polis"</code>, or <code>"worldpop"</code>. The chosen value keeps <code>&lt;age&gt;_pop_polis</code> and <code>&lt;age&gt;_pop_wp</code> alongside it so every source stays inspectable.</li>
+<li>Added <code><a href="../reference/init_polis_pipeline.html">init_polis_pipeline()</a></code>, a full pipeline-project scaffold: the domain-numbered layout (<code>01_data</code>, <code>02_scripts</code>, <code>03_outputs</code>), a wired <code>.Rprofile</code> carrying the <code>cfg</code> manifest, a <code>.gitignore</code>, and runnable download / process scripts, so the project runs end to end once the boundary layers are dropped in. <code>renv = TRUE</code> pins package versions for collaborators. It is distinct from the lighter <code><a href="../reference/init_polis_project.html">init_polis_project()</a></code>.</li>
+<li>
+<code><a href="../reference/run_pipeline.html">run_pipeline()</a></code> now emits a lean <code>detections</code> table alongside <code>virus</code> — a per-detection projection of the positives table (epid, adm0-adm2 + adm2 GUID, latitude/longitude, the virus label, vtype, emergence group, surveillance type/source, and dates) that recomputes nothing.</li>
+<li>Added <code><a href="../reference/polis_dictionary.html">polis_dictionary()</a></code>, a data dictionary for the raw and cleaned tables.</li>
+<li>Added citation metadata: a <code>CITATION.cff</code> (GitHub’s “Cite this repository”) and <code>inst/CITATION</code>, so <code>citation("polished")</code> returns a proper reference.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="polished-010">polished 0.1.0<a class="anchor" aria-label="anchor" href="#polished-010"></a></h2><p class="text-muted">CRAN release: 2020-07-01</p>
 <ul><li>Initial development version.</li>
