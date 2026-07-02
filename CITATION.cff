@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use polished in your work, please cite it as below."
+type: software
+title: "polished: Download and Clean WHO POLIS Data"
+version: 0.1.0
+abstract: >-
+  Retrieves and cleans poliovirus surveillance data from the World Health
+  Organization Polio Information System ('POLIS') API.
+authors:
+  - family-names: Yusuf
+    given-names: "Mohamed A."
+    email: mohamedayusuf87@gmail.com
+    orcid: "https://orcid.org/0000-0002-9339-4613"
+license: MIT
+repository-code: "https://github.com/truenomad/polished"
+url: "https://truenomad.github.io/polished/"
+date-released: "2026-07-02"
+keywords:
+  - polio
+  - surveillance
+  - epidemiology
+  - POLIS
+  - "r-package"
