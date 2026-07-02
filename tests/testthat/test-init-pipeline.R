@@ -105,7 +105,8 @@ test_that("renv = FALSE keeps the guarded autoloader (renv-ready, not required)"
 test_that("renv = TRUE sets up renv with a single, clean autoloader", {
   skip_if_not_installed("renv")
   root <- withr::local_tempdir()
-  suppressMessages(init_polis_pipeline(root, renv = TRUE, quiet = TRUE))
+  # quiet = FALSE so the renv "next steps" success message is exercised too
+  suppressMessages(init_polis_pipeline(root, renv = TRUE, quiet = FALSE))
 
   expect_true(file.exists(file.path(root, "renv/activate.R")))
   expect_true(file.exists(file.path(root, "renv.lock")))
@@ -116,6 +117,30 @@ test_that("renv = TRUE sets up renv with a single, clean autoloader", {
   expect_false(any(grepl('file.exists("renv/activate.R")', rp, fixed = TRUE)))
   expect_true(any(grepl("polis_config", rp, fixed = TRUE)))
   expect_silent(parse(file.path(root, ".Rprofile")))
+})
+
+test_that("renv = TRUE without renv installed warns and stays renv-ready", {
+  # stub the availability check so this branch is exercised whether or not renv
+  # is actually installed in the test library
+  local_mocked_bindings(.polis_renv_available = function() FALSE)
+
+  root <- withr::local_tempdir()
+  # quiet = FALSE also exercises the success message on the do_renv = FALSE path
+  expect_message(
+    init_polis_pipeline(root, renv = TRUE, quiet = FALSE),
+    "renv"
+  )
+
+  # renv setup was skipped: no renv/ scaffold, no lockfile ...
+  expect_false(dir.exists(file.path(root, "renv")))
+  expect_false(file.exists(file.path(root, "renv.lock")))
+  # ... and the .Rprofile keeps the guarded (renv-optional) autoloader
+  rp <- readLines(file.path(root, ".Rprofile"))
+  expect_true(any(grepl(
+    'if (file.exists("renv/activate.R")) source("renv/activate.R")',
+    rp,
+    fixed = TRUE
+  )))
 })
 
 test_that("init_polis_pipeline rejects a bad root and bad pop_source", {
