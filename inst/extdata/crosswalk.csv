@@ -915,6 +915,12 @@ Case,,afp_class,,AFP surveillance category,enrich_afp(): AFP-Positive/Non-polio 
 Case,,afp,,AFP-positive flag,enrich_afp(): 1 when afp_class is AFP-Positive,TRUE
 Case,,npafp,,Non-polio AFP flag,enrich_afp(): 1 when Discarded/Pending and not a circulating VDPV 1/2,TRUE
 Case,,pending_results,,Pending lab results flag,enrich_afp(): TRUE when classification is Pending,TRUE
+Case,,diagnosis_harmonised,,Harmonised clinical diagnosis,clean_afp_diagnosis(): canonical diagnosis coalesced from classification/diagnosis_final/ICD/other-specified/provisional,TRUE
+Case,,diagnosis_source,,Harmonised diagnosis source,clean_afp_diagnosis(): which field supplied diagnosis_harmonised,TRUE
+Case,,diagnosis_class,,Diagnosis class,clean_afp_diagnosis(): polio/afp_compatible/non_flaccid/non_afp/unspecified/not_recorded,TRUE
+Case,,is_non_afp,,Reported non-AFP flag,clean_afp_diagnosis(): TRUE for reported illness that is not acute flaccid paralysis (malaria/sepsis/...),TRUE
+Case,,residual_paralysis,,60-day residual paralysis outcome,clean_afp_diagnosis(): residual/recovered/died/pending from followup_findings,TRUE
+Case,,febrile_asymmetric_onset,,Febrile asymmetric onset flag,clean_afp_diagnosis(): TRUE when paralysis asymmetric with fever at onset,TRUE
 EnvSample,,year_collection,,Year of collection,derived from collection_date,TRUE
 EnvSample,,month_collection,,Month of collection,derived from collection_date,TRUE
 SubActivity,,year_start,,Year of campaign start,derived from date_from,TRUE
