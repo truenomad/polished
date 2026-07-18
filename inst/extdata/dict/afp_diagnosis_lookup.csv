@@ -1,0 +1,27 @@
+pattern,diagnosis
+guillain|gullain|guillian|gb syndrome|g b s|\bgbs\b|\bsgb\b|barre|\baidp\b|\baman\b|amsan|polyradiculo,Guillain-Barre syndrome
+diphther|dipther|dipther|difteri|diphteri|post dip|palat|paltal|patal palsy,Diphtheritic neuropathy
+polyneuropath|polyneurit|polynevrit|neuropathie|neuro pathy|neuropath|radiculit|radiculopath|mononeur|\bcidp\b|foot drop|wrist drop|peroneal|radial nerve|\berb\b|nevralgie|neuralgia|\bplexus\b|nerve palsy|nerve injury|nerve root,Peripheral neuropathy
+injection neur|injection pals|post injection|postinjection|\bt n\b|\btn\b|\btmn\b|traumatic neur|viral neuritis|neuriti|neurit|neurat|neuvrit|injectit|nevrite,Traumatic neuritis
+transverse myel|transverse myl|transverse mil|myelit|myelite|myelop|meylit|mielit|mylit|my elite|meyelit,Transverse myelitis
+hypokal|hypo kal|hipokal|hypokl|hipokl|electroli|electrolyt|dyselectrol|periodic paral,Hypokalaemic paralysis
+encephal|enchepal|encefal|\benceph\b|\badem\b|meningo enceph|acute cns|cns infection|\baes\b|acute encephalit|\bsspe\b|\brabies\b,Encephalitis or ADEM
+mening|menig|\btbm\b|\btbme\b|tb mening|hydrocephal,Meningitis
+\bbell?s?\b|belli?s|\bbels?\b|bills?|biels|bel s|facial pals|\bfacial\b,Facial palsy
+myositis|myosit|myosi|myalg|myelg|myleg|\bmylg\b|myoci|myopath|myosite|muscular dystroph|dystrophy|\bdmd\b|muscle inflam,Myositis or myalgia
+transient paralysis|transient weak|transient pals|transient paresis|transient parasis|\btransient\b|todd|post ictal|postictal|\bictal\b,Transient paralysis
+seizure|convuls|epilep|\bfits?\b|\bgtcs\b|chorea,Seizure or epilepsy
+hemipl|hemipar|hemiper|hemipr|hemeplegia|hemoplag|hemi pleg|\bcva\b|\bc v a\b|\bavc\b|\btia\b|strok|strock|cerebrovascul|brain infarct|moya,Hemiplegia or stroke
+cerebral palsy|cerebral pals|cereberal|\bcp child\b,Cerebral palsy
+pseudo paral|pseudoparal|\bfunctional\b|impotence fonctionnelle|conversion disorder|hysteric,Pseudoparalysis
+malaria|paludism|\bpalu\b|neuropaludism|neuropalu|malarie,Malaria
+septicaem|septicem|\bsepsis\b|\bseptic\b|infection generalis,Sepsis
+malnutrition|malnutri|kwashior|marasm|gizi buruk|gz buruk|\bgizi\b|\bmas\b|\bsam\b|\bs a m\b|\bpcm\b|\bpem\b|\bkep\b|rickt|ricket|scurvy|nutritional,Malnutrition
+measles|rougeole|rubeola|campak,Measles
+non polio enterovirus|\bnpev\b|enterovirus|echovirus|echo virus|coxsackie,Non-polio enterovirus
+typhoid|thypoid|enteric fever|typhi|tuberculo|\btbc\b|\btb\b|brucell|drepanocyt|sickle|\bsc anemia\b|\banemia\b|leukaem|leukem|rheumatic fever|rhumatism|rheumatis|\braa\b|celiac|coeliac|hypocal|pneumon|diarrh|\bdiare\b|diarhea|gastroenter|gastro enter|gastroentr|enteritis|\bgea\b|\bge\b|\bispa\b|tonsill|dengue|\bdbd\b|chikungun|arbov|\bzika\b|hepatit|cellulit|viral fever|febris|febrile|\bdemam\b|\bfever\b|viral infection|viral illness|\bviral\b|viraemia|viremia|systemic illness|systamic illness|syndrome infectieux|\binfection\b|dehydrat|\buti\b|\bscd\b|\bcsom\b|otitis|anaem,Other systemic illness
+arthrit|artrit|arthral|arthalg|synovit|osteomyel|\bjoint\b|tenosynov|muscular strain|muscle strain|local inflam|sprain|irritable hip|genu val|genu var,Musculoskeletal
+\btrauma\b|traumati|fractur|\bfall\b|\binjury\b|unnoticed|snake bite|snakebite|envenom|\brta\b|road traffic|\bburn\b|choc traum,Trauma or injury
+\blimp\b|limping|non neurol|orthopedic|orthopaedic,Limp or non-neurological
+ataxia|\bgait\b|bulb|\bumnl\b|upper motor|\bsol\b|icsol|space occup|neoplasm|\btumou?r\b|\bsma\b|spinal muscular atroph|konzo|delayed milestone|developmental delay|hypotoni|floppy infant|myasthen|degener|neurodeg|encephalopath|brain atrophy|cranial|\bpott\b|cerebell|cerebel|balbar|\bumn\b|multiple sclerosis|vocal cord|down syndrome|other neuro,Other neurological
+monop|mono p|monoa|parap|para p|paralys|paralis|quadrip|quadri p|tetrap|tetra p|diplegia|diplegi|biplegia|biplejia|floppy neck|flopy neck|floopy neck|floppi|neck flop|neckflop|neck drop|limb weak|weak.*limb|\bweakness\b|weaknes|weeknes|muscle weak|lower limb|upper limb|right leg|left leg|right arm|left arm|\bleg\b|paralysie|flaccid|flacid|paresis|parasis|parese|paralytic|paretic|acute flaccid|clinical polio|\bpolio\b|poliomyel|poliomiel|true afp|afp of unknown,"Paralysis, pattern only"

@@ -1,0 +1,31 @@
+diagnosis,diagnosis_class,is_non_afp
+Poliomyelitis,polio,FALSE
+Guillain-Barre syndrome,afp_compatible,FALSE
+Traumatic neuritis,afp_compatible,FALSE
+Diphtheritic neuropathy,afp_compatible,FALSE
+Transverse myelitis,afp_compatible,FALSE
+Non-polio enterovirus,afp_compatible,FALSE
+Facial palsy,afp_compatible,FALSE
+Transient paralysis,afp_compatible,FALSE
+Myositis or myalgia,afp_compatible,FALSE
+Hypokalaemic paralysis,afp_compatible,FALSE
+Encephalitis or ADEM,afp_compatible,FALSE
+Meningitis,afp_compatible,FALSE
+Peripheral neuropathy,afp_compatible,FALSE
+Other neurological,afp_compatible,FALSE
+"Paralysis, pattern only",afp_compatible,FALSE
+Hemiplegia or stroke,non_flaccid,FALSE
+Cerebral palsy,non_flaccid,FALSE
+Pseudoparalysis,non_flaccid,FALSE
+Limp or non-neurological,non_flaccid,FALSE
+Malaria,non_afp,TRUE
+Sepsis,non_afp,TRUE
+Malnutrition,non_afp,TRUE
+Measles,non_afp,TRUE
+Other systemic illness,non_afp,TRUE
+Musculoskeletal,non_afp,TRUE
+Trauma or injury,non_afp,TRUE
+Seizure or epilepsy,non_afp,TRUE
+Other (non-specific),unspecified,FALSE
+Unknown,unspecified,FALSE
+Not recorded,not_recorded,FALSE
