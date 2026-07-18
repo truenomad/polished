@@ -1,5 +1,18 @@
 # polished 0.2.0
 
+* Added `clean_afp_diagnosis()`, a `clean_afp()` step that harmonises the AFP
+  clinical diagnosis. POLIS scatters the clinical cause across four fields
+  (`diagnosis_final`, the ICD-10 `diagnosis_other`, and the bilingual free-text
+  `diagnosis_other_specified` / `provisional_diagnosis`); it coalesces them, in
+  priority order with a confirmed-polio override, into a single
+  `diagnosis_harmonised` (plus a `diagnosis_source` provenance), then derives
+  `diagnosis_class` and the `is_non_afp` flag that separates reported non-AFP
+  illness (malaria, sepsis, malnutrition, ...) from the acute-flaccid-paralysis
+  differentials, the 60-day `residual_paralysis` outcome and the
+  `febrile_asymmetric_onset` flag. The mapping ships as three reviewable
+  reference tables exposed by `polis_afp_diagnosis_lookup()` (free-text
+  keywords, multilingual), `polis_afp_icd10()` (ICD-10 prefixes) and
+  `polis_afp_diagnosis_class()` (diagnosis -> class).
 * Added `clean_pop()`, the POLIS population cleaner: it turns the raw population
   reference into adm0/adm1/adm2 under-5 / under-15 / all-ages denominators,
   optionally reconciled against a WorldPop input and rolled up by boundary

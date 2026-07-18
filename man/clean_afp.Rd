@@ -77,6 +77,11 @@ building blocks \code{vtype} / \code{vtype_fixed}) plus the Sabin flags
 \code{country_actual}, \code{risk_group}, \code{epi_zones} / \code{epi_zones_v2} -- the
 \code{polio_type} serotype, and the surveillance AFP flags \code{afp_class}, \code{afp},
 \code{npafp} and \code{pending_results};
+\item the harmonised clinical diagnosis (\code{diagnosis_harmonised},
+\code{diagnosis_source}, \code{diagnosis_class}, \code{is_non_afp}) coalesced from the
+four scattered POLIS diagnosis fields via \code{\link[=clean_afp_diagnosis]{clean_afp_diagnosis()}}, plus
+the 60-day \code{residual_paralysis} outcome and the \code{febrile_asymmetric_onset}
+presentation flag;
 \item normalised admin names and one row per POLIS \code{id} (latest by
 \code{last_update_date}).
 }

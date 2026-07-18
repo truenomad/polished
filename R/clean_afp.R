@@ -34,6 +34,11 @@
 #'     `country_actual`, `risk_group`, `epi_zones` / `epi_zones_v2` -- the
 #'     `polio_type` serotype, and the surveillance AFP flags `afp_class`, `afp`,
 #'     `npafp` and `pending_results`;
+#'   \item the harmonised clinical diagnosis (`diagnosis_harmonised`,
+#'     `diagnosis_source`, `diagnosis_class`, `is_non_afp`) coalesced from the
+#'     four scattered POLIS diagnosis fields via [clean_afp_diagnosis()], plus
+#'     the 60-day `residual_paralysis` outcome and the `febrile_asymmetric_onset`
+#'     presentation flag;
 #'   \item normalised admin names and one row per POLIS `id` (latest by
 #'     `last_update_date`).
 #' }
@@ -144,6 +149,11 @@ clean_afp <- function(
   )
   data <- clean_afp_classification(data) |>
     .afp_add_timeliness()
+  step(
+    "Harmonising the clinical diagnosis",
+    "Harmonised the clinical diagnosis"
+  )
+  data <- clean_afp_diagnosis(data)
 
   # ---- standardise geography ------------------------------------------------
   # `shape` may be a long ADM2 attribute table or a polygon layer. A polygon

@@ -1,0 +1,37 @@
+pattern,diagnosis
+^G61,Guillain-Barre syndrome
+^G70,Other neurological
+^G71|^G72,Myositis or myalgia
+^G12,Other neurological
+^T80|^T88,Traumatic neuritis
+^P14,Traumatic neuritis
+^G37,Transverse myelitis
+^G04|^G05|^G36|^G06,Encephalitis or ADEM
+^G5[12],Facial palsy
+^G55|^G56,Peripheral neuropathy
+^M60|^M62|^M63|^M79,Myositis or myalgia
+^G6[0234],Peripheral neuropathy
+^E87,Hypokalaemic paralysis
+^E88,Other systemic illness
+^G0[0-3]|^A17|^A39|^A87,Meningitis
+^G80,Cerebral palsy
+^G81|^I6|^G4[56],Hemiplegia or stroke
+^G8[23],"Paralysis, pattern only"
+^G31,Other neurological
+^G4[01]|^R56,Seizure or epilepsy
+^B5,Malaria
+^A4[01]|^R65,Sepsis
+^E4|^E55|^E5|^K90,Malnutrition
+^B05,Measles
+^F45,Pseudoparalysis
+^A18|^A19,Other systemic illness
+^L0,Other systemic illness
+^Q66,Musculoskeletal
+^M,Musculoskeletal
+^A0[129]|^A2|^A3|^J|^B3|^B9|^B0|^A8|^A9|^D5|^D6|^C|^D3|^D4|^I0,Other systemic illness
+^T50,Trauma or injury
+^S|^T09|^T1[0-9]|^W|^V|^X|^Y,Trauma or injury
+^F,Other neurological
+^P,Other neurological
+^Q,Other neurological
+^R2[5-9]|^G9[3-9]|^R4|^R29,Other neurological
