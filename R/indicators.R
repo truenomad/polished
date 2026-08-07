@@ -441,8 +441,10 @@ calc_polio_indicators <- function(
 .polio_plan_indicators <- function(indicators, registry, std, cfg, levels) {
   run <- character(0)
   skipped <- list()
+  plan_env <- environment()
   skip <- function(code, reason) {
-    skipped[[length(skipped) + 1]] <<- list(code = code, reason = reason)
+    plan_env$skipped[[length(plan_env$skipped) + 1]] <-
+      list(code = code, reason = reason)
   }
 
   # The level / source / column / population / admin gates a spec must clear on
@@ -2080,7 +2082,8 @@ calc_polio_indicators <- function(
   }
 
   reg <- list()
-  add <- function(code, s) reg[[code]] <<- s
+  reg_env <- environment()
+  add <- function(code, s) reg_env$reg[[code]] <- s
 
   # ---- Family A: AFP / NPAFP counts & rates -------------------------------
   add(
