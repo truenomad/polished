@@ -104,15 +104,25 @@ reference:
   contents:
   - clean_afp_classification
   - clean_es_classification
+- title: Clinical diagnosis
+  desc: >
+    Harmonise the four POLIS fields that carry the clinical cause of an AFP case
+    into one canonical diagnosis, then derive the coarse class, the reported
+    non-AFP flag and the follow-up outcome.
+  contents:
+  - clean_afp_diagnosis
 - title: Reference tables
   desc: >
     The packaged lookups the cleaners are driven by: the raw-to-canonical column
-    crosswalk, the data dictionary (raw or cleaned schema) it backs, and the
-    country grouping/risk reference.
+    crosswalk, the data dictionary (raw or cleaned schema) it backs, the country
+    grouping/risk reference, and the AFP diagnosis dictionaries.
   contents:
   - polis_crosswalk
   - polis_dictionary
   - polis_country_lookup
+  - polis_afp_diagnosis_lookup
+  - polis_afp_icd10
+  - polis_afp_diagnosis_class
 - title: Recover & reconcile geography
   desc: >
     Fill missing admin names and GUIDs without overwriting present values or
