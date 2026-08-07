@@ -21,8 +21,105 @@
 #' -- collapses duplicate `(place, year)` rows to their median, drops zeros/blanks
 #' to missing, flags values that jump from a district's own history, and fills
 #' gaps from a district -> province -> country ladder. Given `worldpop` it adds a
-#' cross-source layer: each POLIS value is checked against WorldPop and a
-#' missing/implausible one is replaced (WorldPop first, then the same ladder).
+#' cross-source layer: each POLIS value is checked against WorldPop, and one that
+#' is missing or implausible is replaced by a substitution ladder that keeps the
+#' district on its own population level.
+#'
+#' @details
+#' # What goes wrong in POLIS population, and what catches it
+#'
+#' Two jobs, deliberately separate. **Detection** decides whether a value is
+#' usable; **substitution** decides what replaces it when it is not. Conflating
+#' them is how a repaired value becomes a worse problem than the one it fixed
+#' (see *Why substitution is level-matched* below).
+#'
+#' \tabular{lll}{
+#'   **Fault** \tab **Origin** \tab **Handled by** \cr
+#'   Duplicate `(place, year)` rows, often conflicting \tab POLIS \tab median
+#'     collapse; the conflicts are returned in `meta$dup_conflicts` \cr
+#'   Zeros / blanks presented as real values \tab POLIS \tab dropped to `NA` \cr
+#'   A single year wildly off the district's own series \tab POLIS \tab
+#'     `bad_vs_history` (scaled MAD, `mad_k`) \cr
+#'   A district carrying its PARENT's population -- typically where an adm2
+#'     shares a name with its adm1 \tab POLIS \tab `bad_vs_worldpop` +
+#'     `bad_vs_adm1` \cr
+#'   District GUIDs that have since changed boundary \tab POLIS \tab orphan
+#'     name crosswalk; unresolved ones stay in `meta$orphan_xwalk` \cr
+#'   u5 > u15 > all-ages ordering breaches \tab POLIS \tab `age_order_bad` +
+#'     whole-set fallback \cr
+#'   WorldPop emptying out over water and dense urban cores, so it convicts a
+#'     POLIS value for being right \tab WorldPop \tab `wp_implausible`
+#'     (density, `dens_lo`) \cr
+#'   The three age bands landing on different sources, so they no longer
+#'     describe one population \tab clean_pop \tab shared level ratio +
+#'     `age_source_split` \cr
+#'   A year repeated verbatim from the one before -- a refresh that did not
+#'     happen \tab POLIS \tab `<age>_pop_frozen` (flagged, never substituted) \cr
+#'   POLIS coverage starting late / ending early, so head and tail years have
+#'     no POLIS at all \tab POLIS \tab the substitution ladder \cr
+#' }
+#'
+#' Two further properties are not faults but must be understood before the
+#' output is used. The POLIS-to-WorldPop gap is **heterogeneous across
+#' districts** -- in Nigeria the ratio spans roughly 0.7 to 2.7 with a long tail
+#' -- so no single national rescaling can reconcile them, which is why every
+#' correction here is per district. And POLIS tends to run **high in aggregate**
+#' (its Nigerian under-15 total implies a country larger than the UN estimate),
+#' so rates computed on it are correspondingly lower. Both are visible because
+#' `<age>_pop_polis` and `<age>_pop_wp` are always retained.
+#'
+#' # Why substitution is level-matched
+#'
+#' The two sources disagree about a district's *level*, not just its value. So
+#' replacing a rejected POLIS year with WorldPop's raw number -- the obvious
+#' move, and what this function used to do -- turns a rejected **year** into a
+#' rejected **level**: the series then steps by the gap between two sources at
+#' whichever years happened to be rejected. That is a district-specific,
+#' year-specific discontinuity, and it is the single hardest kind for anything
+#' downstream to absorb, because a fitted model reads it as a real change in
+#' whatever the denominator feeds rather than as an artefact.
+#'
+#' So a district never leaves its own level. The ladder, in order:
+#'
+#' 1. **`polis`** -- a POLIS value that survived every signal.
+#' 2. **`polis_interp`** -- an interior gap, linearly interpolated from the
+#'    district's own trusted years. Never extrapolates.
+#' 3. **`worldpop_levelled`** -- head/tail years, where there is no trusted
+#'    value on one side and the shape has to come from WorldPop. Rescaled by
+#'    `<age>_pop_level_ratio`, the POLIS:WorldPop ratio at the district's
+#'    *nearest* trusted year. Nearest rather than an average because the two
+#'    sources grow at different rates, and a summary ratio makes a projected
+#'    year step down on a rising series.
+#' 4. **`worldpop`** -- raw, and only for a district POLIS never usably
+#'    described, which therefore has no level of its own to hold.
+#' 5. **`district_trend` / `adm1` / `adm0`** -- the admin ladder, when there is
+#'    no WorldPop either.
+#'
+#' A rejected outlier is treated exactly as a missing value, so detection and
+#' substitution stay independent.
+#'
+#' On Nigerian adm2 (774 districts, 2016-2026) the ladder takes district-years
+#' moving more than 25% year-on-year from 780 to 21, raw-WorldPop fallbacks from
+#' about 2,880 to 484, and districts whose age bands sit on different levels
+#' from 23 to 0.
+#'
+#' # Worked examples
+#'
+#' *EWEKORO (Ogun, Nigeria)* -- POLIS reports 131,998 under-15s for 2019 against
+#' roughly 39,000 either side. `bad_vs_history` rejects it; rung 2 interpolates
+#' 40,062 from the district's own 2018 and 2020. Its 2016, 2017 and 2026 have no
+#' POLIS at all and take rung 3.
+#'
+#' *KATSINA (Nigeria)* -- an adm2 sharing its name with its adm1, reporting
+#' 2.1-3.9M under-15s where the district holds roughly 265,000.
+#' `bad_vs_worldpop` and `bad_vs_adm1` reject every year, so no trusted value
+#' exists to define a level and the district correctly falls to rung 4.
+#'
+#' *BAKASSI (Cross River, Nigeria)* -- the opposite case. WorldPop gives 82
+#' under-15s over 26 km2, about 3 per km2, because the district is largely
+#' water. Without the density signal WorldPop would convict POLIS's 26,536;
+#' `wp_implausible` disqualifies WorldPop as the arbiter instead, POLIS is kept,
+#' and the level ratio is around 315.
 #'
 #' @param population A raw POLIS Population data frame (columns `PlaceId`,
 #'   `PlaceDisplayName`, `Year`, `AgeGroupName`, `Value`), or a path to one.
@@ -42,23 +139,40 @@
 #'   (default) runs the POLIS-only path.
 #' @param years Calendar years to keep (POLIS carries 1990-2034 incl. projections).
 #'   Default `2010:2027`.
-#' @param thresholds Named list of the implausibility tunables: `ratio_lo` /
-#'   `ratio_hi` (a POLIS value below/above this fold of WorldPop is implausible),
-#'   `mad_k` (scaled-MAD distance from the district's own median), `min_votes`
-#'   (how many signals must fire to call a value suspect). Default
-#'   `list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L)`.
+#' @param thresholds Named list of the implausibility tunables:
+#'   \describe{
+#'     \item{`ratio_lo`, `ratio_hi`}{a POLIS value below/above this fold of
+#'       WorldPop is implausible (`bad_vs_worldpop`, and against the province's
+#'       typical ratio for `bad_vs_adm1`).}
+#'     \item{`mad_k`}{scaled-MAD distance from the district's own median
+#'       (`bad_vs_history`) -- the signal that catches a single bad year.}
+#'     \item{`min_votes`}{how many signals must fire to call a value suspect.}
+#'     \item{`dens_lo`}{people per km2 below which WORLDPOP is treated as the
+#'       implausible source rather than the arbiter (`wp_implausible`). Needs a
+#'       polygon `shape`; without one the signal never fires. Guards the case
+#'       where WorldPop's raster allocation empties a district out and would
+#'       otherwise convict a correct POLIS value.}
+#'     \item{`share_lo`, `share_hi`}{bounds on the under-15 share of all-ages
+#'       used when reporting age-band coherence.}
+#'   }
+#'   Default `list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L,
+#'   dens_lo = 5, share_lo = 0.2, share_hi = 0.7)`. Supplying a partial list
+#'   overrides only the keys given.
 #' @param reference_date Date treated as "today" when deciding which boundary
 #'   versions are *current* for the orphan-GUID name crosswalk. Default
 #'   [Sys.Date()].
 #' @param pop_source Which population to use as the chosen `<age>_pop` value
 #'   (the denominator indicators read). One of:
 #'   \describe{
-#'     \item{`"reconciled"`}{(default) a trusted POLIS value, else WorldPop, else
-#'       the district -> province -> country ladder.}
-#'     \item{`"polis"`}{the POLIS value (gaps filled from the ladder; WorldPop is
-#'       ignored even if supplied) -- the full POLIS population.}
+#'     \item{`"reconciled"`}{(default) a trusted POLIS value, then the district's
+#'       own interpolated series, then WorldPop rescaled onto the district's
+#'       level, then raw WorldPop, then the district -> province -> country
+#'       ladder. See the substitution ladder in Details.}
+#'     \item{`"polis"`}{the POLIS value, with interior gaps interpolated from the
+#'       district's own series and the rest from the admin ladder; WorldPop is
+#'       ignored even if supplied -- the full POLIS population.}
 #'     \item{`"worldpop"`}{the WorldPop value, else a POLIS value, else the
-#'       ladder.}
+#'       ladder. No levelling: this mode is asking for WorldPop's own numbers.}
 #'   }
 #'   The output always keeps `<age>_pop_polis` and `<age>_pop_wp` alongside the
 #'   chosen `<age>_pop`, so every source stays inspectable whatever the mode.
@@ -68,14 +182,22 @@
 #'   \describe{
 #'     \item{`adm2`}{district x year, wide: the id columns plus, per age band
 #'       (`u5`/`u15`/`all`), `<age>_pop` (chosen), `<age>_pop_polis`,
-#'       `<age>_pop_wp`, `<age>_pop_source` (`polis`/`worldpop`/`district_trend`/
-#'       `adm1`/`adm0`) and `<age>_pop_imputed`, plus `age_order_bad`. Restricted
+#'       `<age>_pop_wp`, `<age>_pop_source` (`polis` / `polis_interp` /
+#'       `worldpop_levelled` / `worldpop` / `district_trend` / `adm1` / `adm0`),
+#'       `<age>_pop_imputed`, `<age>_pop_level_ratio` (the POLIS:WorldPop ratio
+#'       used to put a substituted value on the district's level -- `NA` when
+#'       none was needed or none could be formed) and `<age>_pop_frozen` (the
+#'       POLIS value repeated verbatim from the previous year). Plus
+#'       `age_order_bad` and `age_source_split` (the bands do not share a
+#'       level -- non-empty only where no band had a ratio to lend). Restricted
 #'       to the boundary valid each year (no double-counting versioned shapes).}
 #'     \item{`adm1`, `adm0`}{province / country roll-ups (sums) of the nine pop
-#'       columns.}
+#'       columns. The per-district ratio and frozen flags are deliberately not
+#'       rolled up: neither is meaningful summed across districts.}
 #'     \item{`meta`}{a list (skipped by the file writer): `audit` (one row per
-#'       district x year x age, with every signal flag), `dup_conflicts`,
-#'       `orphan_xwalk`, `params`.}
+#'       district x year x age, with every signal flag -- `bad_vs_worldpop`,
+#'       `bad_vs_history`, `bad_vs_adm1`, `wp_implausible`, `frozen`, `n_votes`,
+#'       `polis_suspect`), `dup_conflicts`, `orphan_xwalk`, `params`.}
 #'   }
 #'
 #' @seealso [run_pipeline()], which runs this as the `population` stream;
@@ -97,7 +219,15 @@ clean_pop <- function(
   shape = NULL,
   worldpop = NULL,
   years = 2010:2027,
-  thresholds = list(ratio_lo = 1 / 3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
+  thresholds = list(
+    ratio_lo = 1 / 3,
+    ratio_hi = 3,
+    mad_k = 5,
+    min_votes = 1L,
+    dens_lo = 5,
+    share_lo = 0.2,
+    share_hi = 0.7
+  ),
   reference_date = Sys.Date(),
   pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
@@ -110,7 +240,15 @@ clean_pop <- function(
     )
   }
   th <- utils::modifyList(
-    list(ratio_lo = 1 / 3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
+    list(
+      ratio_lo = 1 / 3,
+      ratio_hi = 3,
+      mad_k = 5,
+      min_votes = 1L,
+      dens_lo = 5,
+      share_lo = 0.2,
+      share_hi = 0.7
+    ),
     thresholds %||% list()
   )
   # POLIS AgeGroupName -> short band label
@@ -210,7 +348,7 @@ clean_pop <- function(
   audit <- dplyr::bind_rows(imp)
 
   # ---- 4. widen + age-order reconciliation -----------------------------------
-  wide <- .pop_widen_reconcile(imp, id_cols)
+  wide <- .pop_widen_reconcile(imp, id_cols, pop_source)
 
   # ---- 5. roll up to adm1 / adm0 via boundary-validity windows ---------------
   if (isTRUE(verbose)) {
@@ -356,9 +494,27 @@ clean_pop <- function(
   if (is.null(shape)) {
     return(NULL)
   }
+  # Area, when the shape is a real polygon layer, is the only check available
+  # here that is independent of BOTH population sources -- see the density
+  # signal in .pop_impute_age(). Carried on the attribute table so everything
+  # downstream can stay geometry-free.
+  area <- NULL
+  if (inherits(shape, "sf") && requireNamespace("sf", quietly = TRUE)) {
+    area <- try(
+      data.frame(
+        adm2_guid = shape[["adm2_guid"]],
+        area_km2 = as.numeric(sf::st_area(shape)) / 1e6
+      ),
+      silent = TRUE
+    )
+    if (inherits(area, "try-error")) area <- NULL
+  }
   geo <- if (inherits(shape, "sf")) sf::st_drop_geometry(shape) else shape
   if ("iso_3_code" %in% names(geo) && !"country_iso3code" %in% names(geo)) {
     geo <- dplyr::rename(geo, country_iso3code = "iso_3_code")
+  }
+  if (!is.null(area) && !"area_km2" %in% names(geo)) {
+    geo <- dplyr::left_join(geo, area, by = "adm2_guid")
   }
   geo
 }
@@ -436,7 +592,8 @@ clean_pop <- function(
       "adm0_guid",
       "adm1",
       "adm1_guid",
-      "adm2"
+      "adm2",
+      "area_km2"
     )
     districts <- shp_geo |>
       dplyr::summarise(
@@ -606,6 +763,14 @@ clean_pop <- function(
     base$pop_wp,
     NA_real_
   )
+  # absent whenever no polygon shape was supplied; the density signal then
+  # simply never fires rather than erroring
+  if (!"area_km2" %in% names(base)) {
+    base$area_km2 <- NA_real_
+  }
+  # tolerate a partial `thresholds` list -- this is called directly in tests and
+  # by callers written before a key existed, so a missing key must not error
+  th$dens_lo <- th$dens_lo %||% 5
   has_wp <- any(!is.na(base$pop_wp))
   d <- base |>
     dplyr::mutate(
@@ -653,19 +818,92 @@ clean_pop <- function(
         adm1_med_ratio > 0 &
         ((wp_ratio / adm1_med_ratio) < th$ratio_lo |
           (wp_ratio / adm1_med_ratio) > th$ratio_hi),
+      # signal 4: WorldPop itself is the implausible one. Every other signal
+      # arbitrates POLIS *against* WorldPop, so where WorldPop is the broken
+      # source the votes fire backwards and reject a POLIS value for being
+      # right. Area is independent of both, so an implied density below
+      # `dens_lo` (people per km2) disqualifies WorldPop as an arbiter rather
+      # than the value it is judging. WorldPop allocates by raster and empties
+      # out over water and dense urban cores: BAKASSI reads 82 under-15s over
+      # 26 km2 = 3.2/km2, against POLIS's 26,536 = 1,020/km2.
+      wp_implausible = !is.na(pop_wp) &
+        !is.na(area_km2) &
+        area_km2 > 0 &
+        (pop_wp / area_km2) < th$dens_lo,
+      bad_vs_worldpop = bad_vs_worldpop %in% TRUE & !wp_implausible,
+      bad_vs_adm1 = bad_vs_adm1 %in% TRUE & !wp_implausible,
       n_votes = (bad_vs_worldpop %in% TRUE) +
         (bad_vs_history %in% TRUE) +
         (bad_vs_adm1 %in% TRUE),
       polis_missing = is.na(polis_pos),
       polis_suspect = n_votes >= th$min_votes,
+      # the POLIS values that survived every signal -- the only ones allowed to
+      # define this district's level
+      trusted_polis = dplyr::if_else(
+        !polis_missing & !polis_suspect,
+        polis_pos,
+        NA_real_
+      )
+    ) |>
+    # ---- the substitution ladder ------------------------------------------
+    # Detection says WHETHER a value is usable; this says WHAT replaces it when
+    # it is not, and the governing rule is that a district must never leave its
+    # own level. Substituting WorldPop's raw value (the previous behaviour)
+    # turns a rejected YEAR into a rejected LEVEL: the series then steps by the
+    # gap between two sources, which is a district-specific, year-specific
+    # discontinuity -- the one kind a fitted model cannot absorb, and the kind
+    # that reads as a real change in whatever the denominator feeds.
+    dplyr::group_by(adm2_guid) |>
+    dplyr::mutate(
+      # (a) interior gap: interpolate the district's own trusted series.
+      # rule = 1 returns NA outside the trusted range, so this fills gaps
+      # BETWEEN trusted years only and never extrapolates.
+      polis_interp = .pop_interp(year, trusted_polis),
+      # (b) head/tail: no trusted value on one side, so the shape has to come
+      # from WorldPop -- but rescaled onto this district's own POLIS level by
+      # the ratio between them where both were trustworthy.
+      #
+      # The ratio is taken from the NEAREST trusted year, not as a median over
+      # all of them, because the two sources grow at different rates: POLIS
+      # typically outpaces WorldPop, so a median ratio sits below the current
+      # one and a projected year would step DOWN on a rising series. Carrying
+      # the nearest anchor makes the joint continuous, which is the whole point.
+      .obs_ratio = dplyr::if_else(
+        !is.na(trusted_polis) & !is.na(pop_wp) & pop_wp > 0,
+        trusted_polis / pop_wp,
+        NA_real_
+      ),
+      level_ratio = .pop_fill_nearest(year, .obs_ratio),
+      level_ratio = dplyr::if_else(
+        is.finite(level_ratio) & level_ratio > 0,
+        level_ratio,
+        NA_real_
+      ),
+      wp_levelled = pop_wp * level_ratio,
+      # frozen: POLIS repeated verbatim from the previous year. Flagged, never
+      # substituted -- a carried-forward value is stale, not wrong, and the
+      # honest response is to say so. NGA 2023 repeats 2022 for 768 of 775
+      # districts, which is a POLIS refresh that did not happen.
+      frozen = !is.na(polis_pos) &
+        !is.na(dplyr::lag(polis_pos, order_by = year)) &
+        polis_pos == dplyr::lag(polis_pos, order_by = year)
+    ) |>
+    dplyr::ungroup() |>
+    dplyr::select(-dplyr::any_of(".obs_ratio")) |>
+    dplyr::mutate(
       source = dplyr::case_when(
         # "polis": trust any positive POLIS value (no WorldPop check)
         pop_source == "polis" & !polis_missing ~ "polis",
+        pop_source == "polis" & !is.na(polis_interp) ~ "polis_interp",
         # "worldpop": WorldPop first, then a POLIS value
         pop_source == "worldpop" & !is.na(pop_wp) ~ "worldpop",
         pop_source == "worldpop" & !polis_missing ~ "polis",
-        # "reconciled": a trusted POLIS value, then WorldPop
+        # "reconciled": trusted POLIS, then the district's own series, then
+        # WorldPop put on the district's level, then WorldPop raw (only for a
+        # district POLIS never described, which therefore has no level to hold)
         pop_source == "reconciled" & !polis_missing & !polis_suspect ~ "polis",
+        pop_source == "reconciled" & !is.na(polis_interp) ~ "polis_interp",
+        pop_source == "reconciled" & !is.na(wp_levelled) ~ "worldpop_levelled",
         pop_source == "reconciled" & !is.na(pop_wp) ~ "worldpop",
         # shared admin ladder fallback for every mode
         !is.na(dist_med) ~ "district_trend",
@@ -675,6 +913,8 @@ clean_pop <- function(
       ),
       pop = dplyr::case_when(
         source == "polis" ~ as.numeric(polis_pos),
+        source == "polis_interp" ~ as.numeric(polis_interp),
+        source == "worldpop_levelled" ~ as.numeric(wp_levelled),
         source == "worldpop" ~ as.numeric(pop_wp),
         source == "district_trend" ~ as.numeric(dist_med),
         source == "adm1" ~ as.numeric(adm1_year_med),
@@ -687,8 +927,54 @@ clean_pop <- function(
       # NA signals read as FALSE in the audit trail
       bad_vs_worldpop = bad_vs_worldpop %in% TRUE,
       bad_vs_history = bad_vs_history %in% TRUE,
-      bad_vs_adm1 = bad_vs_adm1 %in% TRUE
+      bad_vs_adm1 = bad_vs_adm1 %in% TRUE,
+      wp_implausible = wp_implausible %in% TRUE,
+      frozen = frozen %in% TRUE
     )
+}
+
+# Linear interpolation of `y` over `x`, filling INTERIOR gaps only. rule = 1
+# leaves anything outside the observed range as NA, which is what keeps the
+# head/tail on the levelled-WorldPop rung of the ladder instead of silently
+# extrapolating a trend POLIS never supported.
+# Carry `y` to every position from its nearest non-missing neighbour in `x`
+# (ties resolved backwards, i.e. the earlier year wins). Used for the
+# POLIS-to-WorldPop level ratio, where the nearest observation is the right
+# anchor and a global summary is not -- see .pop_impute_age().
+#' @noRd
+.pop_fill_nearest <- function(x, y) {
+  ok <- !is.na(y) & !is.na(x)
+  if (!any(ok)) {
+    return(rep(NA_real_, length(y)))
+  }
+  xs <- x[ok]
+  ys <- y[ok]
+  vapply(
+    x,
+    function(xi) {
+      if (is.na(xi)) {
+        return(NA_real_)
+      }
+      ys[which.min(abs(xs - xi))]
+    },
+    numeric(1)
+  )
+}
+
+#' @noRd
+.pop_interp <- function(x, y) {
+  ok <- !is.na(y) & !is.na(x)
+  if (sum(ok) < 2L) {
+    return(rep(NA_real_, length(y)))
+  }
+  o <- order(x[ok])
+  stats::approx(
+    x = x[ok][o],
+    y = y[ok][o],
+    xout = x,
+    rule = 1,
+    ties = "ordered"
+  )$y
 }
 
 # -----------------------------------------------------------------------------
@@ -700,7 +986,7 @@ clean_pop <- function(
 # WorldPop value exists, the offending band(s) fall back to WorldPop (nested
 # bands from one source are internally consistent); the breach is flagged.
 #' @noRd
-.pop_widen_reconcile <- function(imp, id_cols) {
+.pop_widen_reconcile <- function(imp, id_cols, pop_source = "reconciled") {
   to_wide <- function(df, age) {
     out <- df |>
       dplyr::select(
@@ -709,12 +995,30 @@ clean_pop <- function(
         polis_pos,
         pop_wp,
         source,
-        imputed
+        imputed,
+        level_ratio,
+        frozen
       )
-    keys <- c("pop", "polis_pos", "pop_wp", "source", "imputed")
+    keys <- c(
+      "pop",
+      "polis_pos",
+      "pop_wp",
+      "source",
+      "imputed",
+      "level_ratio",
+      "frozen"
+    )
     names(out)[match(keys, names(out))] <- paste0(
       age,
-      c("_pop", "_pop_polis", "_pop_wp", "_pop_source", "_pop_imputed")
+      c(
+        "_pop",
+        "_pop_polis",
+        "_pop_wp",
+        "_pop_source",
+        "_pop_imputed",
+        "_pop_level_ratio",
+        "_pop_frozen"
+      )
     )
     out |>
       dplyr::mutate(
@@ -729,12 +1033,71 @@ clean_pop <- function(
     Map(to_wide, imp, names(imp))
   )
 
+  # ---- age-source coherence -------------------------------------------------
+  # The three bands are imputed independently, and POLIS covers a different span
+  # for each of them (in AFG, u5 only 2020-2023 against u15's 2014-2025). So a
+  # district can end up with one band on its own POLIS level and another on raw
+  # WorldPop's -- and the bands are then not describing the same population. In
+  # NGA 2025 that produced 23 districts with u15 from WorldPop over all-ages from
+  # POLIS, reading a 14% under-15 share against the national 47.6%.
+  #
+  # The POLIS-to-WorldPop level gap is a property of the DISTRICT -- a boundary
+  # and allocation difference -- not of the age band, so a band with no ratio of
+  # its own can legitimately borrow a sibling's. That is what makes the whole
+  # nested set share one level.
+  # Only in "reconciled" mode. "worldpop" mode exists to return WorldPop's own
+  # numbers, so levelling them onto POLIS is precisely what the caller did not
+  # ask for; "polis" mode never lands on a raw-WorldPop value to begin with.
+  ratio_cols <- paste0(c("u5", "u15", "all"), "_pop_level_ratio")
+  have_ratio <- intersect(ratio_cols, names(wide))
+  if (identical(pop_source, "reconciled") && length(have_ratio)) {
+    shared_ratio <- do.call(
+      dplyr::coalesce,
+      lapply(have_ratio, function(cc) wide[[cc]])
+    )
+    for (age in c("u5", "u15", "all")) {
+      src_c <- paste0(age, "_pop_source")
+      wp_c <- paste0(age, "_pop_wp")
+      pop_c <- paste0(age, "_pop")
+      if (!all(c(src_c, wp_c, pop_c) %in% names(wide))) {
+        next
+      }
+      borrow <- wide[[src_c]] %in%
+        "worldpop" &
+        !is.na(wide[[wp_c]]) &
+        !is.na(shared_ratio)
+      wide[[pop_c]][borrow] <- as.integer(round(
+        wide[[wp_c]][borrow] * shared_ratio[borrow]
+      ))
+      wide[[src_c]][borrow] <- "worldpop_levelled"
+      wide[[paste0(age, "_pop_level_ratio")]][borrow] <- shared_ratio[borrow]
+    }
+  }
+
   wide <- wide |>
     dplyr::mutate(
       age_order_bad = (!is.na(u5_pop) & !is.na(u15_pop) & u5_pop > u15_pop) |
         (!is.na(u15_pop) & !is.na(all_pop) & u15_pop > all_pop) |
         (!is.na(u5_pop) & !is.na(all_pop) & u5_pop > all_pop)
     )
+  # flag any row whose bands STILL disagree about level (no sibling had a ratio)
+  lvl <- function(x) {
+    dplyr::case_when(
+      x %in% c("polis", "polis_interp", "worldpop_levelled") ~ "unit",
+      x %in% "worldpop" ~ "worldpop",
+      is.na(x) ~ NA_character_,
+      .default = "ladder"
+    )
+  }
+  wide$age_source_split <- mapply(
+    function(a, b, c) {
+      v <- stats::na.omit(c(a, b, c))
+      length(unique(v)) > 1L
+    },
+    lvl(wide$u5_pop_source),
+    lvl(wide$u15_pop_source),
+    lvl(wide$all_pop_source)
+  )
   # Only reconcile a breach when all three bands have a WorldPop value: swapping
   # the whole nested set to one source keeps it internally consistent. A partial
   # swap could leave the ordering still broken and would override an otherwise
@@ -759,6 +1122,9 @@ clean_pop <- function(
 # Roll-ups (boundary-validity aware)
 # -----------------------------------------------------------------------------
 
+# Summed on roll-up. Deliberately the population columns only: `_level_ratio`
+# is a per-district scaling factor and `_frozen` a per-district flag, neither of
+# which is meaningful added across districts.
 .pop_pop_cols <- c(
   "u5_pop",
   "u5_pop_polis",

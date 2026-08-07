@@ -80,16 +80,25 @@ test_that("clean_pop reconciles POLIS against WorldPop", {
   expect_equal(g1$u15_pop, 1100L)
   expect_equal(g1$u15_pop_source, "polis")
 
-  # zero -> missing -> WorldPop fallback
+  # zero -> missing -> WorldPop, LEVELLED onto the district's own scale. u15 has
+  # no trusted POLIS of its own in either year, so it borrows the ratio its
+  # sibling bands imply: u5 is 320 against WorldPop's 300, i.e. this district
+  # runs ~6.7% above WorldPop, so 900 * (320/300) = 960 rather than a bare 900.
+  # Without this the district's u15 would sit on WorldPop's level while its u5
+  # and all-ages sat on POLIS's -- three bands not describing one population.
   g2_20 <- cell(a2, "{G2}", 2020)
-  expect_equal(g2_20$u15_pop, 900L)
-  expect_equal(g2_20$u15_pop_source, "worldpop")
+  expect_equal(g2_20$u15_pop, 960L)
+  expect_equal(g2_20$u15_pop_source, "worldpop_levelled")
   expect_true(g2_20$u15_pop_imputed)
+  expect_equal(round(g2_20$u15_pop_level_ratio, 4), round(320 / 300, 4))
 
-  # implausible value (5 vs 900) -> suspect -> WorldPop
+  # implausible value (5 vs 900) -> suspect -> same treatment, 2021 ratio
   g2_21 <- cell(a2, "{G2}", 2021)
-  expect_equal(g2_21$u15_pop, 900L)
-  expect_equal(g2_21$u15_pop_source, "worldpop")
+  expect_equal(g2_21$u15_pop, 990L) # 900 * (330/300)
+  expect_equal(g2_21$u15_pop_source, "worldpop_levelled")
+
+  # the bands now share one level everywhere
+  expect_false(any(a2$age_source_split))
 
   # orphan guid g9 remapped onto DISTRICT C (g3): its value is used
   g3 <- cell(a2, "{G3}", 2020)
@@ -130,8 +139,14 @@ test_that("pop_source picks POLIS, WorldPop, or reconciled values", {
   w <- run("worldpop")
   expect_equal(w$u15_pop, 400L)
   expect_equal(w$u15_pop_source, "worldpop")
-  # "reconciled": rejects the suspect POLIS value for WorldPop
-  expect_equal(run("reconciled")$u15_pop_source, "worldpop")
+  # "reconciled": rejects the suspect POLIS value, then puts WorldPop on this
+  # district's own level (its u5 is 70 against WorldPop's 160, so POLIS runs at
+  # ~0.44 of WorldPop here) -> 400 * 0.4375 = 175. Note this ALSO repairs the
+  # age ordering: a bare 400 would have left u15 above all-ages' 350.
+  r <- run("reconciled")
+  expect_equal(r$u15_pop_source, "worldpop_levelled")
+  expect_equal(r$u15_pop, 175L)
+  expect_true(r$u5_pop <= r$u15_pop && r$u15_pop <= r$all_pop)
   # both source columns are always retained alongside the chosen value
   expect_equal(p$u15_pop_polis, 80L)
   expect_equal(p$u15_pop_wp, 400L)
@@ -164,8 +179,8 @@ test_that("clean_pop rolls up to adm1/adm0 by summing valid districts", {
     years = 2020:2021
   )
   d0 <- res$adm0[res$adm0$year == 2020, ]
-  # 1100 (g1) + 900 (g2, worldpop) + 980 (g3) = 2980
-  expect_equal(d0$u15_pop, 2980L)
+  # 1100 (g1) + 960 (g2, worldpop levelled onto its own scale) + 980 (g3)
+  expect_equal(d0$u15_pop, 3040L)
   expect_equal(nrow(res$adm1), 2L) # one province x two years
 })
 
