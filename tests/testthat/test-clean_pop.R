@@ -139,14 +139,17 @@ test_that("pop_source picks POLIS, WorldPop, or reconciled values", {
   w <- run("worldpop")
   expect_equal(w$u15_pop, 400L)
   expect_equal(w$u15_pop_source, "worldpop")
-  # "reconciled": rejects the suspect POLIS value, then puts WorldPop on this
-  # district's own level (its u5 is 70 against WorldPop's 160, so POLIS runs at
-  # ~0.44 of WorldPop here) -> 400 * 0.4375 = 175. Note this ALSO repairs the
-  # age ordering: a bare 400 would have left u15 above all-ages' 350.
+  # "reconciled": rejects the suspect POLIS value. This fixture is a SINGLE
+  # year, so there is only one observation of the POLIS:WorldPop ratio -- below
+  # `min_level_years` -- and no level can be established from one observation.
+  # The district therefore falls to raw WorldPop rather than being rescaled on
+  # a ratio it has no evidence for. Ordering still holds because the age-order
+  # reconciliation moves the whole nested set to one source.
   r <- run("reconciled")
-  expect_equal(r$u15_pop_source, "worldpop_levelled")
-  expect_equal(r$u15_pop, 175L)
+  expect_equal(r$u15_pop_source, "worldpop")
+  expect_equal(r$u15_pop, 400L)
   expect_true(r$u5_pop <= r$u15_pop && r$u15_pop <= r$all_pop)
+  expect_false(r$age_source_split)
   # both source columns are always retained alongside the chosen value
   expect_equal(p$u15_pop_polis, 80L)
   expect_equal(p$u15_pop_wp, 400L)

@@ -11,7 +11,7 @@ clean_pop(
   worldpop = NULL,
   years = 2010:2027,
   thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens_lo = 5,
-    share_lo = 0.2, share_hi = 0.7),
+    share_lo = 0.2, share_hi = 0.7, min_level_years = 2L),
   reference_date = Sys.Date(),
   pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
@@ -56,9 +56,14 @@ where WorldPop's raster allocation empties a district out and would
 otherwise convict a correct POLIS value.}
 \item{\code{share_lo}, \code{share_hi}}{bounds on the under-15 share of all-ages
 used when reporting age-band coherence.}
+\item{\code{min_level_years}}{how many trusted years a district needs before a
+POLIS:WorldPop level ratio is established from them. A level cannot be
+inferred from one observation, so below this count the district falls
+to raw WorldPop instead of being rescaled on a ratio it has no
+evidence for.}
 }
-Default \code{list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens_lo = 5, share_lo = 0.2, share_hi = 0.7)}. Supplying a partial list
-overrides only the keys given.}
+Default \code{list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens_lo = 5, share_lo = 0.2, share_hi = 0.7, min_level_years = 2L)}.
+Supplying a partial list overrides only the keys given.}
 
 \item{reference_date}{Date treated as "today" when deciding which boundary
 versions are \emph{current} for the orphan-GUID name crosswalk. Default

@@ -154,10 +154,15 @@
 #'       otherwise convict a correct POLIS value.}
 #'     \item{`share_lo`, `share_hi`}{bounds on the under-15 share of all-ages
 #'       used when reporting age-band coherence.}
+#'     \item{`min_level_years`}{how many trusted years a district needs before a
+#'       POLIS:WorldPop level ratio is established from them. A level cannot be
+#'       inferred from one observation, so below this count the district falls
+#'       to raw WorldPop instead of being rescaled on a ratio it has no
+#'       evidence for.}
 #'   }
 #'   Default `list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L,
-#'   dens_lo = 5, share_lo = 0.2, share_hi = 0.7)`. Supplying a partial list
-#'   overrides only the keys given.
+#'   dens_lo = 5, share_lo = 0.2, share_hi = 0.7, min_level_years = 2L)`.
+#'   Supplying a partial list overrides only the keys given.
 #' @param reference_date Date treated as "today" when deciding which boundary
 #'   versions are *current* for the orphan-GUID name crosswalk. Default
 #'   [Sys.Date()].
@@ -226,7 +231,8 @@ clean_pop <- function(
     min_votes = 1L,
     dens_lo = 5,
     share_lo = 0.2,
-    share_hi = 0.7
+    share_hi = 0.7,
+    min_level_years = 2L
   ),
   reference_date = Sys.Date(),
   pop_source = c("reconciled", "polis", "worldpop"),
@@ -247,7 +253,8 @@ clean_pop <- function(
       min_votes = 1L,
       dens_lo = 5,
       share_lo = 0.2,
-      share_hi = 0.7
+      share_hi = 0.7,
+      min_level_years = 2L
     ),
     thresholds %||% list()
   )
@@ -499,15 +506,38 @@ clean_pop <- function(
   # signal in .pop_impute_age(). Carried on the attribute table so everything
   # downstream can stay geometry-free.
   area <- NULL
-  if (inherits(shape, "sf") && requireNamespace("sf", quietly = TRUE)) {
-    area <- try(
-      data.frame(
-        adm2_guid = shape[["adm2_guid"]],
-        area_km2 = as.numeric(sf::st_area(shape)) / 1e6
-      ),
+  if (
+    inherits(shape, "sf") &&
+      !"area_km2" %in% names(shape) &&
+      requireNamespace("sf", quietly = TRUE)
+  ) {
+    # Global boundary layers routinely carry self-intersecting rings, and s2
+    # refuses the whole layer over one bad polygon ("Loop 0 is not valid: Edge
+    # 8 crosses edge 10" on the WHO global adm2 set). So retry on repaired
+    # geometry -- and if that fails too, SAY SO. A silently absent area means
+    # the density signal never fires and WorldPop goes on arbitrating
+    # unchallenged, which is exactly the case it exists to catch.
+    km2 <- try(
+      as.numeric(sf::st_area(sf::st_geometry(shape))) / 1e6,
       silent = TRUE
     )
-    if (inherits(area, "try-error")) area <- NULL
+    if (inherits(km2, "try-error")) {
+      km2 <- try(
+        as.numeric(sf::st_area(sf::st_make_valid(sf::st_geometry(shape)))) /
+          1e6,
+        silent = TRUE
+      )
+    }
+    if (inherits(km2, "try-error")) {
+      cli::cli_warn(c(
+        "Could not compute district areas from {.arg shape}; the density signal
+         is disabled.",
+        i = "Supply an {.field area_km2} column on {.arg shape} to enable it.",
+        x = conditionMessage(attr(km2, "condition"))
+      ))
+    } else {
+      area <- data.frame(adm2_guid = shape[["adm2_guid"]], area_km2 = km2)
+    }
   }
   geo <- if (inherits(shape, "sf")) sf::st_drop_geometry(shape) else shape
   if ("iso_3_code" %in% names(geo) && !"country_iso3code" %in% names(geo)) {
@@ -771,6 +801,7 @@ clean_pop <- function(
   # tolerate a partial `thresholds` list -- this is called directly in tests and
   # by callers written before a key existed, so a missing key must not error
   th$dens_lo <- th$dens_lo %||% 5
+  th$min_level_years <- th$min_level_years %||% 2L
   has_wp <- any(!is.na(base$pop_wp))
   d <- base |>
     dplyr::mutate(
@@ -873,7 +904,20 @@ clean_pop <- function(
         trusted_polis / pop_wp,
         NA_real_
       ),
-      level_ratio = .pop_fill_nearest(year, .obs_ratio),
+      # A level cannot be established from ONE observation. Requiring at least
+      # `min_level_years` trusted years is what stops a single surviving bad
+      # value defining the scale for a whole series: KATSINA (NGA) reports its
+      # PARENT's population in every year but one, and that lone survivor --
+      # itself about half the true figure -- would otherwise set a ratio of
+      # 0.54 and halve every correctly-sourced WorldPop year around it. With no
+      # ratio the district falls to raw WorldPop, which is the right answer for
+      # a district POLIS never usably described.
+      n_level_years = sum(!is.na(.obs_ratio)),
+      level_ratio = dplyr::if_else(
+        n_level_years >= th$min_level_years,
+        .pop_fill_nearest(year, .obs_ratio),
+        NA_real_
+      ),
       level_ratio = dplyr::if_else(
         is.finite(level_ratio) & level_ratio > 0,
         level_ratio,
@@ -1080,6 +1124,24 @@ clean_pop <- function(
         (!is.na(u15_pop) & !is.na(all_pop) & u15_pop > all_pop) |
         (!is.na(u5_pop) & !is.na(all_pop) & u5_pop > all_pop)
     )
+  # Only reconcile a breach when all three bands have a WorldPop value: swapping
+  # the whole nested set to one source keeps it internally consistent. A partial
+  # swap could leave the ordering still broken and would override an otherwise
+  # good POLIS value, so those rows are left as-is (still flagged age_order_bad).
+  fix <- wide$age_order_bad &
+    !is.na(wide$u5_pop_wp) &
+    !is.na(wide$u15_pop_wp) &
+    !is.na(wide$all_pop_wp)
+  for (age in c("u5", "u15", "all")) {
+    pop_c <- paste0(age, "_pop")
+    wp_c <- paste0(age, "_pop_wp")
+    src_c <- paste0(age, "_pop_source")
+    imp_c <- paste0(age, "_pop_imputed")
+    wide[[src_c]][fix] <- "worldpop"
+    wide[[imp_c]][fix] <- TRUE
+    wide[[pop_c]][fix] <- wide[[wp_c]][fix]
+  }
+
   # flag any row whose bands STILL disagree about level (no sibling had a ratio)
   lvl <- function(x) {
     dplyr::case_when(
@@ -1098,23 +1160,6 @@ clean_pop <- function(
     lvl(wide$u15_pop_source),
     lvl(wide$all_pop_source)
   )
-  # Only reconcile a breach when all three bands have a WorldPop value: swapping
-  # the whole nested set to one source keeps it internally consistent. A partial
-  # swap could leave the ordering still broken and would override an otherwise
-  # good POLIS value, so those rows are left as-is (still flagged age_order_bad).
-  fix <- wide$age_order_bad &
-    !is.na(wide$u5_pop_wp) &
-    !is.na(wide$u15_pop_wp) &
-    !is.na(wide$all_pop_wp)
-  for (age in c("u5", "u15", "all")) {
-    pop_c <- paste0(age, "_pop")
-    wp_c <- paste0(age, "_pop_wp")
-    src_c <- paste0(age, "_pop_source")
-    imp_c <- paste0(age, "_pop_imputed")
-    wide[[src_c]][fix] <- "worldpop"
-    wide[[imp_c]][fix] <- TRUE
-    wide[[pop_c]][fix] <- wide[[wp_c]][fix]
-  }
   wide
 }
 
@@ -1250,6 +1295,7 @@ utils::globalVariables(c(
   "polis_suspect",
   "trusted_polis",
   ".obs_ratio",
+  "n_level_years",
   "level_ratio",
   "frozen",
   "source",
