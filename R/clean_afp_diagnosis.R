@@ -366,3 +366,9 @@ clean_afp_diagnosis <- function(data) {
   }
   data
 }
+
+# NSE columns referenced bare in the join_by() of .afp_dx_add_class().
+utils::globalVariables(c(
+  "diagnosis_harmonised",
+  "diagnosis"
+))
