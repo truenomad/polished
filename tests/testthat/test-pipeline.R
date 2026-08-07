@@ -143,6 +143,7 @@ testthat::test_that("run_pipeline_dir reads a directory and writes the data/ lay
 })
 
 testthat::test_that("run_pipeline output_dir writes data + checks sub-directories", {
+  testthat::skip_if_not_installed("qs2")
   out_dir <- withr::local_tempdir()
   # explicit default config so the session-active config can't leak folder
   # overrides from an earlier test into this run
@@ -167,6 +168,7 @@ testthat::test_that("run_pipeline output_dir writes data + checks sub-directorie
 })
 
 testthat::test_that("run_pipeline does not rewrite unchanged output files", {
+  testthat::skip_if_not_installed("qs2")
   raw_dir <- withr::local_tempdir()
   out_dir <- withr::local_tempdir()
   cache_dir <- withr::local_tempdir()
@@ -184,6 +186,7 @@ testthat::test_that("run_pipeline does not rewrite unchanged output files", {
 })
 
 testthat::test_that("cfg$cache_dir threads the SIA cache through run_pipeline", {
+  testthat::skip_if_not_installed("qs2")
   cache_dir <- withr::local_tempdir()
   inputs <- list(
     activity = data.frame(
@@ -240,6 +243,7 @@ testthat::test_that("region scope reaches the IM/LQAS roll-ups via who_region at
 })
 
 testthat::test_that("run_pipeline reuses the clean cache when the source is unchanged", {
+  testthat::skip_if_not_installed("qs2")
   raw_dir <- withr::local_tempdir()
   cache_dir <- withr::local_tempdir()
   saveRDS(raw_afp(), file.path(raw_dir, "raw_afp.rds"))
@@ -326,6 +330,7 @@ testthat::test_that(".polis_lazy_ref defers the read and memoises it", {
 })
 
 testthat::test_that("load_polished reads and filters the written outputs by country", {
+  testthat::skip_if_not_installed("qs2")
   out_dir <- withr::local_tempdir()
   afp <- raw_afp()
   afp$CountryISO3Code <- c("NGA", "NGA", "TCD")
@@ -342,6 +347,7 @@ testthat::test_that("load_polished reads and filters the written outputs by coun
 })
 
 testthat::test_that("load_polished resolves an ISO3 country filter to name-keyed roll-ups", {
+  testthat::skip_if_not_installed("qs2")
   out_dir <- withr::local_tempdir()
   d <- file.path(out_dir, "data")
   dir.create(d, recursive = TRUE)

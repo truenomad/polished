@@ -424,6 +424,7 @@ testthat::test_that("clean_sia bins campaigns into rounds and flags the latest",
 })
 
 testthat::test_that("clean_sia caches by content and reuses on identical calls", {
+  testthat::skip_if_not_installed("qs2")
   activity <- data.frame(
     Id = 1,
     SIASubActivityCode = "S1",
@@ -481,6 +482,7 @@ testthat::test_that("clean_sia caches by content and reuses on identical calls",
 })
 
 testthat::test_that("sia cache write surfaces a failed rename and cleans up", {
+  testthat::skip_if_not_installed("qs2")
   cleaned <- tibble::tibble(id = 1L)
   cache_path <- file.path(withr::local_tempdir(), "x.qs2")
   # a cross-device rename returns FALSE; we should warn and leave no stray files
