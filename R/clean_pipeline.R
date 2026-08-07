@@ -553,9 +553,10 @@ print.polis_config <- function(x, ...) {
   }
   pools <- .polis_guid_pools(frames)
   total <- c(adm0 = 0L, adm1 = 0L, adm2 = 0L)
+  fill_env <- environment()
   fill <- function(df) {
     out <- .polis_fill_guids(df, pools)
-    total <<- total + attr(out, "guid_filled")
+    fill_env$total <- fill_env$total + attr(out, "guid_filled")
     attr(out, "guid_filled") <- NULL
     out
   }
@@ -1543,10 +1544,11 @@ load_polished <- function(
 .polis_lazy_ref <- function(handle) {
   resolved <- NULL
   loaded <- FALSE
+  ref_env <- environment()
   function() {
     if (!loaded) {
-      resolved <<- .polis_resolve_ref(handle)
-      loaded <<- TRUE
+      ref_env$resolved <- .polis_resolve_ref(handle)
+      ref_env$loaded <- TRUE
     }
     resolved
   }

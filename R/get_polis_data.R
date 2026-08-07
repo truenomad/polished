@@ -327,18 +327,19 @@ get_polis_data <- function(
       # corrupt (e.g. a torn write or a bad manual conversion) is also
       # rebuilt from the intact parts.
       canonical_corrupt <- FALSE
+      corrupt_env <- environment()
       out_rows <- if (file.exists(out_file)) {
         withCallingHandlers(
           tryCatch(
             nrow(.polis_io_read(out_file, ext)),
             error = function(e) {
-              canonical_corrupt <<- TRUE
+              corrupt_env$canonical_corrupt <- TRUE
               0L
             }
           ),
           warning = function(w) {
             if (grepl("hash mismatch|corrupt", conditionMessage(w))) {
-              canonical_corrupt <<- TRUE
+              corrupt_env$canonical_corrupt <- TRUE
               invokeRestart("muffleWarning")
             }
           }
@@ -446,6 +447,7 @@ get_polis_data <- function(
       }
 
       running_total <- current_rows
+      pb_env <- environment()
       lapply(specs, function(spec) {
         on_batch_cb <- function(
           rows_in_batch,
@@ -453,10 +455,10 @@ get_polis_data <- function(
           year,
           last_id
         ) {
-          running_total <<- running_total + rows_in_batch
-          n_new <<- .polis_pretty_num(rows_in_batch)
-          n_cum <<- .polis_pretty_num(running_total)
-          pb_cur <<- n_cum
+          pb_env$running_total <- pb_env$running_total + rows_in_batch
+          pb_env$n_new <- .polis_pretty_num(rows_in_batch)
+          pb_env$n_cum <- .polis_pretty_num(pb_env$running_total)
+          pb_env$pb_cur <- pb_env$n_cum
           if (!is.null(pb_id)) {
             cli::cli_progress_update(
               id = pb_id,

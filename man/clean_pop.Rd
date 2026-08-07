@@ -10,7 +10,8 @@ clean_pop(
   shape = NULL,
   worldpop = NULL,
   years = 2010:2027,
-  thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L),
+  thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens_lo = 5,
+    share_lo = 0.2, share_hi = 0.7, min_level_years = 2L),
   reference_date = Sys.Date(),
   pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
@@ -40,11 +41,29 @@ frame or path) carrying \code{adm2_guid}, \code{year} and a population column. \
 \item{years}{Calendar years to keep (POLIS carries 1990-2034 incl. projections).
 Default \code{2010:2027}.}
 
-\item{thresholds}{Named list of the implausibility tunables: \code{ratio_lo} /
-\code{ratio_hi} (a POLIS value below/above this fold of WorldPop is implausible),
-\code{mad_k} (scaled-MAD distance from the district's own median), \code{min_votes}
-(how many signals must fire to call a value suspect). Default
-\code{list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L)}.}
+\item{thresholds}{Named list of the implausibility tunables:
+\describe{
+\item{\code{ratio_lo}, \code{ratio_hi}}{a POLIS value below/above this fold of
+WorldPop is implausible (\code{bad_vs_worldpop}, and against the province's
+typical ratio for \code{bad_vs_adm1}).}
+\item{\code{mad_k}}{scaled-MAD distance from the district's own median
+(\code{bad_vs_history}) -- the signal that catches a single bad year.}
+\item{\code{min_votes}}{how many signals must fire to call a value suspect.}
+\item{\code{dens_lo}}{people per km2 below which WORLDPOP is treated as the
+implausible source rather than the arbiter (\code{wp_implausible}). Needs a
+polygon \code{shape}; without one the signal never fires. Guards the case
+where WorldPop's raster allocation empties a district out and would
+otherwise convict a correct POLIS value.}
+\item{\code{share_lo}, \code{share_hi}}{bounds on the under-15 share of all-ages
+used when reporting age-band coherence.}
+\item{\code{min_level_years}}{how many trusted years a district needs before a
+POLIS:WorldPop level ratio is established from them. A level cannot be
+inferred from one observation, so below this count the district falls
+to raw WorldPop instead of being rescaled on a ratio it has no
+evidence for.}
+}
+Default \code{list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens_lo = 5, share_lo = 0.2, share_hi = 0.7, min_level_years = 2L)}.
+Supplying a partial list overrides only the keys given.}
 
 \item{reference_date}{Date treated as "today" when deciding which boundary
 versions are \emph{current} for the orphan-GUID name crosswalk. Default
@@ -53,12 +72,15 @@ versions are \emph{current} for the orphan-GUID name crosswalk. Default
 \item{pop_source}{Which population to use as the chosen \verb{<age>_pop} value
 (the denominator indicators read). One of:
 \describe{
-\item{\code{"reconciled"}}{(default) a trusted POLIS value, else WorldPop, else
-the district -> province -> country ladder.}
-\item{\code{"polis"}}{the POLIS value (gaps filled from the ladder; WorldPop is
-ignored even if supplied) -- the full POLIS population.}
+\item{\code{"reconciled"}}{(default) a trusted POLIS value, then the district's
+own interpolated series, then WorldPop rescaled onto the district's
+level, then raw WorldPop, then the district -> province -> country
+ladder. See the substitution ladder in Details.}
+\item{\code{"polis"}}{the POLIS value, with interior gaps interpolated from the
+district's own series and the rest from the admin ladder; WorldPop is
+ignored even if supplied -- the full POLIS population.}
 \item{\code{"worldpop"}}{the WorldPop value, else a POLIS value, else the
-ladder.}
+ladder. No levelling: this mode is asking for WorldPop's own numbers.}
 }
 The output always keeps \verb{<age>_pop_polis} and \verb{<age>_pop_wp} alongside the
 chosen \verb{<age>_pop}, so every source stays inspectable whatever the mode.}
@@ -70,14 +92,22 @@ A named list:
 \describe{
 \item{\code{adm2}}{district x year, wide: the id columns plus, per age band
 (\code{u5}/\code{u15}/\code{all}), \verb{<age>_pop} (chosen), \verb{<age>_pop_polis},
-\verb{<age>_pop_wp}, \verb{<age>_pop_source} (\code{polis}/\code{worldpop}/\code{district_trend}/
-\code{adm1}/\code{adm0}) and \verb{<age>_pop_imputed}, plus \code{age_order_bad}. Restricted
+\verb{<age>_pop_wp}, \verb{<age>_pop_source} (\code{polis} / \code{polis_interp} /
+\code{worldpop_levelled} / \code{worldpop} / \code{district_trend} / \code{adm1} / \code{adm0}),
+\verb{<age>_pop_imputed}, \verb{<age>_pop_level_ratio} (the POLIS:WorldPop ratio
+used to put a substituted value on the district's level -- \code{NA} when
+none was needed or none could be formed) and \verb{<age>_pop_frozen} (the
+POLIS value repeated verbatim from the previous year). Plus
+\code{age_order_bad} and \code{age_source_split} (the bands do not share a
+level -- non-empty only where no band had a ratio to lend). Restricted
 to the boundary valid each year (no double-counting versioned shapes).}
 \item{\code{adm1}, \code{adm0}}{province / country roll-ups (sums) of the nine pop
-columns.}
+columns. The per-district ratio and frozen flags are deliberately not
+rolled up: neither is meaningful summed across districts.}
 \item{\code{meta}}{a list (skipped by the file writer): \code{audit} (one row per
-district x year x age, with every signal flag), \code{dup_conflicts},
-\code{orphan_xwalk}, \code{params}.}
+district x year x age, with every signal flag -- \code{bad_vs_worldpop},
+\code{bad_vs_history}, \code{bad_vs_adm1}, \code{wp_implausible}, \code{frozen}, \code{n_votes},
+\code{polis_suspect}), \code{dup_conflicts}, \code{orphan_xwalk}, \code{params}.}
 }
 }
 \description{
@@ -86,9 +116,106 @@ from the raw POLIS Population table. Used standalone it cleans POLIS by itself
 -- collapses duplicate \verb{(place, year)} rows to their median, drops zeros/blanks
 to missing, flags values that jump from a district's own history, and fills
 gaps from a district -> province -> country ladder. Given \code{worldpop} it adds a
-cross-source layer: each POLIS value is checked against WorldPop and a
-missing/implausible one is replaced (WorldPop first, then the same ladder).
+cross-source layer: each POLIS value is checked against WorldPop, and one that
+is missing or implausible is replaced by a substitution ladder that keeps the
+district on its own population level.
 }
+\section{What goes wrong in POLIS population, and what catches it}{
+Two jobs, deliberately separate. \strong{Detection} decides whether a value is
+usable; \strong{substitution} decides what replaces it when it is not. Conflating
+them is how a repaired value becomes a worse problem than the one it fixed
+(see \emph{Why substitution is level-matched} below).
+
+\tabular{lll}{
+\strong{Fault} \tab \strong{Origin} \tab \strong{Handled by} \cr
+Duplicate \verb{(place, year)} rows, often conflicting \tab POLIS \tab median
+collapse; the conflicts are returned in \code{meta$dup_conflicts} \cr
+Zeros / blanks presented as real values \tab POLIS \tab dropped to \code{NA} \cr
+A single year wildly off the district's own series \tab POLIS \tab
+\code{bad_vs_history} (scaled MAD, \code{mad_k}) \cr
+A district carrying its PARENT's population -- typically where an adm2
+shares a name with its adm1 \tab POLIS \tab \code{bad_vs_worldpop} +
+\code{bad_vs_adm1} \cr
+District GUIDs that have since changed boundary \tab POLIS \tab orphan
+name crosswalk; unresolved ones stay in \code{meta$orphan_xwalk} \cr
+u5 > u15 > all-ages ordering breaches \tab POLIS \tab \code{age_order_bad} +
+whole-set fallback \cr
+WorldPop emptying out over water and dense urban cores, so it convicts a
+POLIS value for being right \tab WorldPop \tab \code{wp_implausible}
+(density, \code{dens_lo}) \cr
+The three age bands landing on different sources, so they no longer
+describe one population \tab clean_pop \tab shared level ratio +
+\code{age_source_split} \cr
+A year repeated verbatim from the one before -- a refresh that did not
+happen \tab POLIS \tab \verb{<age>_pop_frozen} (flagged, never substituted) \cr
+POLIS coverage starting late / ending early, so head and tail years have
+no POLIS at all \tab POLIS \tab the substitution ladder \cr
+}
+
+Two further properties are not faults but must be understood before the
+output is used. The POLIS-to-WorldPop gap is \strong{heterogeneous across
+districts} -- in Nigeria the ratio spans roughly 0.7 to 2.7 with a long tail
+-- so no single national rescaling can reconcile them, which is why every
+correction here is per district. And POLIS tends to run \strong{high in aggregate}
+(its Nigerian under-15 total implies a country larger than the UN estimate),
+so rates computed on it are correspondingly lower. Both are visible because
+\verb{<age>_pop_polis} and \verb{<age>_pop_wp} are always retained.
+}
+
+\section{Why substitution is level-matched}{
+The two sources disagree about a district's \emph{level}, not just its value. So
+replacing a rejected POLIS year with WorldPop's raw number -- the obvious
+move, and what this function used to do -- turns a rejected \strong{year} into a
+rejected \strong{level}: the series then steps by the gap between two sources at
+whichever years happened to be rejected. That is a district-specific,
+year-specific discontinuity, and it is the single hardest kind for anything
+downstream to absorb, because a fitted model reads it as a real change in
+whatever the denominator feeds rather than as an artefact.
+
+So a district never leaves its own level. The ladder, in order:
+\enumerate{
+\item \strong{\code{polis}} -- a POLIS value that survived every signal.
+\item \strong{\code{polis_interp}} -- an interior gap, linearly interpolated from the
+district's own trusted years. Never extrapolates.
+\item \strong{\code{worldpop_levelled}} -- head/tail years, where there is no trusted
+value on one side and the shape has to come from WorldPop. Rescaled by
+\verb{<age>_pop_level_ratio}, the POLIS:WorldPop ratio at the district's
+\emph{nearest} trusted year. Nearest rather than an average because the two
+sources grow at different rates, and a summary ratio makes a projected
+year step down on a rising series.
+\item \strong{\code{worldpop}} -- raw, and only for a district POLIS never usably
+described, which therefore has no level of its own to hold.
+\item \strong{\code{district_trend} / \code{adm1} / \code{adm0}} -- the admin ladder, when there is
+no WorldPop either.
+}
+
+A rejected outlier is treated exactly as a missing value, so detection and
+substitution stay independent.
+
+On Nigerian adm2 (774 districts, 2016-2026) the ladder takes district-years
+moving more than 25\% year-on-year from 780 to 21, raw-WorldPop fallbacks from
+about 2,880 to 484, and districts whose age bands sit on different levels
+from 23 to 0.
+}
+
+\section{Worked examples}{
+\emph{EWEKORO (Ogun, Nigeria)} -- POLIS reports 131,998 under-15s for 2019 against
+roughly 39,000 either side. \code{bad_vs_history} rejects it; rung 2 interpolates
+40,062 from the district's own 2018 and 2020. Its 2016, 2017 and 2026 have no
+POLIS at all and take rung 3.
+
+\emph{KATSINA (Nigeria)} -- an adm2 sharing its name with its adm1, reporting
+2.1-3.9M under-15s where the district holds roughly 265,000.
+\code{bad_vs_worldpop} and \code{bad_vs_adm1} reject every year, so no trusted value
+exists to define a level and the district correctly falls to rung 4.
+
+\emph{BAKASSI (Cross River, Nigeria)} -- the opposite case. WorldPop gives 82
+under-15s over 26 km2, about 3 per km2, because the district is largely
+water. Without the density signal WorldPop would convict POLIS's 26,536;
+\code{wp_implausible} disqualifies WorldPop as the arbiter instead, POLIS is kept,
+and the level ratio is around 315.
+}
+
 \examples{
 pop_raw <- data.frame(
   PlaceId = "0cda1c45-9529-4188-aaaa-000000000001",

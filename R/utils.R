@@ -1250,6 +1250,7 @@
     )
   }
 
+  pb_env <- environment()
   update_progress_from_disk <- function() {
     changed <- FALSE
     for (i in seq_len(n_specs)) {
@@ -1259,8 +1260,8 @@
       }
       cur_mtime <- as.numeric(file.info(pf)$mtime)
       if (cur_mtime != file_mtimes[i]) {
-        file_mtimes[i] <<- cur_mtime
-        file_rows[i] <<- tryCatch(
+        pb_env$file_mtimes[i] <- cur_mtime
+        pb_env$file_rows[i] <- tryCatch(
           nrow(.polis_io_read(pf, ext)),
           error = function(e) file_rows[i]
         )
@@ -1270,9 +1271,9 @@
     current_total <- sum(file_rows)
     if (current_total > prev_total) {
       delta <- current_total - prev_total
-      n_new <<- .polis_pretty_num(delta)
-      n_cum <<- .polis_pretty_num(current_total)
-      pb_cur <<- n_cum
+      pb_env$n_new <- .polis_pretty_num(delta)
+      pb_env$n_cum <- .polis_pretty_num(current_total)
+      pb_env$pb_cur <- pb_env$n_cum
       if (!is.null(pb_id)) {
         # Cosmetic bar: a dropped bar id must not abort the download.
         try(
@@ -1297,7 +1298,7 @@
           stringsAsFactors = FALSE
         )
       )
-      prev_total <<- current_total
+      pb_env$prev_total <- current_total
     }
     invisible(changed)
   }
@@ -1811,6 +1812,7 @@
   manifest <- if (file.exists(manifest_path)) readRDS(manifest_path) else list()
   written <- 0L
   skipped <- 0L
+  io_env <- environment()
 
   write_df <- function(value, path) {
     stamp <- .polis_hash(value)
@@ -1820,12 +1822,12 @@
         file.exists(path) &&
         identical(manifest[[name]], stamp)
     ) {
-      skipped <<- skipped + 1L
+      io_env$skipped <- io_env$skipped + 1L
       return(invisible())
     }
     .polis_write(value, path)
-    manifest[[name]] <<- stamp
-    written <<- written + 1L
+    io_env$manifest[[name]] <- stamp
+    io_env$written <- io_env$written + 1L
   }
 
   for (key in names(cleaned)) {
