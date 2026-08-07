@@ -511,23 +511,11 @@ clean_pop <- function(
       !"area_km2" %in% names(shape) &&
       requireNamespace("sf", quietly = TRUE)
   ) {
-    # Global boundary layers routinely carry self-intersecting rings, and s2
-    # refuses the whole layer over one bad polygon ("Loop 0 is not valid: Edge
-    # 8 crosses edge 10" on the WHO global adm2 set). So retry on repaired
-    # geometry -- and if that fails too, SAY SO. A silently absent area means
-    # the density signal never fires and WorldPop goes on arbitrating
-    # unchallenged, which is exactly the case it exists to catch.
-    km2 <- try(
-      as.numeric(sf::st_area(sf::st_geometry(shape))) / 1e6,
-      silent = TRUE
-    )
-    if (inherits(km2, "try-error")) {
-      km2 <- try(
-        as.numeric(sf::st_area(sf::st_make_valid(sf::st_geometry(shape)))) /
-          1e6,
-        silent = TRUE
-      )
-    }
+    # s2 rejects a whole layer over one self-intersecting ring, which global
+    # boundary sets routinely carry. .spatial_area() measures with s2 off on an
+    # equal-area projection (m2), which tolerates them. Warn if that fails too:
+    # without an area the density signal silently never fires.
+    km2 <- try(.spatial_area(sf::st_geometry(shape)) / 1e6, silent = TRUE)
     if (inherits(km2, "try-error")) {
       cli::cli_warn(c(
         "Could not compute district areas from {.arg shape}; the density signal
