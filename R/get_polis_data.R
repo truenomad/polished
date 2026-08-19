@@ -335,6 +335,7 @@ get_polis_data <- function(
       if (dir.exists(parts_dir)) {
         try(unlink(parts_dir, recursive = TRUE, force = TRUE), silent = TRUE)
       }
+      dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
       current_rows <- 0L
     }
 
