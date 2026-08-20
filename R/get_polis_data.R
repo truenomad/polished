@@ -318,7 +318,28 @@ get_polis_data <- function(
       integer(1)
     ))
 
-    if (!is.na(declared_total) && current_rows >= declared_total) {
+    if (!is.na(declared_total) && current_rows > declared_total) {
+      if (!isTRUE(quiet)) {
+        cli::cli_alert_warning(paste0(
+          nm,
+          ": local copy holds ",
+          .polis_pretty_num(current_rows),
+          " rows against ",
+          .polis_pretty_num(declared_total),
+          " declared by POLIS; clearing the cache and refetching."
+        ))
+      }
+      if (file.exists(out_file)) {
+        try(file.remove(out_file), silent = TRUE)
+      }
+      if (dir.exists(parts_dir)) {
+        try(unlink(parts_dir, recursive = TRUE, force = TRUE), silent = TRUE)
+      }
+      dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
+      current_rows <- 0L
+    }
+
+    if (!is.na(declared_total) && current_rows == declared_total) {
       # Already complete. Only re-merge parts to canonical when the
       # canonical is missing or smaller than parts -- a prior refetch
       # may have padded the canonical with rows that aren't on disk in

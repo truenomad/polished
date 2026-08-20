@@ -1,3 +1,13 @@
+# polished 0.2.1
+
+* `get_polis_data()` no longer treats a local copy that is larger than the
+  server's declared row count as up to date. That test used `>=`, so a table
+  carrying rows POLIS had since retired, or duplicates from an interrupted
+  merge, reported itself complete and was skipped on every subsequent run --
+  the surplus kept the condition true, so the table could never refresh again
+  without `force = TRUE`. The count is now compared with `==`, and a local
+  copy holding more rows than declared clears its cache and refetches.
+
 # polished 0.2.0
 
 * Added `clean_afp_diagnosis()`, a `clean_afp()` step that harmonises the AFP
