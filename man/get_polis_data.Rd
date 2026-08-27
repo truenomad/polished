@@ -157,6 +157,13 @@ mismatch against POLIS's \verb{@odata.count}). Only when a gap is detected
 does it issue a \verb{$select=Id} probe and refetch missing rows via OData
 \verb{Id in (...)} chunks. Set to \code{FALSE} to skip the post-download check
 entirely.
+
+\strong{Resilience.} Read timeouts are retried inside each request, and a year
+whose worker still fails is requeued up to three times. Parts are
+checkpointed, so a retry resumes from the last Id. A copy slightly ahead
+of the declared row count keeps its cache; only an excess beyond 1\%
+clears the year parts. \code{POLIS_TIMEOUT_SECONDS} overrides the 120-second
+default.
 }
 \examples{
 \dontrun{

@@ -495,3 +495,30 @@ testthat::test_that("formatted xlsx writer styles every column type", {
   polished:::.polis_write_excel_formatted(edges, path3)
   testthat::expect_true(file.exists(path3))
 })
+
+# -------------------------------------------------------------------
+# Request resilience — transport failures must fall under the retry
+# budget, and the read timeout must be tunable without a reinstall.
+# -------------------------------------------------------------------
+
+testthat::test_that(".polis_timeout_seconds honours the env override", {
+  withr::local_envvar(POLIS_TIMEOUT_SECONDS = "")
+  testthat::expect_equal(polished:::.polis_timeout_seconds(), 120)
+
+  withr::local_envvar(POLIS_TIMEOUT_SECONDS = "300")
+  testthat::expect_equal(polished:::.polis_timeout_seconds(), 300)
+})
+
+testthat::test_that(".polis_timeout_seconds falls back when the override is junk", {
+  for (bad in c("not-a-number", "0", "-5")) {
+    withr::local_envvar(POLIS_TIMEOUT_SECONDS = bad)
+    testthat::expect_equal(polished:::.polis_timeout_seconds(), 120)
+  }
+})
+
+testthat::test_that(".polis_get_body retries transport failures, not just HTTP statuses", {
+  # httr2 defaults retry_on_failure = FALSE, which leaves curl timeouts
+  # outside max_tries entirely
+  body <- paste(deparse(polished:::.polis_get_body), collapse = " ")
+  testthat::expect_match(body, "retry_on_failure = TRUE", fixed = TRUE)
+})

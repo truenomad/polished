@@ -546,17 +546,31 @@
   }
 }
 
+# Per-request read timeout, overridable with POLIS_TIMEOUT_SECONDS so a slow
+# POLIS day does not need a reinstall to ride out.
+.polis_timeout_seconds <- function(default_seconds = 120L) {
+  raw <- Sys.getenv("POLIS_TIMEOUT_SECONDS", "")
+  val <- suppressWarnings(as.numeric(raw))
+  if (length(val) != 1L || is.na(val) || val <= 0) {
+    as.numeric(default_seconds)
+  } else {
+    val
+  }
+}
+
 # Single GET with retry + gzip. Returns the parsed JSON body.
 .polis_get_body <- function(
   url,
   polis_api_key,
   max_attempts = 5L,
-  timeout_seconds = 120L
+  timeout_seconds = .polis_timeout_seconds()
 ) {
+  # retry_on_failure covers curl transport errors; without it a POLIS read
+  # timeout bypasses max_tries and kills the run
   resp <- httr2::request(url) |>
     httr2::req_headers(`authorization-token` = polis_api_key) |>
     httr2::req_options(accept_encoding = "gzip") |>
-    httr2::req_retry(max_tries = max_attempts) |>
+    httr2::req_retry(max_tries = max_attempts, retry_on_failure = TRUE) |>
     httr2::req_timeout(timeout_seconds) |>
     httr2::req_perform()
   httr2::resp_body_json(resp)
@@ -1363,6 +1377,11 @@
     )
   }
 
+  # a year that times out is usually transient, and its part file lets the
+  # retry resume from the last Id rather than start over
+  max_spec_attempts <- 3L
+  attempts <- integer(n_specs)
+
   n_workers <- length(cl)
   node_spec <- integer(n_workers)
   remaining <- seq_along(specs)
@@ -1376,6 +1395,7 @@
       }
       idx <- remaining[1L]
       remaining <- remaining[-1L]
+      attempts[idx] <- attempts[idx] + 1L
       parallel_send_call(
         cl[[n]],
         worker_wrapper,
@@ -1398,8 +1418,32 @@
     if (any(ready)) {
       result <- parallel_recv_one_result(cl)
       idx <- result$tag
-      all_results[[idx]] <- result$value
-      completed <- completed + 1L
+      value <- result$value
+      failed <- !(is.list(value) && isTRUE(value$ok))
+      if (failed && attempts[idx] < max_spec_attempts) {
+        if (!isTRUE(quiet)) {
+          cli::cli_alert_warning(paste0(
+            nm,
+            " ",
+            specs[[idx]]$year,
+            ": attempt ",
+            attempts[idx],
+            " of ",
+            max_spec_attempts,
+            " failed (",
+            if (is.list(value) && !is.null(value$message)) {
+              value$message
+            } else {
+              "unknown worker error"
+            },
+            "); requeuing."
+          ))
+        }
+        remaining <- c(remaining, idx)
+      } else {
+        all_results[[idx]] <- value
+        completed <- completed + 1L
+      }
       node_spec[node_spec == idx] <- 0L
     }
 
@@ -1430,7 +1474,15 @@
         specs[[k]]$year
       }
       cli::cli_abort(c(
-        "x" = paste0(nm, " ", yr, ": worker failed - ", msg),
+        "x" = paste0(
+          nm,
+          " ",
+          yr,
+          ": worker failed after ",
+          max_spec_attempts,
+          " attempts - ",
+          msg
+        ),
         "i" = paste0(
           "Part file at ",
           specs[[k]]$part_file,

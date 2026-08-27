@@ -683,3 +683,126 @@ testthat::test_that("get_polis_data aborts with a checkpoint when a year worker 
     "fetch failed"
   )
 })
+
+# -------------------------------------------------------------------
+# Declared-count overshoot — rows POLIS retires between pulls leave a
+# small surplus that must not be mistaken for a corrupt cache.
+# -------------------------------------------------------------------
+
+testthat::test_that("a small overshoot keeps the parts and the rows they hold", {
+  root <- withr::local_tempdir()
+  seeded <- data.frame(
+    Id = 1:3,
+    PublishDate = rep("2024-06-15", 3),
+    stringsAsFactors = FALSE
+  )
+  part_file <- seed_parts(
+    polis_folder = root,
+    table_name = "raw_im",
+    year = 2024,
+    df = seeded
+  )
+
+  # POLIS declares one row fewer than the parts hold
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 2,
+    .polis_fetch_id_page = function(...) data.frame(),
+    .polis_fetch_id_list = function(...) integer(0),
+    .package = "polished"
+  )
+
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE,
+    prune_parts = FALSE
+  )
+
+  testthat::expect_true(file.exists(part_file))
+  testthat::expect_equal(nrow(readRDS(file.path(root, "raw_im.rds"))), 3L)
+})
+
+testthat::test_that("an overshoot beyond the tolerance clears the year parts", {
+  root <- withr::local_tempdir()
+  n_seeded <- 1500L
+  part_file <- seed_parts(
+    polis_folder = root,
+    table_name = "raw_im",
+    year = 2024,
+    df = data.frame(
+      Id = seq_len(n_seeded),
+      PublishDate = rep("2024-06-15", n_seeded),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 0,
+    .polis_fetch_id_page = function(...) data.frame(),
+    .polis_fetch_id_list = function(...) integer(0),
+    .package = "polished"
+  )
+
+  polished::get_polis_data(
+    tables = "im",
+    min_date = "2024-01-01",
+    max_date = "2024-12-31",
+    polis_folder = root,
+    polis_api_key = "dummy",
+    workers = 1L,
+    quiet = TRUE,
+    prune_parts = FALSE
+  )
+
+  testthat::expect_false(file.exists(part_file))
+})
+
+testthat::test_that("an interrupted refetch leaves the canonical file in place", {
+  root <- withr::local_tempdir()
+  out_file <- file.path(root, "raw_im.rds")
+  saveRDS(
+    data.frame(
+      Id = 1:2,
+      PublishDate = rep("2024-06-15", 2),
+      stringsAsFactors = FALSE
+    ),
+    out_file
+  )
+  n_seeded <- 1500L
+  seed_parts(
+    polis_folder = root,
+    table_name = "raw_im",
+    year = 2024,
+    df = data.frame(
+      Id = seq_len(n_seeded),
+      PublishDate = rep("2024-06-15", n_seeded),
+      stringsAsFactors = FALSE
+    )
+  )
+
+  # the overshoot clears the parts, then the refetch dies mid-flight
+  testthat::local_mocked_bindings(
+    .polis_get_count = function(...) 5,
+    .polis_fetch_id_page = function(...) stop("page boom"),
+    .package = "polished"
+  )
+
+  testthat::expect_error(
+    polished::get_polis_data(
+      tables = "im",
+      min_date = "2024-01-01",
+      max_date = "2024-12-31",
+      polis_folder = root,
+      polis_api_key = "dummy",
+      workers = 1L,
+      quiet = TRUE
+    ),
+    "fetch failed"
+  )
+  testthat::expect_true(file.exists(out_file))
+  testthat::expect_equal(nrow(readRDS(out_file)), 2L)
+})

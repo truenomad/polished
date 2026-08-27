@@ -1,3 +1,17 @@
+# polished 0.2.2
+
+* Read timeouts are now retried. `httr2::req_retry()` defaults
+  `retry_on_failure = FALSE`, so `max_tries` never covered transport errors
+  and a single timeout aborted the run. `POLIS_TIMEOUT_SECONDS` overrides
+  the 120-second default.
+* A year whose worker fails is requeued up to three times instead of ending
+  the download outright. Parts are checkpointed, so each retry resumes from
+  the last Id.
+* A local copy slightly ahead of the declared row count keeps its cache;
+  rows POLIS retires between pulls are not corruption. Only an excess beyond
+  1% clears the year parts, and the canonical file now survives until its
+  replacement is written.
+
 # polished 0.2.1
 
 * `get_polis_data()` no longer treats a local copy that is larger than the

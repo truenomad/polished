@@ -59,6 +59,13 @@
 #' `Id in (...)` chunks. Set to `FALSE` to skip the post-download check
 #' entirely.
 #'
+#' **Resilience.** Read timeouts are retried inside each request, and a year
+#' whose worker still fails is requeued up to three times. Parts are
+#' checkpointed, so a retry resumes from the last Id. A copy slightly ahead
+#' of the declared row count keeps its cache; only an excess beyond 1%
+#' clears the year parts. `POLIS_TIMEOUT_SECONDS` overrides the 120-second
+#' default.
+#'
 #' @param tables Optional character vector of table names (see
 #'   [polis_tables_mapping] for the supported set, e.g. `"case"`, `"virus"`,
 #'   `"population"`). `NULL` (default) downloads every table in the catalogue.
@@ -157,6 +164,11 @@ get_polis_data <- function(
   quiet = FALSE
 ) {
   ext <- match.arg(output_format)
+
+  # how far the year parts may sit above the declared count before the excess
+  # reads as duplication rather than upstream deletion
+  overshoot_tolerance <- 0.01
+  overshoot_floor <- 1000
 
   if (!isTRUE(nzchar(polis_api_key))) {
     cli::cli_abort(c(
@@ -319,6 +331,13 @@ get_polis_data <- function(
     ))
 
     if (!is.na(declared_total) && current_rows > declared_total) {
+      overshoot <- current_rows - declared_total
+      # rows deleted or re-dated upstream since the last pull leave the parts
+      # slightly above the declared count; only a wild excess means duplication
+      tolerated <- overshoot <= max(
+        overshoot_floor,
+        declared_total * overshoot_tolerance
+      )
       if (!isTRUE(quiet)) {
         cli::cli_alert_warning(paste0(
           nm,
@@ -326,17 +345,23 @@ get_polis_data <- function(
           .polis_pretty_num(current_rows),
           " rows against ",
           .polis_pretty_num(declared_total),
-          " declared by POLIS; clearing the cache and refetching."
+          " declared by POLIS; ",
+          if (tolerated) {
+            "keeping the cache and reconciling by Id."
+          } else {
+            "clearing the year parts and refetching."
+          }
         ))
       }
-      if (file.exists(out_file)) {
-        try(file.remove(out_file), silent = TRUE)
+      # the canonical file stays until the merge writes its replacement, so a
+      # failed refetch leaves the previous copy in place
+      if (!tolerated) {
+        if (dir.exists(parts_dir)) {
+          try(unlink(parts_dir, recursive = TRUE, force = TRUE), silent = TRUE)
+        }
+        dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
+        current_rows <- 0L
       }
-      if (dir.exists(parts_dir)) {
-        try(unlink(parts_dir, recursive = TRUE, force = TRUE), silent = TRUE)
-      }
-      dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
-      current_rows <- 0L
     }
 
     if (!is.na(declared_total) && current_rows == declared_total) {
