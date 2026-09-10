@@ -1,6 +1,6 @@
 Package: polished
 Title: Download and Clean WHO POLIS Data
-Version: 0.2.1
+Version: 0.2.2
 Authors@R:
     person(given = "Mohamed A.",
            family = "Yusuf",
@@ -57,3 +57,4 @@ Suggests:
 VignetteBuilder: quarto
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3

@@ -170,6 +170,13 @@ disk, and refetches any missing rows via OData \verb{Id in (...)} chunks. The
 Id walk is the slow half of a run, so the window matters: pass
 \code{verify_years = NULL} to cover the whole requested range. Set
 \code{auto_refetch = FALSE} to skip the post-download check entirely.
+
+\strong{Resilience.} Read timeouts are retried inside each request, and a year
+whose worker still fails is requeued up to three times. Parts are
+checkpointed, so a retry resumes from the last Id. A copy slightly ahead
+of the declared row count keeps its cache; only an excess beyond 1\%
+clears the year parts. \code{POLIS_TIMEOUT_SECONDS} overrides the 120-second
+default.
 }
 \examples{
 \dontrun{
