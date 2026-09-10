@@ -377,3 +377,30 @@ testthat::test_that("part-cache helpers recover from corruption and bad write ta
     file.exists(paste0(spec$part_file, ".corrupt.", Sys.getpid()))
   )
 })
+
+testthat::test_that(".polis_verify_min_date windows back from max_date and clamps", {
+  f <- polished:::.polis_verify_min_date
+  testthat::expect_identical(
+    f("2000-01-01", "2026-09-10", 3L, no_date = FALSE),
+    as.Date("2024-01-01")
+  )
+  testthat::expect_identical(
+    f("2023-01-01", "2026-09-10", 10L, no_date = FALSE),
+    as.Date("2023-01-01")
+  )
+  testthat::expect_identical(
+    f("2000-01-01", "2026-09-10", NULL, no_date = FALSE),
+    as.Date("2000-01-01")
+  )
+  testthat::expect_identical(
+    f("2000-01-01", "2026-09-10", 3L, no_date = TRUE),
+    as.Date("2000-01-01")
+  )
+  ok <- polished:::.polis_valid_verify_years
+  testthat::expect_true(all(vapply(list(NULL, 1L, 3, 10L), ok, logical(1))))
+  testthat::expect_false(any(vapply(
+    list(0L, -1L, 1.5, "3", c(1L, 2L), NA_integer_, Inf),
+    ok,
+    logical(1)
+  )))
+})

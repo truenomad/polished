@@ -14,6 +14,7 @@ get_polis_data(
   output_format = c("rds", "rda", "csv", "parquet", "qs2"),
   workers = 1L,
   auto_refetch = TRUE,
+  verify_years = 3L,
   log_file = NULL,
   keep_archives = 0L,
   force = FALSE,
@@ -63,6 +64,15 @@ a PSOCK cluster that dispatches one year per worker; pass e.g.
 \item{auto_refetch}{If \code{TRUE} (default), run the metadata-aware
 verification + selective refetch at the end of each table. Set to
 \code{FALSE} to trust whatever is on disk.}
+
+\item{verify_years}{Number of most recent calendar years the completeness
+check covers, counted back from \code{max_date} and clamped to \code{min_date}.
+Default \code{3L}. Records are bucketed by their update date, so an older
+year can lose rows to a newer one but never gain any: a window over the
+recent years catches every new row, and skipping the older years is
+what keeps the check fast. Pass \code{NULL} to walk the whole requested
+range, for example as an occasional deep check. Ignored when
+\code{auto_refetch = FALSE} and for reference tables with no update date.}
 
 \item{log_file}{Optional path to a per-batch log file (\code{.rds}). Default
 \code{NULL}.}
@@ -151,12 +161,15 @@ you see rows accumulate across workers in real time. With
 batch. PSOCK workers need \code{polished} installed in their library
 path -- \code{devtools::load_all()} is not enough.
 
-\strong{Auto-refetch.} When \code{auto_refetch = TRUE} (default) the function
-uses the meta sidecars to detect gaps cheaply (row-count and Id-range
-mismatch against POLIS's \verb{@odata.count}). Only when a gap is detected
-does it issue a \verb{$select=Id} probe and refetch missing rows via OData
-\verb{Id in (...)} chunks. Set to \code{FALSE} to skip the post-download check
-entirely.
+\strong{Auto-refetch.} A table whose row count already matches POLIS's
+\verb{@odata.count} is skipped outright. Otherwise, when \code{auto_refetch = TRUE}
+(default), after the table has been downloaded and merged the function
+pages the server's Id list (\verb{$select=Id}, one request per 2000 rows) over
+the most recent \code{verify_years} calendar years, compares it with the Ids on
+disk, and refetches any missing rows via OData \verb{Id in (...)} chunks. The
+Id walk is the slow half of a run, so the window matters: pass
+\code{verify_years = NULL} to cover the whole requested range. Set
+\code{auto_refetch = FALSE} to skip the post-download check entirely.
 }
 \examples{
 \dontrun{

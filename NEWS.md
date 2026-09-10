@@ -1,5 +1,11 @@
 # polished 0.2.1
 
+* `get_polis_data()` gains `verify_years` (default `3L`). The post-download
+  completeness check, the slowest step on large tables, now covers only the
+  most recent calendar years instead of the whole range back to `min_date`.
+  Records are bucketed by update date, so an older year can lose rows to a
+  newer one but never gain any, and the window misses no new rows. Pass
+  `verify_years = NULL` for the full-range check.
 * `get_polis_data()` no longer treats a local copy that is larger than the
   server's declared row count as up to date. That test used `>=`, so a table
   carrying rows POLIS had since retired, or duplicates from an interrupted

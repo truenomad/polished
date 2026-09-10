@@ -683,3 +683,59 @@ testthat::test_that("get_polis_data aborts with a checkpoint when a year worker 
     "fetch failed"
   )
 })
+
+testthat::test_that("get_polis_data aborts on an invalid verify_years", {
+  root <- withr::local_tempdir()
+  for (bad in list(0L, -1L, 1.5, "3", c(1L, 2L), NA_integer_)) {
+    testthat::expect_error(
+      polished::get_polis_data(
+        tables = "im",
+        polis_folder = root,
+        polis_api_key = "dummy",
+        verify_years = bad
+      ),
+      "verify_years"
+    )
+  }
+})
+
+testthat::test_that("get_polis_data windows the verification Id walk to the last verify_years years", {
+  run_and_capture <- function(verify_years) {
+    root <- withr::local_tempdir()
+    n <- 0L
+    seen <- NULL
+    testthat::local_mocked_bindings(
+      .polis_get_count = function(...) 3,
+      .polis_fetch_id_page = function(...) {
+        n <<- n + 1L
+        if (n == 1L) {
+          data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
+        } else {
+          data.frame()
+        }
+      },
+      .polis_fetch_id_list = function(...) {
+        seen <<- list(...)$min_date
+        1:3
+      },
+      .package = "polished"
+    )
+    polished::get_polis_data(
+      tables = "im",
+      min_date = "2020-01-01",
+      max_date = "2024-12-31",
+      polis_folder = root,
+      polis_api_key = "dummy",
+      workers = 1L,
+      verify_years = verify_years,
+      quiet = TRUE
+    )
+    seen
+  }
+  # default (3): 2022, 2023, 2024
+  testthat::expect_identical(run_and_capture(3L), as.Date("2022-01-01"))
+  # a window wider than the requested range clamps to min_date
+  testthat::expect_identical(run_and_capture(10L), as.Date("2020-01-01"))
+  # NULL: verify the whole requested range
+  testthat::expect_identical(run_and_capture(NULL), as.Date("2020-01-01"))
+})

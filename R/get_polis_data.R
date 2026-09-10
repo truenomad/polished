@@ -52,12 +52,15 @@
 #' batch. PSOCK workers need `polished` installed in their library
 #' path -- `devtools::load_all()` is not enough.
 #'
-#' **Auto-refetch.** When `auto_refetch = TRUE` (default) the function
-#' uses the meta sidecars to detect gaps cheaply (row-count and Id-range
-#' mismatch against POLIS's `@odata.count`). Only when a gap is detected
-#' does it issue a `$select=Id` probe and refetch missing rows via OData
-#' `Id in (...)` chunks. Set to `FALSE` to skip the post-download check
-#' entirely.
+#' **Auto-refetch.** A table whose row count already matches POLIS's
+#' `@odata.count` is skipped outright. Otherwise, when `auto_refetch = TRUE`
+#' (default), after the table has been downloaded and merged the function
+#' pages the server's Id list (`$select=Id`, one request per 2000 rows) over
+#' the most recent `verify_years` calendar years, compares it with the Ids on
+#' disk, and refetches any missing rows via OData `Id in (...)` chunks. The
+#' Id walk is the slow half of a run, so the window matters: pass
+#' `verify_years = NULL` to cover the whole requested range. Set
+#' `auto_refetch = FALSE` to skip the post-download check entirely.
 #'
 #' @param tables Optional character vector of table names (see
 #'   [polis_tables_mapping] for the supported set, e.g. `"case"`, `"virus"`,
@@ -91,6 +94,14 @@
 #' @param auto_refetch If `TRUE` (default), run the metadata-aware
 #'   verification + selective refetch at the end of each table. Set to
 #'   `FALSE` to trust whatever is on disk.
+#' @param verify_years Number of most recent calendar years the completeness
+#'   check covers, counted back from `max_date` and clamped to `min_date`.
+#'   Default `3L`. Records are bucketed by their update date, so an older
+#'   year can lose rows to a newer one but never gain any: a window over the
+#'   recent years catches every new row, and skipping the older years is
+#'   what keeps the check fast. Pass `NULL` to walk the whole requested
+#'   range, for example as an occasional deep check. Ignored when
+#'   `auto_refetch = FALSE` and for reference tables with no update date.
 #' @param log_file Optional path to a per-batch log file (`.rds`). Default
 #'   `NULL`.
 #' @param keep_archives When `> 0`, on each save also writes a timestamped
@@ -149,6 +160,7 @@ get_polis_data <- function(
   output_format = c("rds", "rda", "csv", "parquet", "qs2"),
   workers = 1L,
   auto_refetch = TRUE,
+  verify_years = 3L,
   log_file = NULL,
   keep_archives = 0L,
   force = FALSE,
@@ -162,6 +174,13 @@ get_polis_data <- function(
     cli::cli_abort(c(
       "x" = "POLIS API key is empty.",
       "i" = "Set {.envvar POLIS_API_KEY} or pass {.arg polis_api_key}."
+    ))
+  }
+
+  if (!.polis_valid_verify_years(verify_years)) {
+    cli::cli_abort(c(
+      "x" = "{.arg verify_years} must be a single whole number >= 1, or NULL.",
+      "i" = "Got {.val {verify_years}}."
     ))
   }
 
@@ -560,14 +579,35 @@ get_polis_data <- function(
     .polis_merge_parts(parts_dir, out_file, ext, date_field)
     .polis_archive(out_file, polis_folder, stem, ext, keep_archives)
 
-    # Completeness check across the full requested range -- not just the
-    # newly-added window -- so prior silent drops in earlier sessions get
-    # caught and refetched.
+    # Completeness check. The Id walk is the slow half of a run (one request
+    # per 2000 rows, and full rows on the endpoints that ignore `$select`), so
+    # by default it covers only the most recent `verify_years` calendar years.
+    # Records are bucketed by update date, so an older year can lose rows to a
+    # newer one but never gain any; a window over the recent years therefore
+    # catches every new row. `verify_years = NULL` walks the whole range.
     if (isTRUE(auto_refetch) && file.exists(out_file)) {
+      verify_min <- .polis_verify_min_date(
+        min_date,
+        max_date,
+        verify_years,
+        no_date
+      )
       if (!isTRUE(quiet)) {
-        cli::cli_alert_info(
-          "Verifying completeness against POLIS (may take a moment)..."
-        )
+        range_label <- if (no_date) {
+          ""
+        } else {
+          paste0(
+            " for ",
+            format(verify_min, "%Y"),
+            "-",
+            format(max_date, "%Y")
+          )
+        }
+        cli::cli_alert_info(paste0(
+          "Verifying completeness against POLIS",
+          range_label,
+          " (may take a moment)..."
+        ))
       }
       downloaded <- .polis_io_read(out_file, ext)
       if (!is.data.frame(downloaded) || !"Id" %in% names(downloaded)) {
@@ -577,7 +617,6 @@ get_polis_data <- function(
           )
         }
       } else {
-        verify_min <- as.Date(min_date)
         canonical <- tryCatch(
           .polis_fetch_id_list(
             endpoint = row$endpoint,

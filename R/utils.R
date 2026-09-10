@@ -562,6 +562,31 @@
   httr2::resp_body_json(resp)
 }
 
+# TRUE when `verify_years` is NULL or a single whole number >= 1.
+.polis_valid_verify_years <- function(verify_years) {
+  is.null(verify_years) ||
+    (is.numeric(verify_years) &&
+      length(verify_years) == 1L &&
+      !is.na(verify_years) &&
+      is.finite(verify_years) &&
+      verify_years >= 1 &&
+      verify_years == trunc(verify_years))
+}
+
+# First date the completeness check covers. `verify_years` counts calendar
+# years back from `max_date` (inclusive) and is clamped to `min_date`; NULL
+# means the whole requested range. Reference tables with no update date are
+# pulled whole, so the window does not apply to them.
+.polis_verify_min_date <- function(min_date, max_date, verify_years, no_date) {
+  min_date <- as.Date(min_date)
+  if (isTRUE(no_date) || is.null(verify_years)) {
+    return(min_date)
+  }
+  year_hi <- as.integer(format(as.Date(max_date), "%Y"))
+  year_lo <- year_hi - as.integer(verify_years) + 1L
+  max(min_date, as.Date(sprintf("%d-01-01", year_lo)))
+}
+
 # Ask POLIS how many rows match a year-aligned filter. Returns
 # numeric or NA.
 .polis_get_count <- function(
