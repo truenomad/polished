@@ -185,7 +185,7 @@ clean_afp_diagnosis <- function(data) {
 #' Coded `diagnosis_final` labels mapped to their canonical diagnosis.
 #'
 #' Only the specific coded causes; `"Other"` and `"Unknown"` are handled by the
-#' fall-through in [.afp_dx_harmonise()].
+#' fall-through in `.afp_dx_harmonise()`.
 #' @noRd
 .afp_dx_final_map <- c(
   "Traumatic Neuritis" = "Traumatic neuritis",
@@ -198,7 +198,7 @@ clean_afp_diagnosis <- function(data) {
 
 #' Regex for free text that carries no diagnostic information.
 #'
-#' Matched against normalised text (see [.afp_dx_normalise()]); a hit blanks the
+#' Matched against normalised text (see `.afp_dx_normalise()`); a hit blanks the
 #' field so the coalesce falls through to the next source -- AFP/PFA restated,
 #' administrative notes, or pure numeric placeholder codes.
 #' @noRd
