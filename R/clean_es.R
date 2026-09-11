@@ -133,7 +133,7 @@ clean_es <- function(
     "Parsed dates and derived year/month of collection"
   )
   data <- data |>
-    .es_parse_dates() |>
+    .es_parse_dates(reference_date = .polis_reference_date(cfg)) |>
     .es_add_collection_vars()
 
   # ---- classify virus detection ---------------------------------------------

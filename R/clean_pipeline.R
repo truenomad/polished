@@ -93,6 +93,9 @@ polis_active_config <- function() {
 #'   [run_pipeline()] writes the `polished_*` data files to its `data/`
 #'   sub-directory and a `checks_*` workbook per dataset to its `checks/`
 #'   sub-directory. `NULL` (default) returns the cleaned set without writing.
+#' @param reference_date Optional calculation date. `NULL` resolves to today at
+#'   the start of each run. A fixed date makes date cleaning and indicators
+#'   reproducible and is included in cache keys.
 #' @param cache_dir Optional directory for the opt-in, content-addressed clean
 #'   cache. When set, [run_pipeline()] caches each cleaned stream (`afp`, `es`,
 #'   `hum_spec`, `sia`) keyed on a fingerprint of its source file (path + size +
@@ -131,7 +134,8 @@ polis_config <- function(
   output_dir = NULL,
   cache_dir = NULL,
   parse_types = TRUE,
-  drop_empty_cols = TRUE
+  drop_empty_cols = TRUE,
+  reference_date = NULL
 ) {
   # ---- validate -------------------------------------------------------------
   if (!is.numeric(start_year) || length(start_year) != 1) {
@@ -208,12 +212,14 @@ polis_config <- function(
       output_dir = output_dir,
       cache_dir = cache_dir,
       parse_types = parse_types,
-      drop_empty_cols = drop_empty_cols
+      drop_empty_cols = drop_empty_cols,
+      reference_date = reference_date
     ),
     class = "polis_config"
   )
 
   # register as the session-active config so later calls default to it
+  .polis_reference_date(cfg)
   .polis_config_store$active <- cfg
   cfg
 }
@@ -240,7 +246,7 @@ print.polis_config <- function(x, ...) {
   inputs_label <- .polis_inputs_label(x$inputs)
   cli::cli_text("Inputs: {.val {inputs_label}}")
   cli::cli_text("Output dir: {.val {x$output_dir %||% \"<none>\"}}")
-  cli::cli_text("SIA cache: {.val {x$cache_dir %||% \"<none>\"}}")
+  cli::cli_text("Clean cache: {.val {x$cache_dir %||% \"<none>\"}}")
   invisible(x)
 }
 
@@ -657,6 +663,17 @@ run_pipeline <- function(
   # run_pipeline(cfg = cfg). Each stream is then read + cleaned through the
   # content-addressed cache, so an unchanged source skips both read and clean.
   inputs <- .polis_input_handles(inputs)
+  cfg$reference_date <- .polis_reference_date(cfg)
+  if (!is.null(cfg$cache_dir)) {
+    cfg$.fingerprints <- list(
+      inputs = lapply(
+        c(inputs, list(worldpop = cfg$worldpop)),
+        .polis_fingerprint
+      ),
+      shape = .polis_fingerprint(cfg$shape),
+      population = .polis_fingerprint(cfg$population)
+    )
+  }
   # Auto-detect each output's format from its source extension, then let any
   # explicit `formats` entry override per stream. A partial override (e.g.
   # formats = list(afp = "csv")) therefore changes only that stream; every other
@@ -836,7 +853,11 @@ run_pipeline <- function(
         do.call(clean_pop, args)
       },
       refresh = refresh,
-      extra = list(reference_date = pop_ref_date, pop_source = pop_src)
+      extra = list(
+        reference_date = pop_ref_date,
+        pop_source = pop_src,
+        years = sort(unique(cfg$pop_years))
+      )
     )
   }
 
@@ -851,18 +872,19 @@ run_pipeline <- function(
   # nothing; built from the post-scope cleaned tables, hence the scope in the key.
   if (!is.null(cleaned$afp) || !is.null(cleaned$es)) {
     cli::cli_h1("Building virus / positives")
-    virus_key <- list(
-      name = "virus",
-      # Fingerprint EVERY source, not just afp/es: the GUID backfill above pools
-      # consensus GUIDs across all cleaned streams into afp/es, so a change to
-      # any stream (sia/hum_spec/lqas/im) can change the GUIDs the virus table
-      # is built on. Keying on afp/es alone would serve a stale virus table when
-      # only another stream changed.
-      inputs = lapply(inputs, .polis_fingerprint),
-      cfg = .polis_clean_cache_fields(cfg),
-      scope = .polis_scope_key(cfg),
-      version = .polis_clean_versions[["virus"]]
-    )
+    virus_key <- if (!is.null(cfg$cache_dir))
+      list(
+        name = "virus",
+        # Fingerprint EVERY source, not just afp/es: the GUID backfill above pools
+        # consensus GUIDs across all cleaned streams into afp/es, so a change to
+        # any stream (sia/hum_spec/lqas/im) can change the GUIDs the virus table
+        # is built on. Keying on afp/es alone would serve a stale virus table when
+        # only another stream changed.
+        inputs = cfg$.fingerprints$inputs,
+        cfg = .polis_clean_cache_fields(cfg),
+        scope = .polis_scope_key(cfg),
+        version = .polis_clean_versions[["virus"]]
+      )
     virus <- .polis_cache_run(
       "virus",
       virus_key,
@@ -897,24 +919,25 @@ run_pipeline <- function(
     # Cached on every source it derives from (afp/es/sia/hum_spec fingerprints),
     # the population + shape fingerprints, and the scope. On a hit the population
     # and shape files are never read -- population_fn()/shape_fn() run only here.
-    ind_key <- list(
-      name = "indicators",
-      # Fingerprint every source for the same reason as the virus key: the
-      # cross-stream GUID backfill means any stream (incl. lqas/im) can alter the
-      # afp/es GUIDs the indicators are computed from, so all sources are keyed.
-      inputs = lapply(inputs, .polis_fingerprint),
-      # the denominator is cfg$population when set, else the pop table the
-      # pipeline just produced; fingerprint whichever is used (no file read --
-      # cfg$population is path metadata, the produced denominator is in memory).
-      population = .polis_fingerprint(cfg$population) %||%
-        if (!is.null(cleaned$pop)) {
-          .polis_hash(.polis_pop_denominator(cleaned$pop))
-        },
-      shape = .polis_fingerprint(cfg$shape),
-      cfg = .polis_clean_cache_fields(cfg),
-      scope = .polis_scope_key(cfg),
-      version = .polis_clean_versions[["indicators"]]
-    )
+    ind_key <- if (!is.null(cfg$cache_dir))
+      list(
+        name = "indicators",
+        # Fingerprint every source for the same reason as the virus key: the
+        # cross-stream GUID backfill means any stream (incl. lqas/im) can alter the
+        # afp/es GUIDs the indicators are computed from, so all sources are keyed.
+        inputs = cfg$.fingerprints$inputs,
+        # the denominator is cfg$population when set, else the pop table the
+        # pipeline just produced; fingerprint whichever is used (no file read --
+        # cfg$population is path metadata, the produced denominator is in memory).
+        population = cfg$.fingerprints$population %||%
+          if (!is.null(cleaned$pop)) {
+            .polis_hash(.polis_pop_denominator(cleaned$pop))
+          },
+        shape = cfg$.fingerprints$shape,
+        cfg = .polis_clean_cache_fields(cfg),
+        scope = .polis_scope_key(cfg),
+        version = .polis_clean_versions[["indicators"]]
+      )
     indicators <- tryCatch(
       .polis_cache_run(
         "indicators",
@@ -927,6 +950,7 @@ run_pipeline <- function(
             sia = cleaned$sia,
             virus = cleaned$virus,
             lab = cleaned$hum_spec,
+            reference_date = cfg$reference_date,
             population = population_fn() %||%
               .polis_pop_denominator(cleaned$pop),
             admin_units = if (!is.null(cleaned$pop)) {
@@ -959,7 +983,13 @@ run_pipeline <- function(
   # ---- persist to disk (optional) -------------------------------------------
   # data files -> output_dir/data, check workbooks -> output_dir/checks.
   if (!is.null(output_dir)) {
-    .polis_persist_pipeline(cleaned, output_dir, formats, refresh = refresh)
+    .polis_persist_pipeline(
+      cleaned,
+      output_dir,
+      formats,
+      refresh = refresh,
+      reference_date = cfg$reference_date
+    )
     return(invisible(cleaned))
   }
   cleaned
@@ -995,14 +1025,19 @@ run_pipeline <- function(
   cleaned,
   output_dir,
   formats = list(),
-  refresh = FALSE
+  refresh = FALSE,
+  reference_date = Sys.Date()
 ) {
   data_dir <- file.path(output_dir, "data")
   dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
   .polis_write_outputs(cleaned, data_dir, formats = formats, refresh = refresh)
 
   checks_dir <- file.path(output_dir, "checks")
-  .polis_write_check_workbooks(cleaned, checks_dir, reference_date = Sys.Date())
+  .polis_write_check_workbooks(
+    cleaned,
+    checks_dir,
+    reference_date = reference_date
+  )
   invisible(output_dir)
 }
 
@@ -1443,7 +1478,17 @@ load_polished <- function(
 # scope.
 #' @noRd
 .polis_clean_cache_fields <- function(cfg) {
-  cfg[c("crosswalk", "synonyms", "qa", "parse_types", "drop_empty_cols")]
+  c(
+    cfg[c(
+      "crosswalk",
+      "synonyms",
+      "qa",
+      "parse_types",
+      "drop_empty_cols",
+      "column_roles"
+    )],
+    list(reference_date = .polis_reference_date(cfg))
+  )
 }
 
 # The region/year scope, for caching the *derived* steps (virus, indicators)
@@ -1522,10 +1567,22 @@ load_polished <- function(
   refresh = FALSE,
   extra = NULL
 ) {
+  if (is.null(cfg$cache_dir)) {
+    return(compute(lapply(handles, .polis_resolve_ref)))
+  }
+  fingerprints <- lapply(names(handles), function(key) {
+    if (key %in% names(cfg$.fingerprints$inputs)) {
+      cfg$.fingerprints$inputs[[key]]
+    } else {
+      .polis_fingerprint(handles[[key]])
+    }
+  })
+  names(fingerprints) <- names(handles)
   key_parts <- list(
     name = name,
-    inputs = lapply(handles, .polis_fingerprint),
-    shape = .polis_fingerprint(cfg$shape),
+    inputs = fingerprints,
+    shape = if (!is.null(cfg$.fingerprints)) cfg$.fingerprints$shape else
+      .polis_fingerprint(cfg$shape),
     cfg = .polis_clean_cache_fields(cfg),
     version = version,
     # any extra run inputs a stream's output depends on beyond its handles
@@ -1557,4 +1614,14 @@ load_polished <- function(
     }
     resolved
   }
+}
+
+# Resolve once per pipeline run; standalone cleaners share the same validation.
+.polis_reference_date <- function(cfg) {
+  value <- cfg$reference_date %||% Sys.Date()
+  value <- tryCatch(as.Date(value), error = function(e) as.Date(NA))
+  if (length(value) != 1L || is.na(value)) {
+    cli::cli_abort("{.arg reference_date} must be a single valid date or NULL.")
+  }
+  value
 }

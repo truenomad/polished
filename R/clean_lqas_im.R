@@ -243,7 +243,10 @@ process_lqas <- function(
 
   step("Parsing dates and deriving year", "Parsed dates and derived year")
   data <- data |>
-    .lqasim_parse_dates(c("start", "end")) |>
+    .lqasim_parse_dates(
+      c("start", "end"),
+      reference_date = .polis_reference_date(cfg)
+    ) |>
     .lqasim_add_year("year", "start")
 
   data <- .lqasim_clean_geo(data, shape, step)
@@ -555,11 +558,14 @@ process_im <- function(
 
   step("Parsing dates and deriving year", "Parsed dates and derived year")
   data <- data |>
-    .lqasim_parse_dates(c(
-      "activity_planned_date_from",
-      "activity_planned_date_to",
-      "start_sia"
-    )) |>
+    .lqasim_parse_dates(
+      c(
+        "activity_planned_date_from",
+        "activity_planned_date_to",
+        "start_sia"
+      ),
+      reference_date = .polis_reference_date(cfg)
+    ) |>
     .lqasim_add_year(
       "activity_planned_date_from_year",
       "activity_planned_date_from"

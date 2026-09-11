@@ -138,7 +138,7 @@ clean_afp <- function(
     "Parsed dates and derived onset/age/intervals/timeliness"
   )
   data <- data |>
-    .afp_parse_dates() |>
+    .afp_parse_dates(reference_date = .polis_reference_date(cfg)) |>
     .afp_add_onset_vars() |>
     .afp_add_onset_quality() |>
     .afp_add_intervals() |>

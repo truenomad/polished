@@ -26,14 +26,20 @@ raw_afp_positive <- function() {
 }
 
 testthat::test_that("run_pipeline cleans a single dataset", {
-  out <- suppressMessages(polished::run_pipeline(list(afp = raw_afp())))
+  out <- suppressMessages(polished::run_pipeline(
+    list(afp = raw_afp()),
+    cfg = polished::polis_config()
+  ))
   testthat::expect_named(out, "afp")
   testthat::expect_equal(nrow(out$afp), 2L)
 })
 
 testthat::test_that("run_pipeline builds virus positives from cleaned cases", {
   out <- suppressMessages(
-    polished::run_pipeline(list(afp = raw_afp_positive()))
+    polished::run_pipeline(
+      list(afp = raw_afp_positive()),
+      cfg = polished::polis_config()
+    )
   )
   # positives also yield a lean "detections" view selected from the virus table
   testthat::expect_setequal(names(out), c("afp", "virus", "detections"))
@@ -468,4 +474,94 @@ testthat::test_that("run_pipeline_dir aborts on an empty dir and returns without
   saveRDS(raw_afp(), file.path(src, "raw_afp.rds"))
   cleaned <- suppressMessages(polished::run_pipeline_dir(src))
   testthat::expect_true("afp" %in% names(cleaned))
+})
+
+testthat::test_that("population cache invalidates when requested years change", {
+  testthat::skip_if_not_installed("qs2")
+  raw <- data.frame(
+    PlaceId = "g1",
+    PlaceDisplayName = "DISTRICT",
+    Year = rep(2020:2021, each = 3),
+    AgeGroupName = rep(c("0 to 15 years", "0 to 5 years", "All ages"), 2),
+    Value = c(1000, 350, 2200, 1100, 360, 2250)
+  )
+  cfg <- polished::polis_config(
+    pop_years = 2020L,
+    cache_dir = withr::local_tempdir()
+  )
+  first <- suppressMessages(polished::run_pipeline(list(population = raw), cfg))
+  cfg$pop_years <- 2021L
+  second <- suppressMessages(polished::run_pipeline(
+    list(population = raw),
+    cfg
+  ))
+  testthat::expect_equal(unique(first$pop$adm2$year), 2020L)
+  testthat::expect_equal(unique(second$pop$adm2$year), 2021L)
+})
+
+testthat::test_that("pipeline cache and cleaners use the requested calculation date", {
+  testthat::skip_if_not_installed("qs2")
+  cases <- make_indicator_cases()
+  cases$country_iso3code <- "NGA"
+  cases$year_onset[!is.na(cases$year_onset)] <- 2026L
+  pop <- make_indicator_population()
+  pop$year <- 2026L
+  testthat::local_mocked_bindings(
+    clean_afp = function(...) cases,
+    clean_virus = function(...) tibble::tibble(),
+    .package = "polished"
+  )
+  cfg <- polished::polis_config(
+    cache_dir = withr::local_tempdir(),
+    population = pop,
+    reference_date = as.Date("2026-06-01")
+  )
+  first <- suppressMessages(polished::run_pipeline(
+    list(afp = data.frame(id = 1)),
+    cfg
+  ))
+  cfg$reference_date <- as.Date("2026-09-01")
+  second <- suppressMessages(polished::run_pipeline(
+    list(afp = data.frame(id = 1)),
+    cfg
+  ))
+  testthat::expect_equal(
+    second$indicators$meta$reference_date,
+    cfg$reference_date
+  )
+  testthat::expect_false(identical(
+    first$indicators$long$value,
+    second$indicators$long$value
+  ))
+  testthat::expect_error(
+    polished::polis_config(reference_date = "not-a-date"),
+    "single valid date"
+  )
+})
+
+testthat::test_that("disabling caching bypasses all input fingerprinting", {
+  testthat::local_mocked_bindings(
+    .polis_hash = function(...) stop("Unexpected content hash"),
+    .package = "polished"
+  )
+  testthat::expect_no_error(suppressMessages(polished::run_pipeline(
+    list(afp = raw_afp()),
+    cfg = polished::polis_config(cache_dir = NULL)
+  )))
+})
+
+testthat::test_that("future dates become valid after the configured date advances", {
+  raw <- raw_afp()
+  raw$ParalysisOnsetDate <- "2024-06-15"
+  cfg <- polished::polis_config(
+    reference_date = as.Date("2024-06-01"),
+    drop_empty_cols = FALSE
+  )
+  first <- polished::clean_afp(raw, cfg, verbose = FALSE)
+  cfg$reference_date <- as.Date("2024-07-01")
+  second <- polished::clean_afp(raw, cfg, verbose = FALSE)
+  testthat::expect_true(all(is.na(first$paralysis_onset_date)))
+  testthat::expect_true(all(
+    second$paralysis_onset_date == as.Date("2024-06-15")
+  ))
 })

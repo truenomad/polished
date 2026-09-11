@@ -131,7 +131,7 @@ clean_human_spec <- function(
     "Parsed dates and derived collection vars + lab intervals"
   )
   data <- data |>
-    .spec_parse_dates() |>
+    .spec_parse_dates(reference_date = .polis_reference_date(cfg)) |>
     .spec_add_collection_vars() |>
     .spec_add_intervals()
 

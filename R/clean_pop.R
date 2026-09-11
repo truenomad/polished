@@ -234,7 +234,7 @@ clean_pop <- function(
     share_hi = 0.7,
     min_level_years = 2L
   ),
-  reference_date = Sys.Date(),
+  reference_date = .polis_reference_date(cfg),
   pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
 ) {

@@ -102,7 +102,7 @@ clean_sia <- function(
   cfg = polis_active_config(),
   shape = NULL,
   round_gap_days = 21L,
-  reference_date = Sys.Date(),
+  reference_date = .polis_reference_date(cfg),
   cache_dir = NULL,
   cache_key = NULL,
   verbose = TRUE
