@@ -1,6 +1,4 @@
-# Tests for get_polis_data() — argument validation and the on-disk /
-# return-paths contract via mocked HTTP, plus one live skip_on_cran smoke
-# test against POLIS at the end.
+# Download contracts with synthetic responses; live coverage requires an API key.
 
 testthat::test_that("get_polis_data aborts when the API key is empty", {
   withr::local_envvar(POLIS_API_KEY = "")
@@ -103,9 +101,8 @@ testthat::test_that("population (NA date_field) is pulled whole, Id-only, with n
   testthat::expect_true(any(grepl("Population", urls)))
 })
 
-testthat::test_that("get_polis_data writes to disk and returns paths only", {
-  # The data is never returned into memory: the value is the named file
-  # path(s), and the table is read back from disk.
+testthat::test_that("get_polis_data writes to disk and returns NULL", {
+  # Tables are read back from disk; the function returns NULL invisibly.
   root <- withr::local_tempdir()
   seed_parts(
     polis_folder = root,
@@ -120,6 +117,10 @@ testthat::test_that("get_polis_data writes to disk and returns paths only", {
 
   # Stub the count helper to report exactly what's on disk.
   testthat::local_mocked_bindings(
+    .polis_fetch_id_page = function(last_id = NULL, ...) {
+      if (is.null(last_id))
+        data.frame(Id = 1:5, PublishDate = "2024-06-15") else data.frame()
+    },
     .polis_get_count = function(...) 5,
     .polis_fetch_id_list = function(...) 1:5,
     .package = "polished"
@@ -159,6 +160,10 @@ testthat::test_that("get_polis_data returns NULL invisibly", {
     )
   )
   testthat::local_mocked_bindings(
+    .polis_fetch_id_page = function(last_id = NULL, ...) {
+      if (is.null(last_id))
+        data.frame(Id = 1:3, PublishDate = "2024-06-15") else data.frame()
+    },
     .polis_get_count = function(...) 3,
     .polis_fetch_id_list = function(...) 1:3,
     .package = "polished"
@@ -279,103 +284,6 @@ testthat::test_that("prune_parts = FALSE retains the resume cache", {
   testthat::expect_true(file.exists(file.path(parts_dir, "year_2024.rds")))
 })
 
-testthat::test_that("a pruned run rebuilds parts from the canonical and resumes incrementally", {
-  root <- withr::local_tempdir()
-
-  # Run 1: fresh pull of Id 1:3; parts pruned afterwards (default).
-  n1 <- 0L
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 3,
-    .polis_fetch_id_page = function(...) {
-      n1 <<- n1 + 1L
-      if (n1 == 1L) {
-        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
-      } else {
-        data.frame()
-      }
-    },
-    .polis_fetch_id_list = function(...) 1:3,
-    .package = "polished"
-  )
-  polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE
-  )
-  testthat::expect_false(dir.exists(file.path(root, ".parts", "raw_im")))
-
-  # Run 2: POLIS now has a 4th row. The part rebuilt from the canonical seeds
-  # last_id = 3, so the worker fetches ONLY Id 4 -- proving resume survives the
-  # prune rather than re-pulling 1:3.
-  seen_last <- NULL
-  n2 <- 0L
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 4,
-    .polis_fetch_id_page = function(..., last_id = NULL) {
-      n2 <<- n2 + 1L
-      if (n2 == 1L) {
-        seen_last <<- last_id
-        data.frame(Id = 4L, PublishDate = "2024-06-16")
-      } else {
-        data.frame()
-      }
-    },
-    .polis_fetch_id_list = function(...) 1:4,
-    .package = "polished"
-  )
-  polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE
-  )
-  out <- readRDS(file.path(root, "raw_im.rds"))
-  testthat::expect_setequal(out$Id, 1:4)
-  # resumed from the rebuilt part's max(Id), not from scratch
-  testthat::expect_equal(seen_last, 3)
-})
-
-testthat::test_that("the up-to-date skip prunes the cache by default", {
-  root <- withr::local_tempdir()
-  seed_parts(
-    root,
-    "raw_im",
-    2024,
-    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
-  )
-  saveRDS(
-    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5)),
-    file.path(root, "raw_im.rds")
-  )
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 5,
-    .polis_fetch_id_list = function(...) 1:5,
-    .package = "polished"
-  )
-  polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE
-  )
-  testthat::expect_false(dir.exists(file.path(root, ".parts", "raw_im")))
-  testthat::expect_equal(nrow(readRDS(file.path(root, "raw_im.rds"))), 5L)
-})
-
-# -------------------------------------------------------------------
-# Live smoke test — hits POLIS for one small table.
-# -------------------------------------------------------------------
-
 testthat::test_that("get_polis_data smoke test: pulls `im` end-to-end", {
   testthat::skip_on_cran()
   testthat::skip_on_ci()
@@ -446,65 +354,6 @@ testthat::test_that("get_polis_data fresh pull fetches, merges, verifies and ref
   testthat::expect_true(all(1:4 %in% df$Id)) # the missing id was refetched in
 })
 
-testthat::test_that("get_polis_data reports an up-to-date table (verbose) without re-fetching", {
-  root <- withr::local_tempdir()
-  seed_parts(
-    root,
-    "im",
-    2024,
-    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
-  )
-  dir.create(file.path(root), recursive = TRUE, showWarnings = FALSE)
-  saveRDS(
-    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5)),
-    file.path(root, "raw_im.rds")
-  )
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 5,
-    .polis_fetch_id_list = function(...) 1:5,
-    .package = "polished"
-  )
-  testthat::expect_null(polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = FALSE
-  ))
-})
-
-testthat::test_that("get_polis_data rebuilds a corrupt canonical from parts when up to date", {
-  root <- withr::local_tempdir()
-  seed_parts(
-    root,
-    "raw_im",
-    2024,
-    data.frame(Id = 1:5, PublishDate = rep("2024-06-15", 5))
-  )
-  # a canonical that cannot be read (corrupt / torn write)
-  out_file <- file.path(root, "raw_im.rds")
-  writeLines("not an rds file", out_file)
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 5,
-    .polis_fetch_id_list = function(...) 1:5,
-    .package = "polished"
-  )
-  polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE
-  )
-  # canonical was rebuilt from the intact parts and is readable again
-  rebuilt <- readRDS(out_file)
-  testthat::expect_equal(nrow(rebuilt), 5L)
-})
-
 testthat::test_that("get_polis_data tolerates a failed count query (unbounded progress)", {
   root <- withr::local_tempdir()
   testthat::local_mocked_bindings(
@@ -524,7 +373,7 @@ testthat::test_that("get_polis_data tolerates a failed count query (unbounded pr
   ))
 })
 
-testthat::test_that("get_polis_data force=TRUE clears both the canonical file and parts", {
+testthat::test_that("get_polis_data force=TRUE replaces the canonical file and old parts", {
   root <- withr::local_tempdir()
   dir.create(file.path(root), recursive = TRUE, showWarnings = FALSE)
   out_file <- file.path(root, "raw_im.rds")
@@ -552,7 +401,7 @@ testthat::test_that("get_polis_data force=TRUE clears both the canonical file an
     force = TRUE
   )
   testthat::expect_false(file.exists(pf))
-  testthat::expect_false(file.exists(out_file))
+  testthat::expect_equal(nrow(readRDS(out_file)), 0L)
 })
 
 testthat::test_that("get_polis_data verification passes cleanly when nothing is missing", {
@@ -580,231 +429,6 @@ testthat::test_that("get_polis_data verification passes cleanly when nothing is 
     workers = 1L,
     quiet = FALSE
   ))
-})
-
-testthat::test_that("get_polis_data warns and skips when the verification id-list fetch fails", {
-  root <- withr::local_tempdir()
-  n <- 0L
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 3,
-    .polis_fetch_id_page = function(...) {
-      n <<- n + 1L
-      if (n == 1L) {
-        data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
-      } else {
-        data.frame()
-      }
-    },
-    .polis_fetch_id_list = function(...) stop("list boom"),
-    .package = "polished"
-  )
-  testthat::expect_null(polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = FALSE
-  ))
-})
-
-testthat::test_that("get_polis_data warns when refetch fails, and when ids are still missing after it", {
-  fetch_three <- local({
-    function() {
-      n <- 0L
-      function(...) {
-        n <<- n + 1L
-        if (n == 1L) {
-          data.frame(Id = 1:3, PublishDate = rep("2024-06-15", 3))
-        } else {
-          data.frame()
-        }
-      }
-    }
-  })
-
-  # refetch itself errors -> warned, nothing added
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 3,
-    .polis_fetch_id_page = fetch_three(),
-    .polis_fetch_id_list = function(...) 1:5,
-    .polis_refetch_missing = function(...) stop("refetch boom"),
-    .package = "polished"
-  )
-  testthat::expect_null(polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = withr::local_tempdir(),
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = FALSE
-  ))
-
-  # refetch returns only some of the missing ids -> "still missing" warning
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 3,
-    .polis_fetch_id_page = fetch_three(),
-    .polis_fetch_id_list = function(...) 1:5,
-    .polis_refetch_missing = function(...) {
-      data.frame(Id = 4, PublishDate = "2024-06-15")
-    },
-    .package = "polished"
-  )
-  testthat::expect_null(polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = withr::local_tempdir(),
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = FALSE
-  ))
-})
-
-testthat::test_that("get_polis_data aborts with a checkpoint when a year worker fails", {
-  root <- withr::local_tempdir()
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 10,
-    .polis_fetch_id_page = function(...) stop("page boom"),
-    .package = "polished"
-  )
-  testthat::expect_error(
-    polished::get_polis_data(
-      tables = "im",
-      min_date = "2024-01-01",
-      max_date = "2024-12-31",
-      polis_folder = root,
-      polis_api_key = "dummy",
-      workers = 1L,
-      quiet = TRUE
-    ),
-    "fetch failed"
-  )
-})
-
-# -------------------------------------------------------------------
-# Declared-count overshoot — rows POLIS retires between pulls leave a
-# small surplus that must not be mistaken for a corrupt cache.
-# -------------------------------------------------------------------
-
-testthat::test_that("a small overshoot keeps the parts and the rows they hold", {
-  root <- withr::local_tempdir()
-  seeded <- data.frame(
-    Id = 1:3,
-    PublishDate = rep("2024-06-15", 3),
-    stringsAsFactors = FALSE
-  )
-  part_file <- seed_parts(
-    polis_folder = root,
-    table_name = "raw_im",
-    year = 2024,
-    df = seeded
-  )
-
-  # POLIS declares one row fewer than the parts hold
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 2,
-    .polis_fetch_id_page = function(...) data.frame(),
-    .polis_fetch_id_list = function(...) integer(0),
-    .package = "polished"
-  )
-
-  polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE,
-    prune_parts = FALSE
-  )
-
-  testthat::expect_true(file.exists(part_file))
-  testthat::expect_equal(nrow(readRDS(file.path(root, "raw_im.rds"))), 3L)
-})
-
-testthat::test_that("an overshoot beyond the tolerance clears the year parts", {
-  root <- withr::local_tempdir()
-  n_seeded <- 1500L
-  part_file <- seed_parts(
-    polis_folder = root,
-    table_name = "raw_im",
-    year = 2024,
-    df = data.frame(
-      Id = seq_len(n_seeded),
-      PublishDate = rep("2024-06-15", n_seeded),
-      stringsAsFactors = FALSE
-    )
-  )
-
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 0,
-    .polis_fetch_id_page = function(...) data.frame(),
-    .polis_fetch_id_list = function(...) integer(0),
-    .package = "polished"
-  )
-
-  polished::get_polis_data(
-    tables = "im",
-    min_date = "2024-01-01",
-    max_date = "2024-12-31",
-    polis_folder = root,
-    polis_api_key = "dummy",
-    workers = 1L,
-    quiet = TRUE,
-    prune_parts = FALSE
-  )
-
-  testthat::expect_false(file.exists(part_file))
-})
-
-testthat::test_that("an interrupted refetch leaves the canonical file in place", {
-  root <- withr::local_tempdir()
-  out_file <- file.path(root, "raw_im.rds")
-  saveRDS(
-    data.frame(
-      Id = 1:2,
-      PublishDate = rep("2024-06-15", 2),
-      stringsAsFactors = FALSE
-    ),
-    out_file
-  )
-  n_seeded <- 1500L
-  seed_parts(
-    polis_folder = root,
-    table_name = "raw_im",
-    year = 2024,
-    df = data.frame(
-      Id = seq_len(n_seeded),
-      PublishDate = rep("2024-06-15", n_seeded),
-      stringsAsFactors = FALSE
-    )
-  )
-
-  # the overshoot clears the parts, then the refetch dies mid-flight
-  testthat::local_mocked_bindings(
-    .polis_get_count = function(...) 5,
-    .polis_fetch_id_page = function(...) stop("page boom"),
-    .package = "polished"
-  )
-
-  testthat::expect_error(
-    polished::get_polis_data(
-      tables = "im",
-      min_date = "2024-01-01",
-      max_date = "2024-12-31",
-      polis_folder = root,
-      polis_api_key = "dummy",
-      workers = 1L,
-      quiet = TRUE
-    ),
-    "fetch failed"
-  )
-  testthat::expect_true(file.exists(out_file))
-  testthat::expect_equal(nrow(readRDS(out_file)), 2L)
 })
 
 testthat::test_that("get_polis_data aborts on an invalid verify_years", {

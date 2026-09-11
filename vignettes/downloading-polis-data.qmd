@@ -115,27 +115,29 @@ covering your bound.
 
 ## Where the data lives, and how resume works
 
-Every table is fetched into a per-year *part file*, with a tiny metadata
-sidecar, before being merged into one canonical file written under the table's
-`raw_*` stem:
+Each batch is written as an immutable page and committed in a journal. Once a
+year finishes, its pages are compacted into one part. The final merge writes the
+canonical file under the table's `raw_*` stem:
 
 ```
 <polis_folder>/
-├── raw_im.rds                  # canonical, merged file you read
-└── .parts/raw_im/
-    ├── year_2023.rds           # one part per calendar year
-    ├── year_2023.meta.rds      # row count + Id range sidecar
-    └── year_2024.rds
+├── raw_afp.rds
+├── .manifests/raw_afp.rds.rds   # scope, revisions and completion state
+└── .parts/raw_afp/
+    ├── year_2023.rds
+    ├── year_2023.meta.rds      # progress without rereading the data
+    └── year_2024.rds.pages/
+        ├── state.rds          # committed pages and last Id
+        └── page_00000001.rds
 ```
 
-The part files **are the resume marker**. Each year is an independent Id-range
-walk that flushes to its part after every 2000-row batch, so if a run dies
-mid-pull — a dropped connection, a Ctrl-C, an OOM — the next call picks up at `Id
-gt max(Id)` for each year. Worst-case lost work is the single in-flight batch.
+An interrupted run resumes after the last committed page. A page whose journal
+commit failed is fetched again. The final merge needs memory for the complete
+table. A failed refresh leaves the previous canonical file in place.
 
-Files written by older versions under the bare table name (e.g. `case.rds`,
-`.parts/case/`) are renamed to their `raw_*` stem in place on the next run, so an
-existing cache is reused rather than re-downloaded.
+Files with older names such as `case.rds` are renamed to `raw_afp.rds`. Legacy
+caches without scope metadata require one fresh download because the country,
+region and date filters used to create them are unknown.
 
 `polis_folder` defaults to `tools::R_user_dir("polished", which = "cache")`, the
 standard per-user cache location, so incremental updates persist across sessions
@@ -150,26 +152,25 @@ polished::get_polis_data(tables = "im", polis_folder = "data/polis")
 
 ### Incremental updates
 
-Re-running the same call is the update path. The function asks POLIS for the
-current row count, compares it against what the part files already hold, and:
+Re-running a call checks the saved scope before reusing its data. Country,
+region or year-range changes start a fresh pull. For tables with
+`LastUpdateDate` or `UpdatedDate`, the downloader compares the full scoped Id
+and revision list, fetches changed rows, and removes deleted records. This
+assumes the service advances its revision timestamp on edits. Equal row counts
+do not establish freshness.
 
-- if the cache already covers the count, it **skips the pull entirely** (just
-  re-merging parts to the canonical file); otherwise
-- it walks each year from its last cached `Id` forward, fetching only the new
-  rows.
+An unchanged snapshot needs no canonical read or partition rebuilding. Tables
+filtered by event dates (`lqas` and `im`) are fetched again because those dates
+do not identify edits. Population snapshots have a one-day expiry by default;
+use `reference_refresh_days = 0` to refresh them on every call.
 
-So a daily cron that calls `get_polis_data(tables = "case")` downloads the full
-history once and only the delta thereafter.
+`force = TRUE` starts a full pull while retaining the old canonical until its
+replacement succeeds. `auto_refetch = FALSE` explicitly trusts completed
+snapshots with matching scope until forced.
 
-To force a clean re-pull instead of resuming, pass `force = TRUE` (this deletes
-the table's parts and canonical file first).
-
-By default (`prune_parts = TRUE`) the per-year parts are deleted once the
-canonical file is written and verified; the next run rebuilds them from the
-canonical, which keeps the parts free of stale cross-year duplicates and keeps
-the "already up to date" short-circuit honest. Incremental resume still works.
-Pass `prune_parts = FALSE` to keep the parts on disk for the fastest possible
-resume (no re-split next run).
+By default, `prune_parts = TRUE` removes completed parts. Use `FALSE` to retain
+them for inspection. Revision changes discard retained parts so they cannot
+restore stale records on a later run.
 
 ## Going faster with parallel workers
 

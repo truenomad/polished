@@ -143,7 +143,7 @@ testthat::test_that(".polis_fetch_year_worker pages into a part file and reports
   testthat::expect_true(file.exists(spec$part_file))
 })
 
-testthat::test_that(".polis_migrate_to_parts splits a canonical file; .polis_merge_parts dedups", {
+testthat::test_that(".polis_merge_parts combines year parts", {
   dir <- withr::local_tempdir()
   out_file <- file.path(dir, "im.rds")
   parts_dir <- file.path(dir, ".parts")
@@ -155,7 +155,16 @@ testthat::test_that(".polis_migrate_to_parts splits a canonical file; .polis_mer
     ),
     out_file
   )
-  polished:::.polis_migrate_to_parts(out_file, parts_dir, "rds", "PublishDate")
+  dir.create(parts_dir)
+  df <- readRDS(out_file)
+  for (year in unique(substr(df$PublishDate, 1, 4))) {
+    polished:::.polis_io_write_part(
+      df[substr(df$PublishDate, 1, 4) == year, ],
+      file.path(parts_dir, paste0("year_", year, ".rds")),
+      "rds",
+      "PublishDate"
+    )
+  }
   testthat::expect_true(dir.exists(parts_dir))
   testthat::expect_gte(length(list.files(parts_dir, pattern = "^year_")), 2L)
 
@@ -248,34 +257,7 @@ testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batc
   )
 })
 
-testthat::test_that(".polis_migrate_to_parts tolerates a corrupt or date-less source", {
-  dir <- withr::local_tempdir()
-  # corrupt rds -> removed, no parts written, no error
-  corrupt <- file.path(dir, "corrupt.rds")
-  writeLines("not an rds", corrupt)
-  testthat::expect_silent(suppressMessages(
-    polished:::.polis_migrate_to_parts(
-      corrupt,
-      file.path(dir, "p1"),
-      "rds",
-      "PublishDate"
-    )
-  ))
-  testthat::expect_false(dir.exists(file.path(dir, "p1")))
-
-  # readable but missing the date field -> no-op
-  nodate <- file.path(dir, "nodate.rds")
-  saveRDS(data.frame(Id = 1:2), nodate)
-  polished:::.polis_migrate_to_parts(
-    nodate,
-    file.path(dir, "p2"),
-    "rds",
-    "PublishDate"
-  )
-  testthat::expect_false(dir.exists(file.path(dir, "p2")))
-})
-
-testthat::test_that(".polis_merge_parts skips unreadable parts and no-ops on an empty dir", {
+testthat::test_that(".polis_merge_parts rejects unreadable parts and no-ops on an empty dir", {
   dir <- withr::local_tempdir()
   testthat::expect_equal(
     polished:::.polis_merge_parts(
@@ -292,15 +274,13 @@ testthat::test_that(".polis_merge_parts skips unreadable parts and no-ops on an 
     data.frame(Id = 1:2, PublishDate = "2024-06-15"),
     file.path(parts, "year_2024.rds")
   )
-  writeLines("junk", file.path(parts, "year_2023.rds")) # unreadable -> skipped
+  writeLines("junk", file.path(parts, "year_2023.rds")) # must not publish a partial table
   out <- file.path(dir, "merged.rds")
-  n <- suppressMessages(polished:::.polis_merge_parts(
-    parts,
-    out,
-    "rds",
-    "PublishDate"
-  ))
-  testthat::expect_equal(n, 2L)
+  testthat::expect_error(
+    polished:::.polis_merge_parts(parts, out, "rds", "PublishDate"),
+    "unknown input format"
+  )
+  testthat::expect_false(file.exists(out))
 })
 
 testthat::test_that("io dispatch + readers reject unsupported types and missing dirs", {

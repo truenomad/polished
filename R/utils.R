@@ -828,66 +828,8 @@
   invisible()
 }
 
-.polis_migrate_to_parts <- function(out_file, parts_dir, ext, date_field) {
-  if (dir.exists(parts_dir)) {
-    return(invisible())
-  }
-  if (!file.exists(out_file)) {
-    return(invisible())
-  }
-
-  df <- tryCatch(
-    .polis_io_read(out_file, ext),
-    error = function(e) {
-      cli::cli_alert_warning(c(
-        paste0(
-          "Existing ",
-          out_file,
-          " is unreadable (",
-          conditionMessage(e),
-          ")."
-        ),
-        i = paste0(
-          "Removing the corrupt file and starting a fresh pull. ",
-          "No resume marker available."
-        )
-      ))
-      try(file.remove(out_file), silent = TRUE)
-      NULL
-    }
-  )
-
-  if (is.null(df) || !is.data.frame(df) || nrow(df) == 0L) {
-    return(invisible())
-  }
-  if (!date_field %in% names(df)) {
-    return(invisible())
-  }
-
-  yrs <- as.integer(format(as.Date(df[[date_field]]), "%Y"))
-  keep <- !is.na(yrs)
-  if (!any(keep)) {
-    return(invisible())
-  }
-  df <- df[keep, , drop = FALSE]
-  yrs <- yrs[keep]
-
-  dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
-  for (yr in unique(yrs)) {
-    part_df <- df[yrs == yr, , drop = FALSE]
-    part_file <- file.path(parts_dir, sprintf("year_%d.%s", yr, ext))
-    .polis_io_write_part(part_df, part_file, ext, date_field)
-  }
-  invisible()
-}
-
-# Drop the per-year resume cache for one table. Called when `prune_parts =
-# TRUE` once the canonical file is written and verified: the canonical is a
-# complete, Id-deduped checkpoint, so the parts are redundant. The next run
-# rebuilds them from the canonical via `.polis_migrate_to_parts()`, which
-# re-buckets every Id into its current `date_field` year -- clearing any stale
-# cross-year duplicate copies and keeping the parts row count honest. Returns
-# `TRUE` if a parts dir was removed, `FALSE` if there was nothing to remove.
+# Completed snapshots are tracked by scope manifests; parts are only needed
+# while a pull is incomplete, or when explicitly retained for inspection.
 .polis_prune_parts <- function(parts_dir) {
   if (!dir.exists(parts_dir)) {
     return(invisible(FALSE))
@@ -907,21 +849,12 @@
     return(invisible(0L))
   }
 
-  dfs <- lapply(part_files, function(f) {
-    tryCatch(
-      .polis_checkpoint_read(f, ext, date_field),
-      error = function(e) {
-        cli::cli_alert_warning(paste0(
-          "Skipping unreadable part ",
-          f,
-          " (",
-          conditionMessage(e),
-          ")"
-        ))
-        data.frame()
-      }
-    )
-  })
+  dfs <- lapply(
+    part_files,
+    .polis_checkpoint_read,
+    ext = ext,
+    date_field = date_field
+  )
   combined <- .polis_dedup(
     dplyr::bind_rows(dfs),
     id_col = "Id",

@@ -19,28 +19,22 @@
 #'   `PublishDate`) which probes have confirmed is 100%-populated.
 #'
 #' @details
-#' **Cache layout.** Each table is fetched into a per-year part file under
-#' `<polis_folder>/.parts/<stem>/year_YYYY.<ext>`, with a tiny
-#' `year_YYYY.meta.rds` sidecar capturing row count and min/max Id. After
-#' all years finish the parts are merged into the canonical
-#' `<polis_folder>/<stem>.<ext>`. The `<stem>` is the table's `raw_*` name
-#' (e.g. `case` is written as `raw_afp`; see [polis_tables_mapping]), so the
-#' download and cleaning halves share one naming convention. By default
-#' (`prune_parts = TRUE`) the parts are deleted once the canonical is written
-#' and the next call rebuilds them from the canonical; pass `prune_parts =
-#' FALSE` to keep them on disk so the next call can resume per-year from
-#' `max(Id)` without the re-split. Either way the next call resumes per-year
-#' from `max(Id)` without re-fetching. To force a clean re-pull, pass `force =
-#' TRUE` or delete `.parts/`.
+#' **Cache layout and recovery.** Pages are committed under
+#' `<polis_folder>/.parts/<stem>/year_YYYY.<ext>.pages/`, then compacted once
+#' per year. A journal records the last committed page. Interrupted pulls
+#' resume at that page's maximum Id; an uncommitted page is fetched again.
+#' After all years finish, the verified table replaces
+#' `<polis_folder>/<stem>.<ext>` atomically. The stem is the table's `raw_*`
+#' name (e.g. `case` is written as `raw_afp`; see [polis_tables_mapping]).
+#' Merging requires memory for the complete table.
 #'
-#' Files written by older versions under the bare `<table_name>` name (e.g.
-#' `case.<ext>`) are renamed to their `raw_*` stem in place on the next run --
-#' no re-download.
-#'
-#' **Resume semantics.** The part files ARE the resume marker. If a
-#' previous run died (network blip, Ctrl-C, OOM), the next call picks up
-#' at `Id gt max(Id_in_part)` for each year. Worst case lost work: the
-#' most recent in-flight batch.
+#' Scope manifests under `.manifests/` record the effective country, region,
+#' year range and format. Changing those filters starts a fresh pull while
+#' preserving the previous canonical file until the replacement succeeds.
+#' Legacy files are renamed to their `raw_*` names, but caches without a scope
+#' manifest must be downloaded once again because their filters are unknown.
+#' `prune_parts = TRUE` removes completed parts; unchanged snapshots can be
+#' reused without splitting or reading the full canonical file.
 #'
 #' **Parallelism.** Each calendar year between `min_date` and `max_date`
 #' is an independent Id-range walk. With `workers > 1`, years are
@@ -52,22 +46,25 @@
 #' batch. PSOCK workers need `polished` installed in their library
 #' path -- `devtools::load_all()` is not enough.
 #'
-#' **Auto-refetch.** A table whose row count already matches POLIS's
-#' `@odata.count` is skipped outright. Otherwise, when `auto_refetch = TRUE`
-#' (default), after the table has been downloaded and merged the function
-#' pages the server's Id list (`$select=Id`, one request per 2000 rows) over
-#' the most recent `verify_years` calendar years, compares it with the Ids on
-#' disk, and refetches any missing rows via OData `Id in (...)` chunks. The
-#' Id walk is the slow half of a run, so the window matters: pass
-#' `verify_years = NULL` to cover the whole requested range. Set
-#' `auto_refetch = FALSE` to skip the post-download check entirely.
+#' **Freshness.** For tables with `LastUpdateDate` or `UpdatedDate`, completed
+#' snapshots are checked against the full scoped list of Ids and revision
+#' timestamps. Changed and new rows are fetched selectively; deleted rows are
+#' removed. Equal row counts never establish freshness. This relies on the
+#' service advancing its revision timestamp when a record changes.
+#' Tables filtered by event dates (`Start` or `PublishDate`) are fetched again
+#' because those dates cannot establish whether a row was edited.
+#' Reference tables with no update date use `reference_refresh_days` instead.
+#' `force = TRUE` always starts a full pull. `auto_refetch = FALSE` explicitly
+#' trusts completed snapshots until forced or their scope changes.
+#'
+#' Fresh pulls also check for missing Ids over `verify_years` and refetch them.
+#' Revision-based reconciliation covers the full scope, including after an
+#' interrupted pull resumes. Verification failures retain checkpoints and
+#' leave the previous canonical file in place for a later retry.
 #'
 #' **Resilience.** Read timeouts are retried inside each request, and a year
-#' whose worker still fails is requeued up to three times. Parts are
-#' checkpointed, so a retry resumes from the last Id. A copy slightly ahead
-#' of the declared row count keeps its cache; only an excess beyond 1%
-#' clears the year parts. `POLIS_TIMEOUT_SECONDS` overrides the 120-second
-#' default.
+#' whose parallel worker still fails is requeued up to three times.
+#' `POLIS_TIMEOUT_SECONDS` overrides the 120-second default.
 #'
 #' @param tables Optional character vector of table names (see
 #'   [polis_tables_mapping] for the supported set, e.g. `"case"`, `"virus"`,
@@ -98,47 +95,35 @@
 #'   sequential loop with a live per-batch progress bar. `> 1` opts into
 #'   a PSOCK cluster that dispatches one year per worker; pass e.g.
 #'   `parallel::detectCores() - 1L` to use most cores.
-#' @param auto_refetch If `TRUE` (default), run the metadata-aware
-#'   verification + selective refetch at the end of each table. Set to
-#'   `FALSE` to trust whatever is on disk.
-#' @param verify_years Number of most recent calendar years the completeness
-#'   check covers, counted back from `max_date` and clamped to `min_date`.
-#'   Default `3L`. Records are bucketed by their update date, so an older
-#'   year can lose rows to a newer one but never gain any: a window over the
-#'   recent years catches every new row, and skipping the older years is
-#'   what keeps the check fast. Pass `NULL` to walk the whole requested
-#'   range, for example as an occasional deep check. Ignored when
+#' @param auto_refetch If `TRUE` (default), verify fresh downloads and refresh
+#'   completed snapshots as described above. `FALSE` trusts a completed
+#'   snapshot with matching scope and skips post-download verification.
+#' @param verify_years Number of most recent calendar years covered by the
+#'   missing-Id check on a fresh pull, counted back from `max_date` and clamped
+#'   to `min_date`. Default `3L`; `NULL` covers the full requested range.
+#'   Revision-based reconciliation always covers the full scope. Ignored when
 #'   `auto_refetch = FALSE` and for reference tables with no update date.
 #' @param log_file Optional path to a per-batch log file (`.rds`). Default
 #'   `NULL`.
 #' @param keep_archives When `> 0`, on each save also writes a timestamped
 #'   copy under `archive/` and prunes older copies. Default `0` (no
 #'   archive).
-#' @param force If `TRUE`, deletes the `.parts/<table>/` directory and the
-#'   canonical file for each selected table before running -- forces a
-#'   fresh full re-pull instead of resuming. Default `FALSE`.
-#' @param prune_parts If `TRUE` (default), deletes the `.parts/<table>/` resume
-#'   cache after the canonical file has been written and verified. The canonical
-#'   is a complete, Id-deduped checkpoint, so the next run rebuilds the parts
-#'   from it (re-bucketing each row into its current `date_field` year). This
-#'   keeps the parts free of stale cross-year duplicate copies that otherwise
-#'   accumulate when a record's update date crosses a year boundary between runs
-#'   -- which in turn keeps the "already up to date" short-circuit honest -- at
-#'   the cost of re-splitting the canonical on the next run. Incremental resume
-#'   still works. Set to `FALSE` to retain the parts for the fastest possible
-#'   resume (at the risk of the parts row count drifting above the true distinct
-#'   total over many incremental re-pulls).
+#' @param force If `TRUE`, discard resume parts and fetch a fresh snapshot.
+#'   The previous canonical file remains until replacement succeeds.
+#' @param prune_parts If `TRUE` (default), delete the per-year resume cache
+#'   after publishing the complete snapshot. `FALSE` retains completed parts
+#'   for inspection; they are discarded when the snapshot's revisions change.
+#' @param reference_refresh_days Maximum age in days of a completed reference
+#'   table without an update timestamp (currently `population`). Default `1`;
+#'   `0` refreshes on every call. Ignored when `auto_refetch = FALSE`.
 #' @param polis_api_key API key. Defaults to `Sys.getenv("POLIS_API_KEY")`.
 #' @param quiet Suppress headers, progress bars, and the info alert.
 #'   Default `FALSE`.
 #'
-#' @return `NULL`, invisibly. `get_polis_data()` is called purely for its
-#'   side effect: each selected table is written to
-#'   `<polis_folder>/<table_name>.<ext>` (plus a `.parts/<table_name>/`
-#'   resume cache). The data is never loaded into memory, so a
-#'   multi-million-row pull cannot inflate your session. Read a table back
-#'   from disk yourself when you need it, e.g.
-#'   `readRDS(file.path(polis_folder, "im.rds"))`.
+#' @return `NULL`, invisibly. Each selected table is written to
+#'   `<polis_folder>/<raw_stem>.<ext>`. Pages and year partitions are loaded
+#'   during downloading; the final merge loads the complete table into memory.
+#'   Read a saved table with `readRDS(file.path(polis_folder, "raw_im.rds"))`.
 #'
 #' @examples
 #' \dontrun{
@@ -147,7 +132,7 @@
 #'
 #' # Read it back from disk when you need it
 #' cache <- tools::R_user_dir("polished", which = "cache")
-#' im <- readRDS(file.path(cache, "im.rds"))
+#' im <- readRDS(file.path(cache, "raw_im.rds"))
 #'
 #' # The whole catalogue in parallel into a project folder
 #' get_polis_data(
@@ -173,14 +158,22 @@ get_polis_data <- function(
   force = FALSE,
   prune_parts = TRUE,
   polis_api_key = Sys.getenv("POLIS_API_KEY"),
-  quiet = FALSE
+  quiet = FALSE,
+  reference_refresh_days = 1
 ) {
   ext <- match.arg(output_format)
+  pending_files <- character()
+  on.exit(unlink(pending_files), add = TRUE)
 
-  # how far the year parts may sit above the declared count before the excess
-  # reads as duplication rather than upstream deletion
-  overshoot_tolerance <- 0.01
-  overshoot_floor <- 1000
+  if (
+    !is.numeric(reference_refresh_days) ||
+      length(reference_refresh_days) != 1L ||
+      is.na(reference_refresh_days) ||
+      !is.finite(reference_refresh_days) ||
+      reference_refresh_days < 0
+  ) {
+    cli::cli_abort("reference_refresh_days must be a finite number >= 0.")
+  }
 
   if (!isTRUE(nzchar(polis_api_key))) {
     cli::cli_abort(c(
@@ -218,7 +211,19 @@ get_polis_data <- function(
   data_dir <- polis_folder
   dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
 
+  min_date <- as.Date(min_date)
   max_date <- as.Date(max_date)
+  if (
+    length(min_date) != 1L ||
+      length(max_date) != 1L ||
+      is.na(min_date) ||
+      is.na(max_date) ||
+      min_date > max_date
+  ) {
+    cli::cli_abort("min_date and max_date must define a valid date range.")
+  }
+  region <- toupper(region)
+  if (!is.null(country_code)) country_code <- toupper(country_code)
 
   if (!isTRUE(quiet)) {
     cli::cli_h1("Downloading POLIS data")
@@ -235,17 +240,6 @@ get_polis_data <- function(
 
     out_file <- file.path(data_dir, paste0(stem, ".", ext))
     parts_dir <- file.path(data_dir, ".parts", stem)
-
-    # Force re-pull: blow away the canonical file and the per-year
-    # cache so the year workers start from Id = 0.
-    if (isTRUE(force)) {
-      if (file.exists(out_file)) {
-        try(file.remove(out_file), silent = TRUE)
-      }
-      if (dir.exists(parts_dir)) {
-        try(unlink(parts_dir, recursive = TRUE, force = TRUE), silent = TRUE)
-      }
-    }
 
     if (!isTRUE(quiet)) {
       cli::cli_h2(paste0(
@@ -276,14 +270,71 @@ get_polis_data <- function(
     # `raw_*` stem so an existing download is reused, not re-fetched.
     .polis_migrate_legacy_names(data_dir, nm, stem, ext)
 
-    # If a pre-parallel run left a single canonical file with no per-
-    # year parts, split it once so the workers can resume per-year.
-    .polis_migrate_to_parts(out_file, parts_dir, ext, date_field)
+    no_date <- is.na(date_field) || !nzchar(date_field)
+    scope <- .polis_download_scope(
+      endpoint,
+      date_field,
+      min_date,
+      max_date,
+      region,
+      country_code,
+      ext
+    )
+    manifest_path <- .polis_download_manifest(data_dir, stem, ext)
+    state <- if (file.exists(manifest_path))
+      tryCatch(readRDS(manifest_path), error = function(e) NULL) else NULL
+    same_scope <- is.list(state) &&
+      identical(state$version, 1L) &&
+      identical(state$scope, scope)
+    completed <- same_scope &&
+      isTRUE(state$complete) &&
+      file.exists(out_file) &&
+      identical(state$file, .polis_part_signature(out_file))
+    if (completed && !isTRUE(force)) {
+      age <- as.numeric(difftime(Sys.time(), state$fetched_at, units = "days"))
+      reusable <- !isTRUE(auto_refetch) ||
+        (no_date && is.finite(age) && age >= 0 && age < reference_refresh_days)
+      if (
+        !reusable &&
+          date_field %in% c("LastUpdateDate", "UpdatedDate") &&
+          !is.null(state$versions)
+      ) {
+        versions <- .polis_refresh_snapshot(
+          state,
+          out_file,
+          ext,
+          endpoint,
+          date_field,
+          min_date,
+          max_date,
+          region,
+          country_code,
+          polis_api_key,
+          workers
+        )
+        .polis_save_manifest(manifest_path, scope, out_file, versions)
+        .polis_archive(out_file, polis_folder, stem, ext, keep_archives)
+        reusable <- TRUE
+        # Retained year parts may contain prior revisions after selective refresh.
+        if (!identical(state$versions, versions)) .polis_prune_parts(parts_dir)
+      }
+      if (reusable) {
+        if (isTRUE(prune_parts)) .polis_prune_parts(parts_dir)
+        if (!isTRUE(quiet))
+          cli::cli_alert_info("Up to date. Using the completed snapshot.")
+        next
+      }
+    }
+    # Resume only an incomplete pull whose effective filters are known to match.
+    # Completed, expired, unknown, or changed scopes start with fresh parts.
+    if (isTRUE(force) || !same_scope || isTRUE(state$complete)) {
+      .polis_prune_parts(parts_dir)
+    }
+    .polis_save_manifest(manifest_path, scope)
     dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
 
     # Ask POLIS for the total row count for the year-aligned range.
-    # Powers the progress bar and lets us skip tables already up to
-    # date without dispatching any workers.
+    # The count is for progress only; it cannot certify freshness.
     declared_total <- tryCatch(
       .polis_get_count(
         endpoint,
@@ -341,93 +392,6 @@ get_polis_data <- function(
       },
       integer(1)
     ))
-
-    if (!is.na(declared_total) && current_rows > declared_total) {
-      overshoot <- current_rows - declared_total
-      # rows deleted or re-dated upstream since the last pull leave the parts
-      # slightly above the declared count; only a wild excess means duplication
-      tolerated <- overshoot <=
-        max(
-          overshoot_floor,
-          declared_total * overshoot_tolerance
-        )
-      if (!isTRUE(quiet)) {
-        cli::cli_alert_warning(paste0(
-          nm,
-          ": local copy holds ",
-          .polis_pretty_num(current_rows),
-          " rows against ",
-          .polis_pretty_num(declared_total),
-          " declared by POLIS; ",
-          if (tolerated) {
-            "keeping the cache and reconciling by Id."
-          } else {
-            "clearing the year parts and refetching."
-          }
-        ))
-      }
-      # the canonical file stays until the merge writes its replacement, so a
-      # failed refetch leaves the previous copy in place
-      if (!tolerated) {
-        if (dir.exists(parts_dir)) {
-          try(unlink(parts_dir, recursive = TRUE, force = TRUE), silent = TRUE)
-        }
-        dir.create(parts_dir, showWarnings = FALSE, recursive = TRUE)
-        current_rows <- 0L
-      }
-    }
-
-    if (!is.na(declared_total) && current_rows == declared_total) {
-      # Already complete. Only re-merge parts to canonical when the
-      # canonical is missing or smaller than parts -- a prior refetch
-      # may have padded the canonical with rows that aren't on disk in
-      # any single part, and re-merging would silently overwrite those
-      # extra rows with parts-only data. A canonical that is unreadable or
-      # corrupt (e.g. a torn write or a bad manual conversion) is also
-      # rebuilt from the intact parts.
-      canonical_corrupt <- FALSE
-      corrupt_env <- environment()
-      out_rows <- if (file.exists(out_file)) {
-        withCallingHandlers(
-          tryCatch(
-            nrow(.polis_io_read(out_file, ext)),
-            error = function(e) {
-              corrupt_env$canonical_corrupt <- TRUE
-              0L
-            }
-          ),
-          warning = function(w) {
-            if (grepl("hash mismatch|corrupt", conditionMessage(w))) {
-              corrupt_env$canonical_corrupt <- TRUE
-              invokeRestart("muffleWarning")
-            }
-          }
-        )
-      } else {
-        0L
-      }
-      if (canonical_corrupt && !isTRUE(quiet)) {
-        cli::cli_alert_warning(
-          "{.val {nm}}: canonical file corrupt; rebuilding from parts."
-        )
-      }
-      if (
-        !file.exists(out_file) || out_rows < current_rows || canonical_corrupt
-      ) {
-        .polis_merge_parts(parts_dir, out_file, ext, date_field)
-      }
-      if (isTRUE(prune_parts) && file.exists(out_file)) {
-        .polis_prune_parts(parts_dir)
-      }
-      if (!isTRUE(quiet)) {
-        cli::cli_alert_info(paste0(
-          "Up to date (",
-          .polis_pretty_num(current_rows),
-          " rows). Skipping."
-        ))
-      }
-      next
-    }
 
     use_parallel <- isTRUE(workers > 1L) && length(specs) > 1L
     workers_actual <- if (use_parallel) {
@@ -545,19 +509,11 @@ get_polis_data <- function(
             if (!is.null(pb_id)) {
               cli::cli_progress_done(id = pb_id)
             }
-            on_disk <- if (dir.exists(parts_dir)) {
-              .polis_merge_parts(parts_dir, out_file, ext, date_field)
-              if (file.exists(out_file)) {
-                tryCatch(
-                  nrow(.polis_io_read(out_file, ext)),
-                  error = function(e) 0L
-                )
-              } else {
-                0L
-              }
-            } else {
-              0L
-            }
+            on_disk <- sum(vapply(
+              specs,
+              function(s) .polis_read_meta(s$part_file, ext, date_field)$n_rows,
+              integer(1)
+            ))
             cli::cli_abort(c(
               "x" = paste0(
                 nm,
@@ -569,7 +525,7 @@ get_polis_data <- function(
               "i" = paste0(
                 .polis_pretty_num(on_disk),
                 " rows checkpointed to ",
-                out_file
+                parts_dir
               ),
               "*" = paste0(
                 "Resume by re-running get_polis_data(",
@@ -595,15 +551,15 @@ get_polis_data <- function(
     if (!isTRUE(quiet)) {
       cli::cli_alert_info("Merging year parts -> canonical file...")
     }
+    canonical_file <- out_file
+    out_file <- paste0(canonical_file, ".pending.", Sys.getpid())
+    pending_files <- c(pending_files, out_file)
     .polis_merge_parts(parts_dir, out_file, ext, date_field)
-    .polis_archive(out_file, polis_folder, stem, ext, keep_archives)
 
     # Completeness check. The Id walk is the slow half of a run (one request
     # per 2000 rows, and full rows on the endpoints that ignore `$select`), so
     # by default it covers only the most recent `verify_years` calendar years.
-    # Records are bucketed by update date, so an older year can lose rows to a
-    # newer one but never gain any; a window over the recent years therefore
-    # catches every new row. `verify_years = NULL` walks the whole range.
+    # A separate revision check reconciles update-dated tables over the full scope.
     if (isTRUE(auto_refetch) && file.exists(out_file)) {
       verify_min <- .polis_verify_min_date(
         min_date,
@@ -647,13 +603,12 @@ get_polis_data <- function(
             polis_api_key = polis_api_key
           ),
           error = function(e) {
-            cli::cli_alert_warning(paste0(
+            cli::cli_abort(paste0(
               nm,
-              ": Id list fetch failed (",
+              ": Id list fetch failed: ",
               conditionMessage(e),
-              "); skipping verification."
+              ". Checkpoints retained; retry the download."
             ))
-            NULL
           }
         )
 
@@ -676,15 +631,23 @@ get_polis_data <- function(
                 workers = workers
               ),
               error = function(e) {
-                cli::cli_alert_warning(paste0(
+                cli::cli_abort(paste0(
                   nm,
-                  ": refetch failed (",
+                  ": refetch failed: ",
                   conditionMessage(e),
-                  ")."
+                  ". Checkpoints retained; retry the download."
                 ))
-                data.frame()
               }
             )
+            if (
+              !is.data.frame(refetched) ||
+                !"Id" %in% names(refetched) ||
+                length(setdiff(missing_ids, refetched$Id))
+            ) {
+              cli::cli_abort(
+                "Refetch did not return all missing IDs; checkpoints retained."
+              )
+            }
             if (nrow(refetched) > 0L) {
               combined <- .polis_dedup(
                 dplyr::bind_rows(downloaded, refetched),
@@ -692,80 +655,11 @@ get_polis_data <- function(
                 date_col = date_field
               )
               .polis_io_write_atomic(combined, out_file, ext)
-              .polis_archive(
-                out_file,
-                polis_folder,
-                stem,
-                ext,
-                keep_archives
-              )
-              # Refresh per-year parts + meta sidecars so the next call
-              # sees the refetched rows when computing current_rows.
-              tryCatch(
-                {
-                  if (date_field %in% names(combined)) {
-                    yrs2 <- as.integer(format(
-                      as.Date(combined[[date_field]]),
-                      "%Y"
-                    ))
-                    keep2 <- !is.na(yrs2)
-                    if (any(keep2)) {
-                      combined_yr <- combined[keep2, , drop = FALSE]
-                      yrs2 <- yrs2[keep2]
-                      dir.create(
-                        parts_dir,
-                        showWarnings = FALSE,
-                        recursive = TRUE
-                      )
-                      for (yr in unique(yrs2)) {
-                        part_df <- combined_yr[yrs2 == yr, , drop = FALSE]
-                        part_file_yr <- file.path(
-                          parts_dir,
-                          sprintf("year_%d.%s", yr, ext)
-                        )
-                        .polis_io_write_part(
-                          part_df,
-                          part_file_yr,
-                          ext,
-                          date_field
-                        )
-                      }
-                    }
-                  }
-                },
-                error = function(e) {
-                  cli::cli_alert_warning(paste0(
-                    nm,
-                    ": meta refresh after refetch failed (",
-                    conditionMessage(e),
-                    ")."
-                  ))
-                }
-              )
-              downloaded <- combined
-              still_missing <- setdiff(canonical, downloaded$Id)
-              if (length(still_missing) > 0L) {
-                cli::cli_alert_warning(c(
-                  "x" = paste0(
-                    nm,
-                    ": ",
-                    length(still_missing),
-                    " ID(s) still missing after refetch."
-                  ),
-                  "i" = paste0(
-                    "First few: ",
-                    paste(
-                      utils::head(still_missing, 5),
-                      collapse = ", "
-                    )
-                  )
-                ))
-              } else if (!isTRUE(quiet)) {
+              if (!isTRUE(quiet))
                 cli::cli_alert_success(paste0(
                   nm,
                   ": verification + refetch complete."
                 ))
-              }
             }
           } else if (!isTRUE(quiet)) {
             cli::cli_alert_success(paste0(
@@ -779,9 +673,35 @@ get_polis_data <- function(
       }
     }
 
-    # Drop the resume cache now that the canonical is a complete, deduped
-    # checkpoint. The next run rebuilds it from the canonical, so this only
-    # trades a re-split for parts that never carry stale cross-year duplicates.
+    # Publish only after the complete candidate passes verification.
+    downloaded <- .polis_io_read(out_file, ext)
+    versions <- if (!no_date)
+      .polis_record_versions(downloaded, date_field) else NULL
+    if (
+      isTRUE(auto_refetch) && date_field %in% c("LastUpdateDate", "UpdatedDate")
+    ) {
+      versions <- .polis_refresh_snapshot(
+        list(versions = versions),
+        out_file,
+        ext,
+        endpoint,
+        date_field,
+        min_date,
+        max_date,
+        region,
+        country_code,
+        polis_api_key,
+        workers
+      )
+    }
+    if (!file.rename(out_file, canonical_file))
+      cli::cli_abort(
+        "Failed to commit the verified snapshot; previous file retained."
+      )
+    out_file <- canonical_file
+    .polis_save_manifest(manifest_path, scope, out_file, versions)
+    .polis_archive(out_file, polis_folder, stem, ext, keep_archives)
+
     if (isTRUE(prune_parts) && file.exists(out_file)) {
       .polis_prune_parts(parts_dir)
     }
