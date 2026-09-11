@@ -586,3 +586,50 @@ testthat::test_that("calc_polio_indicators attaches a validation report and pass
   ))
   testthat::expect_gt(v$n_flagged[v$check == "negative_value"], 0L)
 })
+
+testthat::test_that("population roll-ups include districts without cases and respect years", {
+  cases <- make_indicator_cases()[1, ]
+  pop <- tibble::tibble(
+    adm2_guid = c("D1", "D2"),
+    year = 2023L,
+    u15_pop = c(50000, 50000)
+  )
+  units <- tibble::tibble(
+    adm0_guid = "G0",
+    adm1_guid = "P1",
+    adm2_guid = c("D1", "D2"),
+    year = 2023L
+  )
+  # A historical district-parent relationship must not duplicate this year's pop.
+  units <- dplyr::bind_rows(
+    units,
+    dplyr::mutate(units, year = 2022L, adm1_guid = "OLD")
+  )
+  out <- polished::calc_polio_indicators(
+    cases,
+    population = pop,
+    admin_units = units,
+    indicators = "npafp_rate",
+    levels = c("adm0", "adm1"),
+    reference_date = as.Date("2023-12-31"),
+    verbose = FALSE,
+    summary = FALSE
+  )
+  testthat::expect_equal(out$long$denominator, c(100000, 100000))
+  testthat::expect_equal(out$long$value, c(1, 1))
+  conflict <- dplyr::bind_rows(
+    units,
+    dplyr::mutate(units[1, ], adm1_guid = "OTHER")
+  )
+  testthat::expect_error(
+    polished::calc_polio_indicators(
+      cases,
+      population = pop,
+      admin_units = conflict,
+      indicators = "npafp_rate",
+      verbose = FALSE,
+      summary = FALSE
+    ),
+    "Conflicting population parent"
+  )
+})

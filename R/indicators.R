@@ -310,7 +310,7 @@ calc_polio_indicators <- function(
     reference_date = reference_date,
     ref_year = as.integer(format(reference_date, "%Y")),
     pop = pop_std,
-    pop_by_level = .polio_pop_by_level(pop_std, parent_map),
+    pop_by_level = .polio_pop_by_level(pop_std, parent_map, admin_std),
     admin_units = admin_std,
     parent_map = parent_map
   )
@@ -951,31 +951,49 @@ calc_polio_indicators <- function(
     dplyr::distinct(guid, year, .keep_all = TRUE)
 }
 
-#' Roll the district (adm2) population up to each admin level.
+#' Roll district populations up using the administrative universe.
 #'
-#' Population denominators arrive keyed on `adm2_guid` only, so the parent
-#' levels have no matching row and their population rates would be all `NA`.
-#' Using the `adm2 -> adm1/adm0` GUID links from the case frame, this sums the
-#' district populations into a per-level lookup (`adm0`/`adm1`/`adm2`), each a
-#' `guid`/`year`/`pop` tibble the rate indicators can join on by `guid` for the
-#' level they compute. Returns `NULL` when no population is supplied.
+#' Explicit district/year mappings take precedence over case-derived links.
+#' The latter are a fallback for callers without an administrative reference.
+#' Ambiguous links are rejected rather than counting a district twice.
 #' @keywords internal
 #' @noRd
-.polio_pop_by_level <- function(pop_std, parent_map) {
-  if (is.null(pop_std)) {
-    return(NULL)
+.polio_pop_by_level <- function(pop_std, parent_map, admin_std = NULL) {
+  if (is.null(pop_std)) return(NULL)
+  fallback <- dplyr::distinct(parent_map, g2, g1, g0)
+  years <- sort(unique(pop_std$year))
+  rows <- lapply(years, function(yr) {
+    link <- fallback
+    if (!is.null(admin_std)) {
+      explicit <- admin_std |>
+        dplyr::filter(is.na(year) | year == yr) |>
+        dplyr::select(g2, g1, g0) |>
+        dplyr::distinct()
+      link <- dplyr::bind_rows(
+        explicit,
+        dplyr::anti_join(fallback, explicit, by = "g2")
+      )
+    }
+    if (anyDuplicated(link$g2)) {
+      cli::cli_abort("Conflicting population parent mappings for year {yr}.")
+    }
+    dplyr::left_join(
+      dplyr::filter(pop_std, year == yr),
+      link,
+      by = dplyr::join_by(guid == g2),
+      relationship = "many-to-one"
+    )
+  })
+  joined <- dplyr::bind_rows(rows)
+  if (nrow(joined) == 0L) {
+    empty <- pop_std[0, ]
+    return(list(adm0 = empty, adm1 = empty, adm2 = pop_std))
   }
-  link <- dplyr::distinct(parent_map, g2, g1, g0)
-  joined <- dplyr::left_join(
-    pop_std,
-    link,
-    by = dplyr::join_by(guid == g2)
-  )
   roll_up <- function(parent_col) {
     joined |>
       dplyr::filter(!is.na(.data[[parent_col]])) |>
       dplyr::group_by(guid = .data[[parent_col]], year) |>
-      dplyr::summarise(pop = sum(pop, na.rm = TRUE), .groups = "drop")
+      dplyr::summarise(pop = sum(pop), .groups = "drop")
   }
   list(adm0 = roll_up("g0"), adm1 = roll_up("g1"), adm2 = pop_std)
 }
@@ -999,7 +1017,11 @@ calc_polio_indicators <- function(
     return(NULL)
   }
   flat |>
-    dplyr::distinct(dplyr::across(dplyr::all_of(need))) |>
+    dplyr::distinct(dplyr::across(dplyr::any_of(c(
+      need,
+      "year",
+      "active_year"
+    )))) |>
     dplyr::filter(!is.na(.data[["adm2_guid"]]))
 }
 
@@ -1038,8 +1060,9 @@ calc_polio_indicators <- function(
   } else {
     NA_character_
   }
-  out$year <- if ("year" %in% names(admin_units)) {
-    as.integer(admin_units[["year"]])
+  year_col <- intersect(c("year", "active_year"), names(admin_units))
+  out$year <- if (length(year_col)) {
+    as.integer(admin_units[[year_col[[1L]]]])
   } else {
     NA_integer_
   }

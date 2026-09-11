@@ -929,7 +929,12 @@ run_pipeline <- function(
             lab = cleaned$hum_spec,
             population = population_fn() %||%
               .polis_pop_denominator(cleaned$pop),
-            admin_units = .polio_admin_units_from_shape(shape_fn()),
+            admin_units = if (!is.null(cleaned$pop)) {
+              .polio_admin_units_from_shape(cleaned$pop$adm2) %||%
+                .polio_admin_units_from_shape(shape_fn())
+            } else {
+              .polio_admin_units_from_shape(shape_fn())
+            },
             summary = FALSE
           )
         },
@@ -1335,7 +1340,7 @@ load_polished <- function(
   im = 1L,
   pop = 1L,
   virus = 2L,
-  indicators = 2L
+  indicators = 3L
 )
 
 # Resolve the `inputs` argument to a named list of *handles* WITHOUT reading any
