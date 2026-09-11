@@ -1275,6 +1275,9 @@ load_polished <- function(
     pattern = "^polished_.*\\.",
     full.names = TRUE
   )
+  all_files <- all_files[
+    tolower(tools::file_ext(all_files)) %in% .polis_formats
+  ]
   all_keys <- sub(
     "^polished_",
     "",
@@ -1362,7 +1365,6 @@ load_polished <- function(
   im = "raw_im",
   population = "raw_population"
 )
-.polis_input_exts <- c("qs2", "parquet", "rds", "csv")
 
 # Per-stream cache logic version: bump the entry for a cleaner whenever its
 # output for the same input could change, to invalidate stale cache entries.
@@ -1405,7 +1407,7 @@ load_polished <- function(
     for (key in names(.polis_input_stems)) {
       cand <- file.path(
         inputs,
-        paste0(.polis_input_stems[[key]], ".", .polis_input_exts)
+        paste0(.polis_input_stems[[key]], ".", .polis_formats)
       )
       hit <- cand[file.exists(cand)]
       if (length(hit) > 0L) {
@@ -1448,7 +1450,8 @@ load_polished <- function(
     hum_spec = src_formats[["hum_spec"]],
     sia = src_formats[["activity"]],
     lqas = src_formats[["lqas"]],
-    im = src_formats[["im"]]
+    im = src_formats[["im"]],
+    pop = src_formats[["population"]]
   )
 }
 

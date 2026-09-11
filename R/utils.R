@@ -117,9 +117,10 @@
 # get_polis_data(): I/O + housekeeping
 # ---------------------------------------------------------------------
 
-# get_polis_data only writes rds/rda/csv/parquet/qs2.
+# Supported formats in directory-discovery preference order.
+.polis_formats <- c("qs2", "parquet", "rds", "rda", "csv")
 .polis_check_format <- function(fmt) {
-  allowed <- c("rds", "rda", "csv", "parquet", "qs2")
+  allowed <- .polis_formats
   if (!fmt %in% allowed) {
     cli::cli_abort(c(
       "x" = "Unsupported {.arg output_format}: {.val {fmt}}.",
@@ -190,7 +191,7 @@
     fmt,
     rds = saveRDS(x, path),
     rda = {
-      polis_data <- as.data.frame(x, stringsAsFactors = FALSE)
+      polis_data <- x
       save(polis_data, file = path)
     },
     csv = utils::write.csv(x, path, row.names = FALSE),
@@ -206,7 +207,7 @@
   tryCatch(
     .polis_io_write(x, tmp, fmt),
     error = function(e) {
-      try(file.remove(tmp), silent = TRUE)
+      unlink(tmp)
       cli::cli_abort(conditionMessage(e), call = conditionCall(e))
     }
   )
@@ -225,10 +226,11 @@
 #
 # Each year part `year_YYYY.<ext>` gets a tiny companion file
 # `year_YYYY.meta.rds` that caches:
-#   $n_rows      -- for current_rows / verification fast paths
-#   $min_id      -- for cross-year overlap detection at merge time
-#   $max_id      -- same
-#   $max_date    -- date_field's max (useful for "newer than" checks)
+#   $n_rows      -- progress without deserializing the partition
+#   $min_id      -- smallest committed Id
+#   $max_id      -- last committed cursor
+#   $max_date    -- maximum date in the committed partition
+#   $file        -- size and mtime for validating the sidecar
 #   $saved_at    -- when the sidecar was last refreshed
 #
 # Reads with lazy backfill: if the sidecar is missing but the part
@@ -1269,34 +1271,14 @@
 # Pipeline file I/O (read raw tables / write cleaned outputs)
 # ---------------------------------------------------------------------
 
-# Read a data file, dispatching on extension (.rds/.csv/.parquet/.qs2).
+# The downloader, references and cleaning pipeline share format dispatch.
 .polis_read <- function(path) {
-  ext <- tolower(tools::file_ext(path))
-  switch(
-    ext,
-    rds = readRDS(path),
-    csv = readr::read_csv(path, show_col_types = FALSE, progress = FALSE),
-    parquet = .polis_require("arrow", "read .parquet")$read_parquet(path),
-    qs2 = .polis_require("qs2", "read .qs2")$qs_read(path),
-    cli::cli_abort("Unsupported file type {.val {ext}} for {.file {path}}.")
-  )
+  .polis_io_read(path, tolower(tools::file_ext(path)))
 }
 
-# Write a data frame, dispatching on extension; returns `path` invisibly.
 .polis_write <- function(obj, path) {
   dir.create(dirname(path), showWarnings = FALSE, recursive = TRUE)
-  ext <- tolower(tools::file_ext(path))
-  switch(
-    ext,
-    rds = saveRDS(obj, path),
-    csv = readr::write_csv(obj, path),
-    parquet = .polis_require("arrow", "write .parquet")$write_parquet(
-      obj,
-      path
-    ),
-    qs2 = .polis_require("qs2", "write .qs2")$qs_save(obj, path),
-    cli::cli_abort("Unsupported file type {.val {ext}} for {.file {path}}.")
-  )
+  .polis_io_write_atomic(obj, path, tolower(tools::file_ext(path)))
   invisible(path)
 }
 

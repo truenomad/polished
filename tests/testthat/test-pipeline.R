@@ -565,3 +565,33 @@ testthat::test_that("future dates become valid after the configured date advance
     second$paralysis_onset_date == as.Date("2024-06-15")
   ))
 })
+
+testthat::test_that("RDA downloads pass through directory cleaning and output loading", {
+  src <- withr::local_tempdir()
+  out <- withr::local_tempdir()
+  input <- raw_afp()
+  polished:::.polis_io_write(input, file.path(src, "raw_afp.rda"), "rda")
+  cfg <- polished::polis_config(
+    cache_dir = NULL,
+    reference_date = as.Date("2025-01-01")
+  )
+  result <- suppressMessages(polished::run_pipeline(
+    inputs = src,
+    cfg = cfg,
+    output_dir = out
+  ))
+  path <- file.path(out, "data", "polished_afp.rda")
+  testthat::expect_true(file.exists(path))
+  loaded <- polished::load_polished(
+    output_dir = out,
+    cfg = cfg,
+    datasets = "afp"
+  )
+  testthat::expect_equal(loaded$afp, result$afp)
+  # A leftover temporary or unsupported file must not shadow the saved table.
+  writeLines("interrupted", file.path(out, "data", "polished_afp.tmp"))
+  testthat::expect_equal(
+    polished::load_polished(output_dir = out, cfg = cfg, datasets = "afp")$afp,
+    result$afp
+  )
+})

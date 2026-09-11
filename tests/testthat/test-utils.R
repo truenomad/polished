@@ -61,7 +61,7 @@ testthat::test_that("format-dispatched I/O round-trips rds/csv/rda, checks forma
   )
 })
 
-testthat::test_that("part-meta sidecars compute, backfill, and detect id overlaps", {
+testthat::test_that("part-meta sidecars compute and backfill progress", {
   testthat::expect_identical(
     polished:::.polis_meta_path("a/year_2024.rds"),
     "a/year_2024.meta.rds"
@@ -328,12 +328,12 @@ testthat::test_that("io helpers round-trip qs2, reject unknown formats; resolve_
   # unsupported extension aborts on both read and write
   testthat::expect_error(
     polished:::.polis_write(df, file.path(dir, "t.json")),
-    "Unsupported file type"
+    "Unsupported"
   )
   writeLines("x", file.path(dir, "t.json"))
   testthat::expect_error(
     polished:::.polis_read(file.path(dir, "t.json")),
-    "Unsupported file type"
+    "Unsupported"
   )
 
   # .polis_resolve_ref: path -> read, missing -> abort, non-path -> passthrough
@@ -505,4 +505,29 @@ testthat::test_that(".polis_get_body retries transport failures, not just HTTP s
   # outside max_tries entirely
   body <- paste(deparse(polished:::.polis_get_body), collapse = " ")
   testthat::expect_match(body, "retry_on_failure = TRUE", fixed = TRUE)
+})
+
+testthat::test_that("pipeline and download I/O support the same installed formats", {
+  formats <- polished:::.polis_formats
+  if (!requireNamespace("arrow", quietly = TRUE))
+    formats <- setdiff(formats, "parquet")
+  if (!requireNamespace("qs2", quietly = TRUE))
+    formats <- setdiff(formats, "qs2")
+  root <- withr::local_tempdir()
+  x <- data.frame(Id = 1:3, value = c("one", "two", "three"))
+  for (fmt in formats) {
+    path <- file.path(root, paste0("table.", fmt))
+    polished:::.polis_io_write_atomic(x, path, fmt)
+    testthat::expect_equal(
+      as.data.frame(polished:::.polis_read(path)),
+      x,
+      info = fmt
+    )
+    polished:::.polis_write(x, path)
+    testthat::expect_equal(
+      as.data.frame(polished:::.polis_io_read(path, fmt)),
+      x,
+      info = fmt
+    )
+  }
 })
