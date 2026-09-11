@@ -211,11 +211,10 @@
     }
   )
   if (!isTRUE(file.rename(tmp, path))) {
-    ok <- file.copy(tmp, path, overwrite = TRUE)
-    try(file.remove(tmp), silent = TRUE)
-    if (!isTRUE(ok)) {
-      cli::cli_abort("Failed to write {.file {path}}.")
-    }
+    unlink(tmp)
+    cli::cli_abort(
+      "Failed to commit {.file {path}}; the previous file is unchanged."
+    )
   }
   invisible(path)
 }
@@ -249,12 +248,12 @@
   list(
     n_rows = if (is.data.frame(df)) as.integer(nrow(df)) else 0L,
     min_id = if (has_id) {
-      suppressWarnings(min(df$Id, na.rm = TRUE))
+      suppressWarnings(min(as.numeric(df$Id), na.rm = TRUE))
     } else {
       NA_real_
     },
     max_id = if (has_id) {
-      suppressWarnings(max(df$Id, na.rm = TRUE))
+      suppressWarnings(max(as.numeric(df$Id), na.rm = TRUE))
     } else {
       NA_real_
     },
@@ -277,108 +276,50 @@
   )
 }
 
-# Write a part + its meta sidecar in one call. Meta failures are
-# non-fatal (we'd rather lose the cache than the data).
+# Metadata is tied to the committed file, so stale sidecars cannot certify a
+# replaced or truncated partition. Journals publish progress independently.
+.polis_part_signature <- function(path) {
+  info <- file.info(path)
+  list(size = info$size, mtime = as.numeric(info$mtime))
+}
+
 .polis_io_write_part <- function(df, part_file, ext, date_field) {
-  pid <- Sys.getpid()
-  part_tmp <- paste0(part_file, ".tmp.", pid)
-  meta_file <- .polis_meta_path(part_file)
-  meta_tmp <- paste0(meta_file, ".tmp.", pid)
-
-  # Step (a): write the part to a per-pid tmp file.
+  .polis_io_write_atomic(df, part_file, ext)
+  meta <- .polis_compute_part_meta(df, date_field)
+  meta$file <- .polis_part_signature(part_file)
   tryCatch(
-    .polis_io_write(df, part_tmp, ext),
-    error = function(e) {
-      try(file.remove(part_tmp), silent = TRUE)
-      cli::cli_abort(conditionMessage(e), call = conditionCall(e))
-    }
+    .polis_io_write_atomic(meta, .polis_meta_path(part_file), "rds"),
+    error = function(e)
+      cli::cli_warn(
+        "Checkpoint saved, but metadata could not be written: {conditionMessage(e)}"
+      )
   )
-
-  # Step (b): write the meta to a per-pid tmp file. Meta is best-effort.
-  meta_ok <- tryCatch(
-    {
-      saveRDS(.polis_compute_part_meta(df, date_field), meta_tmp)
-      TRUE
-    },
-    error = function(e) {
-      try(file.remove(meta_tmp), silent = TRUE)
-      FALSE
-    }
-  )
-
-  # Step (c): rename tmp files into final position (POSIX-atomic).
-  tryCatch(
-    file.rename(part_tmp, part_file),
-    error = function(e) {
-      try(file.remove(part_tmp), silent = TRUE)
-      try(file.remove(meta_tmp), silent = TRUE)
-      cli::cli_abort(conditionMessage(e), call = conditionCall(e))
-    }
-  )
-  if (isTRUE(meta_ok)) {
-    tryCatch(
-      file.rename(meta_tmp, meta_file),
-      error = function(e) {
-        try(file.remove(meta_tmp), silent = TRUE)
-      }
-    )
-  }
   invisible()
 }
 
-# Read the meta sidecar. Backfills (reads the part once) when the
-# sidecar is missing or unreadable. Returns an empty-meta list when
-# both the sidecar and part are absent.
 .polis_read_meta <- function(part_file, ext, date_field) {
-  meta_file <- .polis_meta_path(part_file)
-  if (file.exists(meta_file)) {
-    meta <- tryCatch(readRDS(meta_file), error = function(e) NULL)
-    if (
-      is.list(meta) &&
-        all(
-          c("n_rows", "min_id", "max_id") %in%
-            names(meta)
-        )
-    ) {
-      return(meta)
-    }
-  }
-  if (!file.exists(part_file)) {
-    return(.polis_empty_meta())
-  }
-  # Lazy backfill: read once, write sidecar.
+  state <- .polis_read_journal(part_file)
+  if (!is.null(state)) return(state$meta)
+  if (!file.exists(part_file)) return(.polis_empty_meta())
+  signature <- .polis_part_signature(part_file)
+  path <- .polis_meta_path(part_file)
+  meta <- if (file.exists(path))
+    tryCatch(readRDS(path), error = function(e) NULL) else NULL
+  if (
+    is.list(meta) &&
+      all(c("n_rows", "min_id", "max_id") %in% names(meta)) &&
+      identical(meta$file, signature)
+  )
+    return(meta)
   df <- tryCatch(.polis_io_read(part_file, ext), error = function(e) NULL)
-  if (is.null(df)) {
-    return(.polis_empty_meta())
-  }
+  if (is.null(df)) return(.polis_empty_meta())
   meta <- .polis_compute_part_meta(df, date_field)
-  tryCatch(saveRDS(meta, meta_file), error = function(e) invisible())
+  meta$file <- signature
+  tryCatch(
+    .polis_io_write_atomic(meta, path, "rds"),
+    error = function(e) invisible()
+  )
   meta
-}
-
-# True iff any pair of (min_id, max_id) intervals across the metas
-# overlap. Used by .polis_merge_parts to decide whether to dedup.
-.polis_id_ranges_overlap <- function(metas) {
-  ranges <- lapply(metas, function(m) {
-    if (is.null(m) || is.na(m$min_id) || is.na(m$max_id)) {
-      NULL
-    } else {
-      c(as.numeric(m$min_id), as.numeric(m$max_id))
-    }
-  })
-  ranges <- ranges[!vapply(ranges, is.null, logical(1))]
-  if (length(ranges) < 2L) {
-    return(FALSE)
-  }
-  starts <- vapply(ranges, `[`, numeric(1), 1L)
-  ends <- vapply(ranges, `[`, numeric(1), 2L)
-  ord <- order(starts)
-  starts <- starts[ord]
-  ends <- ends[ord]
-  for (i in seq.int(2L, length(starts))) {
-    if (starts[i] <= ends[i - 1L]) return(TRUE)
-  }
-  FALSE
 }
 
 # Format an integer with thousands separators for display in cli bars.
@@ -831,124 +772,6 @@
 # Per-year worker + on-disk caching
 # ---------------------------------------------------------------------
 
-# Fetch all rows for one calendar year via Id-range pagination and
-# write them to a part file. The part is flushed after every batch so
-# a crash loses at most the in-flight 2K-row request.
-.polis_fetch_year_worker <- function(spec, on_batch = NULL) {
-  year <- spec$year
-  min_date <- sprintf("%d-01-01", year)
-  max_date <- sprintf("%d-12-31", year)
-
-  existing <- NULL
-  last_id <- NULL
-  if (file.exists(spec$part_file)) {
-    existing <- tryCatch(
-      .polis_io_read(spec$part_file, spec$ext),
-      error = function(e) {
-        qpath <- paste0(spec$part_file, ".corrupt.", Sys.getpid())
-        try(file.rename(spec$part_file, qpath), silent = TRUE)
-        mpath <- .polis_meta_path(spec$part_file)
-        if (file.exists(mpath)) {
-          try(
-            file.rename(mpath, paste0(mpath, ".corrupt.", Sys.getpid())),
-            silent = TRUE
-          )
-        }
-        NULL
-      }
-    )
-    if (
-      is.data.frame(existing) &&
-        nrow(existing) > 0L &&
-        "Id" %in% names(existing)
-    ) {
-      max_existing <- suppressWarnings(max(existing$Id, na.rm = TRUE))
-      if (is.finite(max_existing)) last_id <- max_existing
-    }
-  }
-
-  cum_new <- 0L
-  page_size <- spec$page_size
-
-  repeat {
-    new_data <- .polis_fetch_id_page(
-      endpoint = spec$endpoint,
-      date_field = spec$date_field,
-      min_date = min_date,
-      max_date = max_date,
-      region = spec$region,
-      country_code = spec$country_code,
-      polis_api_key = spec$polis_api_key,
-      last_id = last_id,
-      page_size = page_size
-    )
-
-    if (!is.data.frame(new_data) || nrow(new_data) == 0L) {
-      break
-    }
-
-    # POLIS occasionally returns a page with no Id column for very old
-    # records (or after a server-side error). Without Id we can't
-    # advance the cursor, so treat it as end-of-data.
-    if (!"Id" %in% names(new_data)) {
-      break
-    }
-    new_last_id <- suppressWarnings(
-      max(as.numeric(new_data$Id), na.rm = TRUE)
-    )
-    if (
-      !is.finite(new_last_id) ||
-        (!is.null(last_id) && new_last_id <= last_id)
-    ) {
-      cli::cli_alert_warning(paste0(
-        "year ",
-        year,
-        ": cursor stalled at Id ",
-        last_id,
-        " (page returned no Id > last_id); ending year early"
-      ))
-      break
-    }
-
-    existing <- if (is.data.frame(existing)) {
-      dplyr::bind_rows(existing, new_data)
-    } else {
-      new_data
-    }
-
-    last_id <- new_last_id
-    cum_new <- cum_new + nrow(new_data)
-
-    .polis_io_write_part(
-      existing,
-      spec$part_file,
-      spec$ext,
-      spec$date_field
-    )
-
-    if (!is.null(on_batch)) {
-      on_batch(
-        rows_in_batch = nrow(new_data),
-        cumulative_in_year = nrow(existing),
-        year = year,
-        last_id = last_id
-      )
-    }
-
-    # Do NOT break on `nrow(new_data) < page_size`. POLIS sometimes
-    # truncates a query under load and returns a partial page even
-    # though more rows exist for `Id gt last_id`. The empty-page
-    # check above is the correct termination signal.
-  }
-
-  list(
-    year = year,
-    rows = if (is.data.frame(existing)) nrow(existing) else 0L,
-    new_rows = cum_new,
-    path = spec$part_file
-  )
-}
-
 # One-time migration: when an older run left a single canonical file
 # on disk with no per-year parts, split it into parts so the workers
 # can resume per-year. Tolerant of a corrupt/truncated input.
@@ -1074,27 +897,19 @@
 }
 
 # Bind all part files into the canonical file, then dedup by Id keeping the
-# latest update date. This is unconditional (G3): a single keep-latest rule
-# governs recency, so a duplicate can never slip through -- even when a record's
-# update date crosses a year boundary between runs and the per-year Id ranges
-# overlap. (.polis_id_ranges_overlap / .polis_read_meta remain available for
-# diagnostics and are exercised by the test suite.)
+# latest update date, including committed pages from interrupted workers.
 .polis_merge_parts <- function(parts_dir, out_file, ext, date_field) {
   if (!dir.exists(parts_dir)) {
     return(invisible(0L))
   }
-  part_files <- list.files(
-    parts_dir,
-    pattern = paste0("^year_\\d+\\.", ext, "$"),
-    full.names = TRUE
-  )
+  part_files <- .polis_checkpoint_files(parts_dir, ext)
   if (length(part_files) == 0L) {
     return(invisible(0L))
   }
 
   dfs <- lapply(part_files, function(f) {
     tryCatch(
-      .polis_io_read(f, ext),
+      .polis_checkpoint_read(f, ext, date_field),
       error = function(e) {
         cli::cli_alert_warning(paste0(
           "Skipping unreadable part ",
@@ -1235,18 +1050,16 @@
   n_specs <- length(specs)
   pf_paths <- vapply(specs, function(s) s$part_file, character(1))
 
-  file_rows <- stats::setNames(integer(n_specs), pf_paths)
-  file_mtimes <- stats::setNames(numeric(n_specs), pf_paths)
-  for (i in seq_len(n_specs)) {
-    pf <- pf_paths[i]
-    if (file.exists(pf)) {
-      file_rows[i] <- tryCatch(
-        nrow(.polis_io_read(pf, ext)),
-        error = function(e) 0L
-      )
-      file_mtimes[i] <- as.numeric(file.info(pf)$mtime)
-    }
-  }
+  file_rows <- stats::setNames(
+    vapply(
+      specs,
+      function(spec) {
+        .polis_read_meta(spec$part_file, ext, spec$date_field)$n_rows
+      },
+      integer(1)
+    ),
+    pf_paths
+  )
   prev_total <- current_rows
 
   n_new <- "0"
@@ -1294,16 +1107,9 @@
     changed <- FALSE
     for (i in seq_len(n_specs)) {
       pf <- pf_paths[i]
-      if (!file.exists(pf)) {
-        next
-      }
-      cur_mtime <- as.numeric(file.info(pf)$mtime)
-      if (cur_mtime != file_mtimes[i]) {
-        pb_env$file_mtimes[i] <- cur_mtime
-        pb_env$file_rows[i] <- tryCatch(
-          nrow(.polis_io_read(pf, ext)),
-          error = function(e) file_rows[i]
-        )
+      rows <- .polis_read_meta(pf, ext, specs[[i]]$date_field)$n_rows
+      if (!identical(rows, file_rows[[i]])) {
+        pb_env$file_rows[i] <- rows
         changed <- TRUE
       }
     }
@@ -1892,10 +1698,12 @@
   io_env <- environment()
 
   write_df <- function(value, path) {
-    stamp <- .polis_hash(value)
+    stamp <- if (requireNamespace("digest", quietly = TRUE))
+      .polis_hash(value) else NULL
     name <- basename(path)
     if (
       !isTRUE(refresh) &&
+        !is.null(stamp) &&
         file.exists(path) &&
         identical(manifest[[name]], stamp)
     ) {

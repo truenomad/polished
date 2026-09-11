@@ -187,7 +187,7 @@ testthat::test_that(".polis_prune_parts removes a parts dir and no-ops when abse
   testthat::expect_false(polished:::.polis_prune_parts(parts_dir))
 })
 
-testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batch, and ends on a stalled cursor", {
+testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batch, and rejects a stalled cursor", {
   dir <- withr::local_tempdir()
   spec <- list(
     year = 2024,
@@ -225,7 +225,7 @@ testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batc
   testthat::expect_equal(res$rows, 4L)
   testthat::expect_true(batches >= 1L)
 
-  # stalled cursor: the page never advances past last_id -> the worker ends early
+  # A repeated page must not certify an incomplete download as finished.
   spec2 <- spec
   spec2$part_file <- file.path(dir, "year_2023.rds")
   testthat::local_mocked_bindings(
@@ -234,8 +234,18 @@ testthat::test_that(".polis_fetch_year_worker resumes from a part, ticks on_batc
     },
     .package = "polished"
   )
-  stalled <- suppressMessages(polished:::.polis_fetch_year_worker(spec2))
-  testthat::expect_equal(stalled$rows, 2L)
+  testthat::expect_error(
+    polished:::.polis_fetch_year_worker(spec2),
+    "stalled Id cursor"
+  )
+  testthat::expect_equal(
+    nrow(polished:::.polis_checkpoint_read(
+      spec2$part_file,
+      "rds",
+      "PublishDate"
+    )),
+    2L
+  )
 })
 
 testthat::test_that(".polis_migrate_to_parts tolerates a corrupt or date-less source", {

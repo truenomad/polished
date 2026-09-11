@@ -98,22 +98,6 @@ testthat::test_that("part-meta sidecars compute, backfill, and detect id overlap
     )$n_rows,
     0L
   )
-
-  # .polis_id_ranges_overlap: overlap, touching, disjoint, single, all-NA
-  mk <- function(lo, hi) list(min_id = lo, max_id = hi)
-  testthat::expect_true(
-    polished:::.polis_id_ranges_overlap(list(mk(1, 5), mk(4, 9)))
-  )
-  testthat::expect_true(
-    polished:::.polis_id_ranges_overlap(list(mk(1, 5), mk(5, 9)))
-  )
-  testthat::expect_false(
-    polished:::.polis_id_ranges_overlap(list(mk(1, 5), mk(6, 9)))
-  )
-  testthat::expect_false(polished:::.polis_id_ranges_overlap(list(mk(1, 5))))
-  testthat::expect_false(
-    polished:::.polis_id_ranges_overlap(list(mk(NA, NA), mk(1, 5)))
-  )
 })
 
 testthat::test_that(".polis_build_id_filter aligns years and toggles region/country/id clauses", {

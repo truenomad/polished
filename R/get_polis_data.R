@@ -337,14 +337,7 @@ get_polis_data <- function(
     current_rows <- sum(vapply(
       specs,
       function(s) {
-        if (file.exists(s$part_file)) {
-          tryCatch(
-            nrow(.polis_io_read(s$part_file, ext)),
-            error = function(e) 0L
-          )
-        } else {
-          0L
-        }
+        .polis_read_meta(s$part_file, ext, date_field)$n_rows
       },
       integer(1)
     ))
