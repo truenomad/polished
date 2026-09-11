@@ -95,23 +95,22 @@
   summary_rows <- list()
   details <- list()
   for (spec in specs) {
-    if (!all(spec$needs %in% names(data))) {
-      next
-    }
-    if (!is.null(spec$applies) && !isTRUE(spec$applies(data))) {
-      next
-    }
-    flagged <- spec$fn(data, reference_date)
-    n_flagged <- nrow(flagged)
+    missing_cols <- setdiff(spec$needs, names(data))
+    applicable <- length(missing_cols) == 0L &&
+      (is.null(spec$applies) || isTRUE(spec$applies(data)))
+    flagged <- if (applicable) spec$fn(data, reference_date) else data[0, ]
+    n_flagged <- if (applicable) nrow(flagged) else NA_integer_
     summary_rows[[length(summary_rows) + 1L]] <- data.frame(
       check = spec$check,
       domain = spec$domain,
       severity = spec$severity,
       n_flagged = n_flagged,
+      status = if (applicable) "checked" else "not_run",
+      missing_columns = paste(missing_cols, collapse = ", "),
       description = spec$description,
       stringsAsFactors = FALSE
     )
-    if (n_flagged > 0L) {
+    if (applicable && n_flagged > 0L) {
       cols <- intersect(c(key_cols, spec$cols), names(flagged))
       details[[spec$check]] <- dplyr::as_tibble(flagged[, cols, drop = FALSE])
     }
@@ -130,6 +129,8 @@
       domain = character(),
       severity = character(),
       n_flagged = integer(),
+      status = character(),
+      missing_columns = character(),
       description = character()
     )
   }
@@ -248,7 +249,9 @@
   )
 }
 
-.polis_checks_specs_es <- function() {
+.polis_checks_specs_es <- function(
+  coords = c("site_y_coordinate", "site_x_coordinate")
+) {
   es_id <- function(d) {
     if ("sample_id" %in% names(d)) "sample_id" else "enviro_sample_id"
   }
@@ -292,12 +295,12 @@
       domain = "ES",
       severity = "info",
       description = "Samples with missing or zero coordinates",
-      needs = c("latitude", "longitude"),
-      cols = c("latitude", "longitude"),
+      needs = coords,
+      cols = coords,
       fn = function(d, ref) {
         d[
-          .polis_zero_coord(d[["latitude"]]) |
-            .polis_zero_coord(d[["longitude"]]),
+          .polis_zero_coord(d[[coords[[1L]]]]) |
+            .polis_zero_coord(d[[coords[[2L]]]]),
           ,
           drop = FALSE
         ]
@@ -401,7 +404,9 @@
   )
 }
 
-.polis_checks_specs_hum_spec <- function() {
+.polis_checks_specs_hum_spec <- function(
+  collection_col = "date_stool_collected"
+) {
   list(
     list(
       check = "hum_spec_duplicates",
@@ -417,10 +422,10 @@
       domain = "HumSpec",
       severity = "warning",
       description = "Specimens with no collection date",
-      needs = "collection_date",
-      cols = "collection_date",
+      needs = collection_col,
+      cols = collection_col,
       fn = function(d, ref) {
-        d[.polis_blank(d[["collection_date"]]), , drop = FALSE]
+        d[.polis_blank(d[[collection_col]]), , drop = FALSE]
       }
     ),
     list(
@@ -513,9 +518,13 @@
 #'   (default [Sys.Date()]).
 #'
 #' @return A named list: `summary` (a tibble with one row per applicable check:
-#'   `check`, `domain`, `severity`, `n_flagged`, `description`) followed by one
+#'   `check`, `domain`, `severity`, `n_flagged`, `status`, `missing_columns`,
+#'   `description`) followed by one
 #'   tibble of flagged rows (key columns) per check that found problems. Pass it
 #'   to [write_checks_excel()] to export a workbook.
+#'
+#' Checks without their required columns appear as `status = "not_run"` and
+#' `n_flagged = NA`; they are distinct from checks that ran and found no issues.
 #'
 #' @examples
 #' afp <- data.frame(
@@ -561,7 +570,16 @@ checks_es <- function(es, reference_date = Sys.Date()) {
   .polis_check_checks_input(es, "es")
   .polis_run_checks(
     es,
-    .polis_checks_specs_es(),
+    .polis_checks_specs_es(
+      if (
+        all(c("latitude", "longitude") %in% names(es)) &&
+          !any(c("site_x_coordinate", "site_y_coordinate") %in% names(es))
+      ) {
+        c("latitude", "longitude")
+      } else {
+        c("site_y_coordinate", "site_x_coordinate")
+      }
+    ),
     .polis_checks_keys$es,
     reference_date
   )
@@ -644,7 +662,13 @@ checks_hum_spec <- function(hum_spec, reference_date = Sys.Date()) {
   .polis_check_checks_input(hum_spec, "hum_spec")
   .polis_run_checks(
     hum_spec,
-    .polis_checks_specs_hum_spec(),
+    .polis_checks_specs_hum_spec(
+      if ("date_stool_collected" %in% names(hum_spec)) {
+        "date_stool_collected"
+      } else {
+        "collection_date"
+      }
+    ),
     .polis_checks_keys$hum_spec,
     reference_date
   )

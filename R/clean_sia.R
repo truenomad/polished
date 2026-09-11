@@ -211,8 +211,15 @@ clean_sia <- function(
     "Deduplicating by id, assigning rounds and finalising",
     "Deduplicated by id, assigned rounds and finalised"
   )
+  revision_col <- if (
+    !is.null(subactivity) && "updated_date" %in% names(data)
+  ) {
+    "updated_date"
+  } else {
+    "last_update_date"
+  }
   out <- data |>
-    polis_upsert(id = "id", date = "last_update_date") |>
+    polis_upsert(id = "id", date = revision_col) |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
     .geo_guid_display_cols() |>
@@ -266,7 +273,7 @@ clean_sia <- function(
 
 #' Logic-version tag for the SIA cache; bump when `clean_sia()` output changes.
 #' @noRd
-.sia_cache_version <- 1L
+.sia_cache_version <- 2L
 
 #' Write a cleaned SIA table to the cache atomically
 #'
@@ -356,6 +363,7 @@ clean_sia <- function(
 #' @noRd
 .sia_date_cols <- function(data) {
   audit <- c(
+    "updated_date",
     "last_update_date",
     "last_modification_date",
     "created_date",

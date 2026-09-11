@@ -75,11 +75,15 @@ testthat::test_that("checks_afp trips every check, orders by severity, trims", {
     reference_date = ref
   )
   testthat::expect_true("afp_no_onset" %in% trimmed$summary$check)
-  testthat::expect_false("afp_missing_guid" %in% trimmed$summary$check)
+  testthat::expect_equal(
+    trimmed$summary$status[trimmed$summary$check == "afp_missing_guid"],
+    "not_run"
+  )
 
   # no applicable check at all -> the empty-summary branch
   none <- polished::checks_afp(data.frame(junk = 1L))
-  testthat::expect_equal(nrow(none$summary), 0L)
+  testthat::expect_true(all(none$summary$status == "not_run"))
+  testthat::expect_true(all(is.na(none$summary$n_flagged)))
   testthat::expect_named(none, "summary")
 
   # bad input rejected
@@ -128,8 +132,11 @@ testthat::test_that("checks_es trips every check and both id-column variants", {
 
   # applies-predicate false: adm0 present but no id column -> es_duplicates skip
   es3 <- data.frame(adm0 = "CHAD", collection_date = NA)
-  testthat::expect_false(
-    "es_duplicates" %in% polished::checks_es(es3)$summary$check
+  testthat::expect_equal(
+    polished::checks_es(es3)$summary$status[
+      polished::checks_es(es3)$summary$check == "es_duplicates"
+    ],
+    "not_run"
   )
 })
 
@@ -156,7 +163,7 @@ testthat::test_that("checks_sia / checks_virus / checks_hum_spec trip checks", {
   )
   virus_res <- polished::checks_virus(virus)
   testthat::expect_setequal(
-    virus_res$summary$check,
+    virus_res$summary$check[virus_res$summary$status == "checked"],
     c("virus_duplicates", "virus_large_nt", "virus_missing_emergence")
   )
   testthat::expect_equal(nrow(virus_res$virus_duplicates), 2L)
@@ -266,4 +273,35 @@ testthat::test_that("internal predicates and helpers cover their branches", {
     nrow(polished:::.polis_negative_interval_rows(data.frame(a = 1:2))),
     0L
   )
+})
+
+testthat::test_that("quality checks consume actual cleaner schemas", {
+  cfg <- polished::polis_config(drop_empty_cols = FALSE)
+  es <- polished::clean_es(
+    data.frame(
+      Id = 1:2,
+      CollectionDate = c("2024-01-01", "2024-01-02"),
+      SiteXCoordinate = c(NA, 10),
+      SiteYCoordinate = c(NA, 12),
+      Admin0Name = "NIGERIA"
+    ),
+    cfg = cfg,
+    verbose = FALSE
+  )
+  checks <- polished::checks_es(es)
+  testthat::expect_equal(nrow(checks$es_empty_coords), 1L)
+  testthat::expect_true("site_x_coordinate" %in% names(checks$es_empty_coords))
+  hum <- polished::clean_human_spec(
+    data.frame(
+      Id = 1:2,
+      SpecimenId = c("S1", "S2"),
+      DateStoolCollected = c(NA, "2024-01-05"),
+      Admin0Name = "NIGERIA"
+    ),
+    cfg = cfg,
+    verbose = FALSE
+  )
+  checks <- polished::checks_hum_spec(hum)
+  testthat::expect_equal(nrow(checks$hum_spec_no_collection_date), 1L)
+  testthat::expect_equal(checks$hum_spec_no_collection_date$id, 1L)
 })
