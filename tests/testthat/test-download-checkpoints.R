@@ -164,3 +164,46 @@ testthat::test_that("checkpoint data writes grow linearly and progress uses meta
     2L
   )
 })
+
+testthat::test_that("progress tolerates a worker removing its finished journal", {
+  f <- checkpoint_fixture(withr::local_tempdir())
+  part <- f$spec$part_file
+  polished:::.polis_io_write_part(f$rows, part, "rds", "LastUpdateDate")
+  journal <- polished:::.polis_journal_path(part)
+  dir.create(dirname(journal))
+  # The completed part is already committed; page files are being pruned.
+  saveRDS(
+    list(
+      version = 1L,
+      pages = "page_00000001.rds",
+      finished = TRUE,
+      meta = polished:::.polis_read_meta(part, "rds", "LastUpdateDate")
+    ),
+    journal
+  )
+  testthat::expect_equal(
+    polished:::.polis_read_meta(part, "rds", "LastUpdateDate")$n_rows,
+    6L
+  )
+  testthat::expect_error(
+    polished:::.polis_read_journal(part),
+    "Invalid download checkpoint"
+  )
+  read_journal <- polished:::.polis_read_journal
+  environment(read_journal) <- list2env(
+    list(readRDS = function(path) {
+      unlink(path)
+      base::readRDS(path)
+    }),
+    parent = environment(read_journal)
+  )
+  testthat::local_mocked_bindings(
+    .polis_read_journal = read_journal,
+    .package = "polished"
+  )
+  # Disappearance between file.exists() and readRDS() falls back to part metadata.
+  testthat::expect_equal(
+    polished:::.polis_read_meta(part, "rds", "LastUpdateDate")$n_rows,
+    6L
+  )
+})

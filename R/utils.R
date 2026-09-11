@@ -301,7 +301,7 @@
 }
 
 .polis_read_meta <- function(part_file, ext, date_field) {
-  state <- .polis_read_journal(part_file)
+  state <- .polis_read_journal(part_file, validate_pages = FALSE)
   if (!is.null(state)) return(state$meta)
   if (!file.exists(part_file)) return(.polis_empty_meta())
   signature <- .polis_part_signature(part_file)

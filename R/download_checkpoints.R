@@ -6,10 +6,16 @@
   file.path(.polis_journal_dir(part_file), "state.rds")
 }
 
-.polis_read_journal <- function(part_file) {
+.polis_read_journal <- function(part_file, validate_pages = TRUE) {
   path <- .polis_journal_path(part_file)
   if (!file.exists(path)) return(NULL)
-  state <- readRDS(path)
+  state <- tryCatch(suppressWarnings(readRDS(path)), error = function(e) {
+    # A worker can remove the finished journal between a progress poll's
+    # existence check and read. The committed part is then authoritative.
+    if (!file.exists(path)) return(NULL)
+    stop(e)
+  })
+  if (is.null(state)) return(NULL)
   if (
     !is.list(state) ||
       !identical(state$version, 1L) ||
@@ -20,7 +26,8 @@
       is.na(state$meta$n_rows) ||
       state$meta$n_rows < 0 ||
       any(basename(state$pages) != state$pages) ||
-      !all(file.exists(file.path(dirname(path), state$pages)))
+      (validate_pages &&
+        !all(file.exists(file.path(dirname(path), state$pages))))
   ) {
     cli::cli_abort("Invalid download checkpoint journal {.file {path}}.")
   }
