@@ -19,7 +19,8 @@ polis_config(
   output_dir = NULL,
   cache_dir = NULL,
   parse_types = TRUE,
-  drop_empty_cols = TRUE
+  drop_empty_cols = TRUE,
+  reference_date = NULL
 )
 }
 \arguments{
@@ -98,6 +99,10 @@ character columns.}
 \item{drop_empty_cols}{If \code{TRUE} (default) each cleaner drops columns that are
 entirely \code{NA} after cleaning. Note this makes the output schema depend on
 the data; set \code{FALSE} for a fixed column set across runs.}
+
+\item{reference_date}{Optional calculation date. \code{NULL} resolves to today at
+the start of each run. A fixed date makes date cleaning and indicators
+reproducible and is included in cache keys.}
 }
 \value{
 An object of class \code{polis_config} (a named list). Also registered as

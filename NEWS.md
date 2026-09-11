@@ -1,11 +1,37 @@
+# polished (development version)
+
+* Population rate denominators now include districts without reported cases
+  when a complete administrative lookup is supplied. Explicit year-specific
+  parent mappings take precedence; ambiguous mappings are rejected.
+* SIA deduplication selects the latest subactivity revision and preserves
+  timestamp precision. ES coordinate and human-specimen collection checks now
+  use the cleaner output names. Unavailable checks report `not_run` and their
+  missing columns instead of disappearing from the summary.
+* `polis_config(reference_date = ...)` controls date-dependent cleaning,
+  indicators and checks consistently. Population years and the calculation
+  date invalidate caches. Disabled caches avoid input hashing; enabled caches
+  reuse reference fingerprints within a run.
+* Download caches track query scope and revisions. Same-count edits,
+  replacements and deletions are reconciled. Changed scopes and legacy caches
+  with unknown filters require a fresh pull. Failed pulls retain the previous
+  complete file and resumable checkpoints.
+* Downloads write immutable pages followed by one year compaction. Progress
+  uses validated metadata. Failed file renames abort without advancing the
+  committed cursor. Unchanged revision-based snapshots avoid full data reads
+  and partition rebuilding.
+* Population snapshots expire after one day by default; set
+  `reference_refresh_days = 0` for every-call refresh. Tables with only event
+  dates are refreshed in full because those dates cannot identify edits.
+* Downloading, directory discovery, cleaning and output loading share format
+  support, including `.rda`. Output writes use atomic replacement. Download
+  documentation now states the actual memory requirements and `raw_*` paths.
+
 # polished 0.2.2
 
 * `get_polis_data()` gains `verify_years` (default `3L`). The post-download
   completeness check, the slowest step on large tables, now covers only the
   most recent calendar years instead of the whole range back to `min_date`.
-  Records are bucketed by update date, so an older year can lose rows to a
-  newer one but never gain any, and the window misses no new rows. Pass
-  `verify_years = NULL` for the full-range check.
+  Pass `verify_years = NULL` for the full-range check.
 * Read timeouts are now retried. `httr2::req_retry()` defaults
   `retry_on_failure = FALSE`, so `max_tries` never covered transport errors
   and a single timeout aborted the run. `POLIS_TIMEOUT_SECONDS` overrides

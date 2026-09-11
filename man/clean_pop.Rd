@@ -12,7 +12,7 @@ clean_pop(
   years = 2010:2027,
   thresholds = list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens_lo = 5,
     share_lo = 0.2, share_hi = 0.7, min_level_years = 2L),
-  reference_date = Sys.Date(),
+  reference_date = .polis_reference_date(cfg),
   pop_source = c("reconciled", "polis", "worldpop"),
   verbose = TRUE
 )
@@ -66,8 +66,8 @@ Default \code{list(ratio_lo = 1/3, ratio_hi = 3, mad_k = 5, min_votes = 1L, dens
 Supplying a partial list overrides only the keys given.}
 
 \item{reference_date}{Date treated as "today" when deciding which boundary
-versions are \emph{current} for the orphan-GUID name crosswalk. Default
-\code{\link[=Sys.Date]{Sys.Date()}}.}
+versions are \emph{current} for the orphan-GUID name crosswalk. Defaults to
+\code{cfg$reference_date}, or \code{\link[=Sys.Date]{Sys.Date()}} when it is \code{NULL}.}
 
 \item{pop_source}{Which population to use as the chosen \verb{<age>_pop} value
 (the denominator indicators read). One of:

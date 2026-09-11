@@ -13,10 +13,14 @@ checks_afp(afp, reference_date = Sys.Date())
 (default \code{\link[=Sys.Date]{Sys.Date()}}).}
 }
 \value{
-A named list: \code{summary} (a tibble with one row per applicable check:
-\code{check}, \code{domain}, \code{severity}, \code{n_flagged}, \code{description}) followed by one
+A named list: \code{summary} (a tibble with one row per configured check:
+\code{check}, \code{domain}, \code{severity}, \code{n_flagged}, \code{status}, \code{missing_columns},
+\code{description}) followed by one
 tibble of flagged rows (key columns) per check that found problems. Pass it
 to \code{\link[=write_checks_excel]{write_checks_excel()}} to export a workbook.
+
+Checks without their required columns appear as \code{status = "not_run"} and
+\code{n_flagged = NA}; they are distinct from checks that ran and found no issues.
 }
 \description{
 Surfaces data-quality problems in a cleaned AFP table by reading columns the

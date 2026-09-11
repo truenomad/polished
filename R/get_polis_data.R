@@ -15,7 +15,7 @@
 #'   `$orderby=Id&$top=2000&$filter=... and Id gt <last>`.
 #' * **The clinical date columns (`CaseDate`, `VirusDate`, ...) have NULL
 #'   coverage** for historical records. The function filters on the
-#'   table's "update" column (`LastUpdateDate` / `UpdatedDate` / `Start` /
+#'   table's populated filter column (`LastUpdateDate` / `UpdatedDate` / `Start` /
 #'   `PublishDate`) which probes have confirmed is 100%-populated.
 #'
 #' @details
@@ -718,7 +718,7 @@ get_polis_data <- function(
 #' Static mapping of the tables `get_polis_data()` supports.
 #'
 #' @details
-#' Each `date_field` is the "update" column the package uses when
+#' Each `date_field` is the date column the package uses when
 #' filtering. Probes against POLIS confirmed each value is 100%-populated
 #' AND clustered post-2010 (records were imported into POLIS then), so a
 #' filter on this field catches every row in the table including pre-2000

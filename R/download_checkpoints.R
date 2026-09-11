@@ -63,7 +63,9 @@
         unlink(.polis_meta_path(part))
         NULL
       })
-    } else NULL
+    } else {
+      NULL
+    }
     meta <- .polis_compute_part_meta(base, spec$date_field)
     state <- list(
       version = 1L,

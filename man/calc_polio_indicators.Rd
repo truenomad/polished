@@ -63,7 +63,12 @@ Absent -> those families are skipped with a warning.}
 frame with columns \code{adm2_guid}, \code{adm0_guid}, optionally \code{adm1_guid}. Build
 it from a district shape with \code{create_long_shape(shape, "adm2")} or
 \code{dplyr::distinct(sf::st_drop_geometry(shape), adm0_guid, adm1_guid, adm2_guid)}. Required for the silent-districts indicator; absent -> it is
-skipped. (\code{\link[=run_pipeline]{run_pipeline()}} derives this from \code{cfg$shape} automatically.)}
+skipped. This lookup also supplies parent mappings for population roll-ups,
+including districts absent from \code{cases}. Optional \code{year} or \code{active_year}
+columns restrict each mapping to its calendar year; missing years apply to
+all years. Conflicting parents for one district/year are rejected.
+\code{\link[=run_pipeline]{run_pipeline()}} derives this from cleaned population, with \code{cfg$shape}
+as a fallback.}
 
 \item{indicators}{Which indicators to compute: the keyword \code{"core"} (default
 -- the core KPI set: NPAFP rate, condition-aware stool adequacy, EV

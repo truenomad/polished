@@ -10,7 +10,7 @@ clean_sia(
   cfg = polis_active_config(),
   shape = NULL,
   round_gap_days = 21L,
-  reference_date = Sys.Date(),
+  reference_date = .polis_reference_date(cfg),
   cache_dir = NULL,
   cache_key = NULL,
   verbose = TRUE
@@ -38,8 +38,9 @@ the same district and \code{vaccine_type} for them to count as one round; a
 larger gap starts a new round. Default \code{21}.}
 
 \item{reference_date}{Date treated as "today" when sanitising campaign dates:
-any parsed date after it is nulled as a data-entry error (default
-\code{\link[=Sys.Date]{Sys.Date()}}). It is part of the cache key, so a run on a later day does not
+any parsed date after it is nulled as a data-entry error. Defaults to
+\code{cfg$reference_date}, or \code{\link[=Sys.Date]{Sys.Date()}} when it is \code{NULL}. It is part of the
+cache key, so a run on a later day does not
 return a stale cached table in which then-future dates are still \code{NA}. Pin
 it for reproducible output.}
 

@@ -164,8 +164,8 @@
 #'   dens_lo = 5, share_lo = 0.2, share_hi = 0.7, min_level_years = 2L)`.
 #'   Supplying a partial list overrides only the keys given.
 #' @param reference_date Date treated as "today" when deciding which boundary
-#'   versions are *current* for the orphan-GUID name crosswalk. Default
-#'   [Sys.Date()].
+#'   versions are *current* for the orphan-GUID name crosswalk. Defaults to
+#'   `cfg$reference_date`, or [Sys.Date()] when it is `NULL`.
 #' @param pop_source Which population to use as the chosen `<age>_pop` value
 #'   (the denominator indicators read). One of:
 #'   \describe{

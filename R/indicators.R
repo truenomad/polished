@@ -125,7 +125,12 @@ utils::globalVariables(c(
 #'   it from a district shape with `create_long_shape(shape, "adm2")` or
 #'   `dplyr::distinct(sf::st_drop_geometry(shape), adm0_guid, adm1_guid,
 #'   adm2_guid)`. Required for the silent-districts indicator; absent -> it is
-#'   skipped. ([run_pipeline()] derives this from `cfg$shape` automatically.)
+#'   skipped. This lookup also supplies parent mappings for population roll-ups,
+#'   including districts absent from `cases`. Optional `year` or `active_year`
+#'   columns restrict each mapping to its calendar year; missing years apply to
+#'   all years. Conflicting parents for one district/year are rejected.
+#'   [run_pipeline()] derives this from cleaned population, with `cfg$shape`
+#'   as a fallback.
 #' @param indicators Which indicators to compute: the keyword `"core"` (default
 #'   -- the core KPI set: NPAFP rate, condition-aware stool adequacy, EV
 #'   detection rate, and timely detection), `"all"` (the full registered

@@ -517,7 +517,7 @@
 #' @param reference_date Date treated as "today" for future-date checks
 #'   (default [Sys.Date()]).
 #'
-#' @return A named list: `summary` (a tibble with one row per applicable check:
+#' @return A named list: `summary` (a tibble with one row per configured check:
 #'   `check`, `domain`, `severity`, `n_flagged`, `status`, `missing_columns`,
 #'   `description`) followed by one
 #'   tibble of flagged rows (key columns) per check that found problems. Pass it

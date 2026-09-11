@@ -55,8 +55,9 @@
 #'   the same district and `vaccine_type` for them to count as one round; a
 #'   larger gap starts a new round. Default `21`.
 #' @param reference_date Date treated as "today" when sanitising campaign dates:
-#'   any parsed date after it is nulled as a data-entry error (default
-#'   [Sys.Date()]). It is part of the cache key, so a run on a later day does not
+#'   any parsed date after it is nulled as a data-entry error. Defaults to
+#'   `cfg$reference_date`, or [Sys.Date()] when it is `NULL`. It is part of the
+#'   cache key, so a run on a later day does not
 #'   return a stale cached table in which then-future dates are still `NA`. Pin
 #'   it for reproducible output.
 #' @param cache_dir Optional directory for an opt-in, content-addressed cache.

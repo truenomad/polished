@@ -291,10 +291,11 @@
   meta$file <- .polis_part_signature(part_file)
   tryCatch(
     .polis_io_write_atomic(meta, .polis_meta_path(part_file), "rds"),
-    error = function(e)
+    error = function(e) {
       cli::cli_warn(
         "Checkpoint saved, but metadata could not be written: {conditionMessage(e)}"
       )
+    }
   )
   invisible()
 }

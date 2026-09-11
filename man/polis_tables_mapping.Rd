@@ -24,7 +24,7 @@ polis_tables_mapping
 Static mapping of the tables \code{get_polis_data()} supports.
 }
 \details{
-Each \code{date_field} is the "update" column the package uses when
+Each \code{date_field} is the date column the package uses when
 filtering. Probes against POLIS confirmed each value is 100\%-populated
 AND clustered post-2010 (records were imported into POLIS then), so a
 filter on this field catches every row in the table including pre-2000

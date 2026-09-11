@@ -33,7 +33,9 @@ download_service <- function(root, rows, table = "case") {
       region,
       country_code,
       ...
-    ) nrow(select_rows(min_date, max_date, region, country_code)),
+    ) {
+      nrow(select_rows(min_date, max_date, region, country_code))
+    },
     .polis_fetch_id_page = function(
       endpoint,
       date_field,
@@ -59,7 +61,7 @@ download_service <- function(root, rows, table = "case") {
     .package = "polished",
     .env = parent.frame()
   )
-  e$run <- function(...)
+  e$run <- function(...) {
     polished::get_polis_data(
       tables = table,
       polis_folder = root,
@@ -67,10 +69,11 @@ download_service <- function(root, rows, table = "case") {
       quiet = TRUE,
       ...
     )
+  }
   e
 }
 
-cache_rows <- function()
+cache_rows <- function() {
   data.frame(
     Id = 1:3,
     LastUpdateDate = "2024-06-15T08:00:00Z",
@@ -78,6 +81,7 @@ cache_rows <- function()
     WHORegion = c("AFRO", "EMRO", "AFRO"),
     value = 1:3
   )
+}
 
 testthat::test_that("unchanged counts cannot hide revisions, replacements or deletions", {
   root <- withr::local_tempdir()
