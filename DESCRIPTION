@@ -1,6 +1,6 @@
 Package: polished
 Title: Download and Clean WHO POLIS Data
-Version: 0.2.2
+Version: 0.3.0
 Authors@R:
     person(given = "Mohamed A.",
            family = "Yusuf",

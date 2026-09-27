@@ -1,4 +1,4 @@
-# polished (development version)
+# polished 0.3.0
 
 * Population rate denominators now include districts without reported cases
   when a complete administrative lookup is supplied. Explicit year-specific
