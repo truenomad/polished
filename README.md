@@ -68,12 +68,13 @@ help page (e.g. `?get_polis_data`) for usage and data-formatting requirements.
 
 To cite `polished` in publications, run `citation("polished")` in R, or use:
 
-> Yusuf, Mohamed A. (2026). *polished: Download and Clean WHO POLIS Data*. R
-> package version 0.3.0. <https://github.com/truenomad/polished>
+> Yusuf, Mohamed A. (2026). *polished: Retrieve and Prepare GPEI POLIS
+> Surveillance Data*. R package version 0.3.0.
+> <https://github.com/truenomad/polished>
 
 ```
 @Manual{polished,
-  title  = {polished: Download and Clean WHO POLIS Data},
+  title  = {polished: Retrieve and Prepare GPEI POLIS Surveillance Data},
   author = {Mohamed A. Yusuf},
   year   = {2026},
   note   = {R package version 0.3.0},

@@ -1,11 +1,13 @@
 cff-version: 1.2.0
-message: "If you use polished in your work, please cite it as below."
+message: "If you use polished in your work, please cite it using the citation below."
 type: software
-title: "polished: Download and Clean WHO POLIS Data"
+title: "polished: Retrieve and Prepare GPEI POLIS Surveillance Data"
 version: 0.3.0
 abstract: >-
-  Retrieves and cleans poliovirus surveillance data from the World Health
-  Organization Polio Information System ('POLIS') API.
+  An R package for retrieving, cleaning, standardising, and preparing
+  polio surveillance data from the Global Polio Eradication Initiative
+  Polio Information System (POLIS) API for reproducible epidemiological
+  and surveillance analyses.
 authors:
   - family-names: Yusuf
     given-names: "Mohamed A."
@@ -17,7 +19,13 @@ url: "https://truenomad.github.io/polished/"
 date-released: "2026-09-27"
 keywords:
   - polio
+  - poliovirus
+  - "acute flaccid paralysis"
   - surveillance
   - epidemiology
   - POLIS
+  - GPEI
+  - "Global Polio Eradication Initiative"
+  - "data cleaning"
+  - "data preparation"
   - "r-package"

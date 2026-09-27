@@ -2,7 +2,7 @@ citHeader("To cite polished in publications use:")
 
 bibentry(
   bibtype = "Manual",
-  title   = "polished: Download and Clean WHO POLIS Data",
+  title   = "polished: Retrieve and Prepare GPEI POLIS Surveillance Data",
   author  = person(
     given   = "Mohamed A.",
     family  = "Yusuf",
