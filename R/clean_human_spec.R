@@ -18,9 +18,9 @@
 #' \itemize{
 #'   \item canonical snake_case names (via the crosswalk + janitor);
 #'   \item every collection/laboratory date parsed to `Date` and sanitised with
-#'     the same "sensible date" rule [clean_afp()] uses -- a value before the
-#'     dawn of surveillance (`min_year`) or in the future is a data-entry error
-#'     and is set to `NA`, never dropped (audit timestamps such as
+#'     the same date-range rule [clean_afp()] uses: values before `min_year` or
+#'     after the configured reference date are set to `NA`; rows are retained
+#'     (audit timestamps such as
 #'     `last_update_date` stay ISO strings for the keep-latest dedup);
 #'   \item `year_collection` / `month_collection` from the sanitised
 #'     `date_stool_collected`, plus the lab-turnaround intervals (in days)
@@ -48,8 +48,8 @@
 #' }
 #' The raw POLIS `virus_types`, `vdpv_classification`, the per-serotype result
 #' fields and the lab-result columns are kept as-is alongside the derived
-#' columns. The business key `specimen_id` + `adm0` is asserted as a tripwire:
-#' violations are flagged to QA, never dropped.
+#' columns. Duplicate `specimen_id` + `adm0` combinations are flagged for review;
+#' the matching rows are retained.
 #'
 #' @param data A raw POLIS lab-specimen data frame.
 #' @param cfg A [polis_config()] object. Defaults to [polis_active_config()] --

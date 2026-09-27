@@ -22,7 +22,9 @@ testthat::test_that("page journals resume after network interruption", {
   f <- checkpoint_fixture(withr::local_tempdir())
   testthat::local_mocked_bindings(
     .polis_fetch_id_page = function(last_id = NULL, ...) {
-      if (!is.null(last_id) && last_id >= 4) stop("disconnected")
+      if (!is.null(last_id) && last_id >= 4) {
+        stop("disconnected")
+      }
       f$fetch(last_id)
     },
     .package = "polished"
@@ -133,7 +135,9 @@ testthat::test_that("checkpoint data writes grow linearly and progress uses meta
   testthat::local_mocked_bindings(
     .polis_fetch_id_page = f$fetch,
     .polis_io_write_atomic = function(x, path, fmt) {
-      if (is.data.frame(x)) serialized <<- serialized + nrow(x)
+      if (is.data.frame(x)) {
+        serialized <<- serialized + nrow(x)
+      }
       write(x, path, fmt)
     },
     .package = "polished"
@@ -206,4 +210,65 @@ testthat::test_that("progress tolerates a worker removing its finished journal",
     polished:::.polis_read_meta(part, "rds", "LastUpdateDate")$n_rows,
     6L
   )
+})
+
+testthat::test_that("duplicate IDs resume after interruption", {
+  fixture <- checkpoint_fixture(withr::local_tempdir())
+  fetch_duplicates <- function(last_id = NULL, ...) {
+    page <- fixture$fetch(last_id)
+    if (is.null(last_id)) {
+      newer <- page[1L, , drop = FALSE]
+      newer$LastUpdateDate <- "2024-06-16"
+      page <- rbind(page, newer)
+    }
+    page
+  }
+  testthat::local_mocked_bindings(
+    .polis_fetch_id_page = function(last_id = NULL, ...) {
+      if (!is.null(last_id)) {
+        cli::cli_abort("disconnected")
+      }
+      fetch_duplicates(last_id)
+    },
+    .package = "polished"
+  )
+  testthat::expect_error(
+    polished:::.polis_fetch_year_worker(fixture$spec),
+    "disconnected"
+  )
+  state <- polished:::.polis_read_journal(fixture$spec$part_file)
+  testthat::expect_equal(state$meta$n_rows, 2L)
+  testthat::expect_equal(state$meta$max_id, 2L)
+  testthat::local_mocked_bindings(
+    .polis_fetch_id_page = fetch_duplicates,
+    .package = "polished"
+  )
+  result <- polished:::.polis_fetch_year_worker(fixture$spec)
+  expected <- fixture$rows
+  expected$LastUpdateDate[1L] <- "2024-06-16"
+  testthat::expect_equal(readRDS(fixture$spec$part_file), expected)
+  testthat::expect_equal(result$new_rows, 4L)
+  testthat::expect_equal(result$rows, 6L)
+})
+
+testthat::test_that("invalid IDs do not advance the committed checkpoint", {
+  for (invalid_id in c(NA_real_, Inf, -Inf)) {
+    fixture <- checkpoint_fixture(withr::local_tempdir())
+    testthat::local_mocked_bindings(
+      .polis_fetch_id_page = function(last_id = NULL, ...) {
+        page <- fixture$fetch(last_id)
+        page$Id[2L] <- invalid_id
+        page
+      },
+      .package = "polished"
+    )
+    testthat::expect_error(
+      polished:::.polis_fetch_year_worker(fixture$spec),
+      "Invalid or stalled Id cursor"
+    )
+    state <- polished:::.polis_read_journal(fixture$spec$part_file)
+    testthat::expect_equal(state$meta$n_rows, 0L)
+    testthat::expect_length(state$pages, 0L)
+    testthat::expect_false(file.exists(fixture$spec$part_file))
+  }
 })

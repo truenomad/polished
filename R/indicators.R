@@ -16,7 +16,7 @@
 #     period_basis / requires / family / levels) and the documentation fields
 #     (formula / numerator / denominator / target / warn / unit / polis_fn).
 #     `available_indicators()` derives from the same registry, so the catalogue
-#     and the engine can never drift (one source of truth).
+#     and calculations use the same definitions.
 #   * Indicator *families* are built by DRY generators (`.make_count_indicator`,
 #     `.make_percent_indicator`, `.make_rate_indicator`, `.make_bucket_family`,
 #     `.make_dose_band_family`, `.make_sia_count`) -- ~60 indicators from a few
@@ -107,9 +107,9 @@ utils::globalVariables(c(
 #' and district (`adm2`) level, by year. Each indicator is a registry spec; the
 #' full catalogue is discoverable with [available_indicators()].
 #'
-#' Indicators whose source table or required columns are absent are **skipped
-#' with a warning** rather than erroring, so a partial schema (e.g. `cases` +
-#' `population` only) still computes every applicable indicator. Rates that need
+#' Indicators whose source table or required columns are absent are skipped
+#' with a warning. The function stops if none of the requested indicators can be
+#' computed. Rates that need
 #' a population denominator require a `population` table of *under-15* population
 #' per admin unit per year.
 #'
@@ -964,7 +964,9 @@ calc_polio_indicators <- function(
 #' @keywords internal
 #' @noRd
 .polio_pop_by_level <- function(pop_std, parent_map, admin_std = NULL) {
-  if (is.null(pop_std)) return(NULL)
+  if (is.null(pop_std)) {
+    return(NULL)
+  }
   fallback <- dplyr::distinct(parent_map, g2, g1, g0)
   years <- sort(unique(pop_std$year))
   rows <- lapply(years, function(yr) {
@@ -1966,7 +1968,7 @@ calc_polio_indicators <- function(
 #' `requires_ind`, `family`, `levels`, `kind`) **and** the documentation fields
 #' surfaced by [available_indicators()] (`label`, `formula`, `numerator`,
 #' `denominator`, `target`, `warn`, `unit`, `polis_fn`, `notes`). The dictionary
-#' and the engine therefore share one definition and can never drift.
+#' and calculations therefore use the same definitions.
 #' @keywords internal
 #' @noRd
 .polio_indicator_registry <- function() {
@@ -3018,8 +3020,7 @@ calc_polio_indicators <- function(
 #' about -- code, label, family, formula, numerator/denominator, source,
 #' period basis, admin levels, whether it needs a population denominator, WHO
 #' target/warn thresholds, unit, the POLIS source function and notes. Derived
-#' from the same registry the engine runs, so the catalogue and the engine never
-#' drift.
+#' from the registry used to calculate the indicators.
 #'
 #' @param as_tibble If `TRUE` (default) return a tibble; if `FALSE` return the
 #'   underlying named list of registry specs.

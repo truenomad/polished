@@ -50,7 +50,7 @@ filter).}
 \verb{<polis_folder>/}. Default
 \code{tools::R_user_dir("polished", which = "cache")} -- the standard
 per-user cache location, persistent across sessions so incremental
-updates "just work". Pass an explicit path to keep data alongside a
+updates reuse the same cache. Pass an explicit path to keep data alongside a
 project.}
 
 \item{output_format}{Output format. One of \code{"rds"} (default), \code{"rda"},
@@ -102,9 +102,9 @@ during downloading; the final merge loads the complete table into memory.
 Read a saved table with \code{readRDS(file.path(polis_folder, "raw_im.rds"))}.
 }
 \description{
-The canonical entry point for fetching data from the POLIS OData service.
-Works around three POLIS quirks that make naive OData clients silently
-lose data:
+Downloads tables from the POLIS OData service to a local cache, with
+resumable batches and optional parallel downloads by year. The downloader
+accounts for these API behaviours:
 \itemize{
 \item \strong{Date filters are year-aligned only.} POLIS only honours \verb{field le YYYY-12-31} bounds; any sub-year \code{le} returns 0 rows. The function
 aligns \code{min_date} / \code{max_date} to year boundaries before building any
@@ -115,8 +115,8 @@ only way to walk past 2000 rows is Id-range pagination:
 \verb{$orderby=Id&$top=2000&$filter=... and Id gt <last>}.
 \item \strong{The clinical date columns (\code{CaseDate}, \code{VirusDate}, ...) have NULL
 coverage} for historical records. The function filters on the
-table's populated filter column (\code{LastUpdateDate} / \code{UpdatedDate} / \code{Start} /
-\code{PublishDate}) which probes have confirmed is 100\%-populated.
+\code{date_field} in \link{polis_tables_mapping}: a revision date (\code{LastUpdateDate} /
+\code{UpdatedDate}) or an event date (\code{Start} / \code{PublishDate}).
 }
 }
 \details{

@@ -111,7 +111,7 @@ the session-active config (see \code{\link[=polis_active_config]{polis_active_co
 \description{
 Creates the settings object shared by the cleaners (\code{\link[=clean_afp]{clean_afp()}},
 \code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_virus]{clean_virus()}}, \code{\link[=clean_sia]{clean_sia()}}) and the orchestrator
-(\code{\link[=run_pipeline]{run_pipeline()}}). Every field has a sensible default and can be overridden.
+(\code{\link[=run_pipeline]{run_pipeline()}}). Arguments control the shared defaults.
 }
 \examples{
 cfg <- polis_config(start_year = 2018)

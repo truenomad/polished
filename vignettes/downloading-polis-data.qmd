@@ -26,12 +26,10 @@ data. Copy the calls into a session with a key set to try them.
 
 ## What `get_polis_data()` is for
 
-POLIS exposes its data through an OData API, but three quirks make a naive OData
-client silently lose rows. `polished::get_polis_data()` is a single entry point
-that works around all three, caches results on disk, and resumes cleanly if a
-pull is interrupted.
+`polished::get_polis_data()` downloads tables from the POLIS OData API, caches
+them on disk and resumes interrupted downloads from saved checkpoints.
 
-The three traps it handles for you:
+The downloader accounts for these API behaviours:
 
 - **Date filters are year-aligned only.** POLIS honours a `field le YYYY-12-31`
   bound but returns **zero rows** for any sub-year `le`. `get_polis_data()`
@@ -43,9 +41,9 @@ The three traps it handles for you:
   gt <last>` — which the function does for you, one page at a time.
 - **The clinical date columns are sparsely populated.** Columns like `CaseDate`
   and `VirusDate` are `NULL` for many historical records, so filtering on them
-  drops rows. The function instead filters on each table's *update* column
-  (`LastUpdateDate` / `UpdatedDate` / `Start` / `PublishDate`), which probes
-  confirm is fully populated.
+  can exclude those rows. The function uses the `date_field` listed in
+  `polis_tables_mapping`: a revision date (`LastUpdateDate` or `UpdatedDate`)
+  or an event date (`Start` or `PublishDate`), depending on the table.
 
 ## Quick start
 
@@ -197,11 +195,9 @@ the bar per batch and has no such requirement.
 
 ## What you get back
 
-Nothing — and that's the point. `get_polis_data()` is called purely for its
-**side effect** of writing each table to disk, and returns `NULL` invisibly. A
-single POLIS table can run to millions of rows, so returning that into memory on
-every call would be a footgun; instead the data stays on disk and you read back
-only the table you need, only when you need it.
+`get_polis_data()` writes each table to disk and returns `NULL` invisibly.
+Read the tables you need with the appropriate file reader. The download's
+final merge still requires memory for the complete table.
 
 Each table lands at `<polis_folder>/<file_stem>.<ext>` (the `raw_*` name from the
 catalogue). Read one back with the matching reader for your `output_format`:
@@ -217,8 +213,8 @@ case <- readRDS(file.path(cache, "raw_afp.rds")) # `case` is saved as raw_afp
 # arrow::read_parquet(file.path(cache, "raw_afp.parquet"))
 ```
 
-Because the value is invisible, a bare `get_polis_data(...)` at the console
-prints nothing — assign the call if you want the paths.
+Assigning the call stores `NULL`, not the output paths. Construct paths from
+`polis_folder`, the table's `file_stem` and `output_format` as shown above.
 
 ### Output formats
 
@@ -236,7 +232,8 @@ polished::get_polis_data(tables = "case", output_format = "parquet")
 
 POLIS occasionally truncates a query under load and returns a partial page even
 when more rows exist. With `auto_refetch = TRUE` (the default), after each table
-finishes the function:
+finishes the function checks the most recent `verify_years` calendar years
+(default `3L`). Set `verify_years = NULL` to check the full date range. It:
 
 1. uses the metadata sidecars to detect a gap cheaply (row-count and Id-range
    mismatch against POLIS's reported `@odata.count`);
@@ -245,9 +242,9 @@ finishes the function:
 3. refetches any missing Ids via `Id in (...)` chunks and merges them in,
    de-duplicating by `Id` keeping the latest update date.
 
-Set `auto_refetch = FALSE` to trust whatever is on disk and skip the check — for
-example in the smoke-test path, or when you know the pull completed cleanly and
-want to save the verification round-trip.
+Set `auto_refetch = FALSE` to reuse completed snapshots with matching scope
+without freshness or completeness checks. Revision-based reconciliation, when
+enabled, covers the full requested scope independently of `verify_years`.
 
 ## Other options worth knowing
 
@@ -261,7 +258,7 @@ want to save the verification round-trip.
 
 ## From download to clean
 
-`get_polis_data()` gets you a faithful local copy of POLIS; the cleaners take it
+`get_polis_data()` writes the downloaded tables to disk; the cleaners take them
 from there. A typical flow pulls a table, then recovers any missing administrative
 geography from the EPID:
 

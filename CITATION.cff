@@ -3,6 +3,7 @@ message: "If you use polished in your work, please cite it using the citation be
 type: software
 title: "polished: Retrieve and Prepare GPEI POLIS Surveillance Data"
 version: 0.3.0
+doi: "10.5281/zenodo.22998766"
 abstract: >-
   An R package for retrieving, cleaning, standardising, and preparing
   polio surveillance data from the Global Polio Eradication Initiative

@@ -23,11 +23,9 @@ knitr:
 library(polished)
 ```
 
-The check functions surface data-quality problems in a cleaned table by
-**reading the columns the cleaners already produced** — duplicates, blank keys,
-unreconciled admin GUIDs, out-of-range values and date-ordering violations.
-Nothing here re-derives geography or recomputes anything; each check is a cheap
-filter, so running them is fast even on millions of rows.
+The check functions identify duplicates, blank keys, unreconciled administrative
+GUIDs, out-of-range values and dates in the wrong order. They use the columns
+produced by the cleaners.
 
 There is one function per stream:
 
@@ -42,8 +40,8 @@ There is one function per stream:
 ## Running a check
 
 Each `checks_*()` takes a cleaned table and returns a list: a `summary` tibble
-counting every applicable check, plus one tibble of flagged rows per check that
-found problems. The example below seeds a small cleaned AFP table with a few
+listing each configured check, plus one tibble of flagged rows per check that
+found problems. The example below creates a small cleaned AFP table with a few
 deliberate issues:
 
 ```{r}
@@ -71,10 +69,12 @@ res$summary
 
 The `summary` lists each check, its `severity` (`error` / `warning` / `info`,
 sorted worst first), and how many rows it flagged. Checks whose required columns
-are absent are skipped, so a trimmed table is handled gracefully.
+are absent have `status = "not_run"`, `n_flagged = NA`, and the missing column
+names in `missing_columns`. A check that ran and found no issues has
+`n_flagged = 0`.
 
-The flagged rows for any failing check live under its name, holding the key
-columns plus whatever the check is about:
+Each check with flagged rows has a named table containing the record keys and
+the columns needed to review the issue:
 
 ```{r}
 #| label: detail

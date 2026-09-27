@@ -24,13 +24,11 @@ polis_tables_mapping
 Static mapping of the tables \code{get_polis_data()} supports.
 }
 \details{
-Each \code{date_field} is the date column the package uses when
-filtering. Probes against POLIS confirmed each value is 100\%-populated
-AND clustered post-2010 (records were imported into POLIS then), so a
-filter on this field catches every row in the table including pre-2000
-legacy records. The clinical/event columns (\code{CaseDate}, \code{VirusDate},
-\code{CollectionDate}) are skipped because they contain pre-2000 legacy
-dates that fall outside typical user-supplied ranges.
+Each \code{date_field} identifies the column used for date filtering. Revision
+dates (\code{LastUpdateDate} or \code{UpdatedDate}) also support checks for edited
+records. Tables filtered by event dates (\code{Start} or \code{PublishDate}) require
+a full refresh to detect edits. Records with missing filter dates, or dates
+outside the requested years, are excluded by the date filter.
 
 A \code{date_field} of \code{NA} marks a \strong{reference table} (e.g. \code{population}) that
 carries no usable update date: it is pulled whole in a single Id-paginated

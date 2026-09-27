@@ -23,23 +23,21 @@ knitr:
 library(polished)
 ```
 
-A real POLIS analysis is more than one `run_pipeline()` call: it has raw
-downloads, processed shapefiles, WorldPop rasters, a population reconciliation,
-and the cleaned `polished_*` outputs — each with a conventional home on disk, and
-a `cfg` that ties them together. `init_polis_pipeline()` stamps out that whole
-project in one call: the directory layout, a wired `.Rprofile`, a `.gitignore`,
-and runnable `2a_download_data.R` / `2b_process_data.R` starter scripts.
+`init_polis_pipeline()` creates directories for raw downloads, boundary layers,
+population data and cleaned `polished_*` outputs. It also writes a `.Rprofile`
+that defines `cfg`, a `.gitignore`, and the starter scripts
+`2a_download_data.R` and `2b_process_data.R`.
 
-It is the heavier sibling of `init_polis_project()`:
+Choose between the two project layouts:
 
 | | `init_polis_project()` | `init_polis_pipeline()` |
 |---|---|---|
 | Layout | generic `raw/processed/validation/cache/logs` zones | domain-numbered `01_data` (shapefiles / population / polis / vaccination), `02_scripts`, `03_outputs` |
 | Writes a `.Rprofile`? | no | yes — the `cfg` manifest |
 | Writes starter scripts? | no | yes — download + process |
-| Use it when | you just need tidy zones for one stream | you want the full reproducible download → clean pipeline |
+| Use it when | you need data and output directories | you also need configuration and starter scripts |
 
-## One call
+## Create a project
 
 ```{r}
 #| label: scaffold
@@ -73,22 +71,21 @@ Each `01_data` domain has a `raw/` (inputs) and `processed/` (derived) half:
 
 Pass `domains =` to scaffold a subset (e.g. `c("shapefiles", "polis")`).
 
-## The wired `.Rprofile`
+## Project configuration in `.Rprofile`
 
-The generated `.Rprofile` is the project **manifest** — the data-directory roots
-are defined once as the single source of truth, and `cfg` is built from them, so
-the scripts and the cleaners share exactly the same paths:
+The generated `.Rprofile` defines the data directories and builds `cfg` from
+them. The starter scripts use these same paths:
 
 ```{r}
 #| label: rprofile
 cat(readLines(file.path(root, ".Rprofile")), sep = "\n")
 ```
 
-The four knobs you passed to `init_polis_pipeline()` are interpolated into the
-`polis_config()` call, so editing them later is just editing the `.Rprofile`:
+The following arguments are written into the `polis_config()` call in
+`.Rprofile`, where you can edit them later:
 
 - **`regions`** — scopes the surveillance streams (AFP/ES/SIA/…). Population is
-  *foundational* and stays global regardless.
+  downloaded globally.
 - **`start_year`** — earliest onset/collection year retained.
 - **`pop_years`** — the population/WorldPop window.
 - **`pop_source`** — which value `clean_pop()` chooses as `<age>_pop`:
@@ -109,11 +106,11 @@ Because `cfg` is built outside any `if (interactive())` guard (and behind a
 list.files(file.path(root, "02_scripts"))
 ```
 
-`2a_download_data.R` pulls **every** input: the POLIS population reference, the
+`2a_download_data.R` downloads the POLIS population reference, the
 seven POLIS surveillance tables (`get_polis_data()`), and the WorldPop rasters
-(`sntutils::download_worldpop*`). Only missing files are (re)fetched. The raw WHO
-polio GDB shapefile layers are the one thing it does **not** download — drop
-those into `01_data/1a_shapefiles/raw/` yourself.
+(`sntutils::download_worldpop*`). POLIS downloads follow the downloader's cache
+and refresh rules. Supply the WHO polio GDB boundary layers separately in
+`01_data/1a_shapefiles/raw/`.
 
 `2b_process_data.R` runs in three sections, in order:
 
@@ -145,9 +142,9 @@ names(afg)
 
 ## Reproducible package versions with `renv`
 
-Pass `renv = TRUE` to wire the project for
-[renv](https://rstudio.github.io/renv/), so everyone installs the **same**
-package versions:
+Pass `renv = TRUE` to add
+[renv](https://rstudio.github.io/renv/) to the project. After installing the
+required packages, record their versions with `renv::snapshot()`:
 
 ```{r}
 #| label: renv
@@ -171,19 +168,18 @@ autoloader — `if (file.exists("renv/activate.R")) source("renv/activate.R")` �
 the project is renv-ready: run `renv::init()` yourself later and nothing else in
 the scaffold changes.
 
-## Conventions baked in
+## Existing files and project paths
 
-- **Idempotent.** Re-running never clobbers an edited `.Rprofile` or script;
-  existing files are kept unless you pass `overwrite = TRUE`. Directory creation
-  is always safe to repeat.
+- **Existing files.** Re-running keeps existing `.Rprofile` and script files
+  unless you pass `overwrite = TRUE`.
 - **`.here` sentinel.** A `.here` marker is written so `here::here()` in the
   `.Rprofile` resolves to the project root even before it is a git repo or
   RStudio project.
 - **Sensitive raw data stays out of git.** The generated `.gitignore` excludes
   `01_data/**/raw/` — raw POLIS tables are individual-level line-lists (and
   large), so they should not be committed. Re-download them with `2a` instead.
-- **One source of truth for paths.** The `.Rprofile` defines the roots; the
-  scripts and `cfg` reference them, so there is never a second, drifting copy.
+- **Shared paths.** The `.Rprofile` defines the data directories used by the
+  scripts and `cfg`.
 
 For a lighter, single-stream workspace (no `.Rprofile`, no scripts) see
 `init_polis_project()` and the *End-to-end pipeline* article.

@@ -15,10 +15,16 @@
     date_field = date_field,
     min_year = if (no_date) NULL else format(as.Date(min_date), "%Y"),
     max_year = if (no_date) NULL else format(as.Date(max_date), "%Y"),
-    region = if (endpoint %in% c("LabSpecimen", "Im", "Population")) NULL else
-      toupper(region),
-    country_code = if (is.null(country_code) || !nzchar(country_code)) NULL else
-      toupper(country_code),
+    region = if (endpoint %in% c("LabSpecimen", "Im", "Population")) {
+      NULL
+    } else {
+      toupper(region)
+    },
+    country_code = if (is.null(country_code) || !nzchar(country_code)) {
+      NULL
+    } else {
+      toupper(country_code)
+    },
     ext = ext
   )
 }
@@ -47,15 +53,25 @@
 }
 
 .polis_record_versions <- function(df, date_field) {
-  if (!is.data.frame(df) || !"Id" %in% names(df)) return(NULL)
-  if (!nrow(df)) return(data.frame(Id = numeric(), revision = character()))
-  if (!date_field %in% names(df)) return(NULL)
+  if (!is.data.frame(df) || !"Id" %in% names(df)) {
+    return(NULL)
+  }
+  if (!nrow(df)) {
+    return(data.frame(Id = numeric(), revision = character()))
+  }
+  if (!date_field %in% names(df)) {
+    return(NULL)
+  }
   out <- data.frame(
     Id = as.numeric(df$Id),
     revision = as.character(df[[date_field]])
   )
-  if (any(!is.finite(out$Id)) || anyDuplicated(out$Id) || anyNA(out$revision))
+  if (any(!is.finite(out$Id)) || anyNA(out$revision)) {
     return(NULL)
+  }
+  if (anyDuplicated(out$Id)) {
+    out <- .polis_dedup(out, id_col = "Id", date_col = "revision")
+  }
   out <- out[order(out$Id), , drop = FALSE]
   rownames(out) <- NULL
   out
@@ -85,7 +101,9 @@
       last_id = last_id,
       select = if (use_select) c("Id", date_field) else NULL
     )
-    if (!is.data.frame(page)) cli::cli_abort("Invalid version-list response.")
+    if (!is.data.frame(page)) {
+      cli::cli_abort("Invalid version-list response.")
+    }
     if (
       is.null(last_id) &&
         use_select &&
@@ -94,7 +112,9 @@
       use_select <- FALSE
       next
     }
-    if (!nrow(page)) break
+    if (!nrow(page)) {
+      break
+    }
     versions <- .polis_record_versions(page, date_field)
     if (
       is.null(versions) || (!is.null(last_id) && any(versions$Id <= last_id))
@@ -106,7 +126,9 @@
     pages[[length(pages) + 1L]] <- versions
     last_id <- max(versions$Id)
   }
-  if (!length(pages)) return(data.frame(Id = numeric(), revision = character()))
+  if (!length(pages)) {
+    return(data.frame(Id = numeric(), revision = character()))
+  }
   dplyr::bind_rows(pages)
 }
 
@@ -134,19 +156,24 @@
     country_code,
     polis_api_key
   )
-  if (identical(state$versions, current)) return(current)
+  if (identical(state$versions, current)) {
+    return(current)
+  }
   downloaded <- .polis_io_read(out_file, ext)
   old <- .polis_record_versions(downloaded, date_field)
-  if (is.null(old))
+  if (is.null(old)) {
     cli::cli_abort(
       "Cached rows have no usable revision metadata; use force = TRUE."
     )
+  }
   pos <- match(current$Id, old$Id)
   changed <- is.na(pos) | current$revision != old$revision[pos]
   ids <- current$Id[changed]
-  replacement <- if (length(ids))
-    .polis_refetch_missing(endpoint, ids, polis_api_key, workers = workers) else
+  replacement <- if (length(ids)) {
+    .polis_refetch_missing(endpoint, ids, polis_api_key, workers = workers)
+  } else {
     downloaded[0, , drop = FALSE]
+  }
   if (length(ids)) {
     versions <- .polis_record_versions(replacement, date_field)
     expected <- current[changed, , drop = FALSE]

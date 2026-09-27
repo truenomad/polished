@@ -22,8 +22,8 @@
 #'     clash take an `_activity` suffix; the redundant geographic parent copies
 #'     -- region, ISO, admin name/GUID, shape id, IST -- are dropped);
 #'   \item every campaign/planning date parsed to `Date` and sanitised with the
-#'     same "sensible date" rule (a value before `min_year` or in the future is a
-#'     data-entry error and set to `NA`); audit timestamps stay ISO strings for
+#'     same date-range rule (values before `min_year` or after the configured
+#'     reference date are set to `NA`); audit timestamps stay ISO strings for
 #'     the keep-latest dedup;
 #'   \item `year_start` / `month_start` from the sanitised `date_from` (the
 #'     sub-activity start);

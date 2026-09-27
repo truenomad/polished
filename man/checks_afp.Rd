@@ -23,11 +23,11 @@ Checks without their required columns appear as \code{status = "not_run"} and
 \code{n_flagged = NA}; they are distinct from checks that ran and found no issues.
 }
 \description{
-Surfaces data-quality problems in a cleaned AFP table by reading columns the
+Identifies data-quality problems in a cleaned AFP table using columns the
 cleaner already produced (duplicates, blank keys, unreconciled GUIDs,
 missing/zero coordinates, future onset dates, out-of-range age, negative
 timeliness intervals, inadequate stool). Checks whose required columns are
-absent are skipped, so a trimmed input is handled gracefully.
+absent are listed as \code{not_run}, with their missing columns recorded.
 }
 \examples{
 afp <- data.frame(

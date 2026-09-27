@@ -73,12 +73,12 @@ A named list:
 }
 \description{
 Fills missing administrative names (and optionally GUIDs) using the EPID as
-a recovery key, through an ordered, provenance-stamped cascade. Only blank
-cells are filled; present values are never overwritten and nothing is
-fabricated on ambiguity.
+a matching key. Tries the configured strategies in order and records the
+source of each filled value. Existing values are retained. Gaps without
+a match accepted by a strategy remain missing.
 }
 \details{
-The cascade, per admin level (Admin0, then Admin1, then Admin2):
+The strategies, per admin level (Admin0, then Admin1, then Admin2):
 \describe{
 \item{original}{Value already present -- kept.}
 \item{self_ref}{Most-recent non-blank value for the exact same EPID

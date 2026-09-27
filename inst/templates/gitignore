@@ -14,7 +14,7 @@ renv/cellar/
 renv/sandbox/
 renv/staging/
 
-# bulky / regenerable data -- precious raw downloads + caches
+# raw downloads and generated caches
 01_data/**/raw/
 01_data/1b_population/worldpop/processed/
 01_data/1c_polis/processed/cache/

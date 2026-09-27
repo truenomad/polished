@@ -23,10 +23,10 @@ knitr:
 library(polished)
 ```
 
-The cleaning layer turns the raw POLIS tables into canonical, analysis-ready
-tables — one cleaner per surveillance stream, all following the same recipe:
-standardise names, sanitise dates, derive the analytic variables, clean the
-geography, enrich, and deduplicate to one row per POLIS `id`.
+The cleaners standardise column names, parse dates, derive variables, reconcile
+geography and remove duplicate records. Each surveillance stream has its own
+cleaner; `clean_virus()` combines positive records from the cleaned AFP and ES
+tables.
 
 | Function | Stream | Built from |
 |---|---|---|
@@ -45,10 +45,9 @@ pass the downloaded tables straight in.
 
 ## Shared settings: `polis_config()`
 
-Every cleaner takes a `cfg` argument. `polis_config()` builds it — a single,
-overridable object holding the column crosswalk, the output column ordering, and
-run constants. There are deliberately no per-column arguments: the canonical
-schema lives in the packaged crosswalk, not in scattered defaults.
+Every cleaner takes a `cfg` argument. `polis_config()` creates this object with
+the column crosswalk, output column order and shared settings. The packaged
+crosswalk defines the standard column names.
 
 ```{r}
 #| label: config
@@ -225,7 +224,7 @@ positives[, c(
 Pass `separate_rows = TRUE` to split a co-detection (e.g. `WPV1andcVDPV 2`) into
 one row per serotype.
 
-## One call: `run_pipeline()`
+## Run the cleaners with `run_pipeline()`
 
 `run_pipeline()` runs the per-stream cleaners over a named list of raw tables
 (`afp`, `es`, `hum_spec`, `activity`, `subactivity`) and returns the cleaned
@@ -241,7 +240,7 @@ names(cleaned)
 ```
 
 Each cleaned element is exactly what the matching `clean_*()` call produces
-above. Two settings on `cfg` extend the run end to end:
+above. Two settings on `cfg` supply additional reference data:
 
 - a `shape` (an already-processed district layer) is passed to every cleaner for
   admin reconciliation and geography recovery;
@@ -259,6 +258,6 @@ cfg <- polis_config(
 run_pipeline(list(afp = afp_raw, es = es_raw), cfg = cfg)
 ```
 
-To run the whole thing from a folder of downloaded `raw_*` files straight to
+To process a folder of downloaded `raw_*` files and write
 `polished_*` outputs (plus data-quality workbooks), use `run_pipeline_dir()` —
 see the *End-to-end pipeline* article.

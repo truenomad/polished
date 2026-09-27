@@ -34,16 +34,15 @@ Surveillance extracts are rarely complete. The same pull will often contain:
 An EPID is a structured case identifier, conventionally
 `COUNTRY-PROVINCE-DISTRICT-YEAR-SERIAL` (e.g. `NIE-BOR-MMC-24-001`). The leading
 three characters are a country code; the next segments are province and district
-abbreviations. So even when the *names* are blank, the EPID still encodes
-*where* the case is.
+abbreviations. These segments can help identify administrative areas when their
+names are missing.
 
-That is the whole idea: **when one row tells us that the code `NIE-BOR-MMC` means
-Maiduguri, Borno, Nigeria, we can carry that geography to every other row whose
-EPID shares the same code** — without ever inventing a place that the data
-doesn't already vouch for.
+For example, a record linking `NIE-BOR-MMC` to Maiduguri, Borno, Nigeria can
+supply missing names for records with the same prefix, subject to year and
+parent-area matching rules.
 
-`polished::impute_geo_from_epid()` does exactly this triangulation. Here is the
-kind of messy input it is built for:
+`polished::impute_geo_from_epid()` applies these matching rules. The example
+below includes missing names and conflicting matches:
 
 ```{r}
 #| label: messy-input
@@ -88,7 +87,7 @@ country. Each gap is recoverable from a *different* kind of evidence — and one
 or two are deliberately **not** recoverable, so you can see what the function
 does when it cannot be sure.
 
-## One call
+## Fill missing geography
 
 You hand `polished::impute_geo_from_epid()` the data, tell it which columns hold
 the EPID, the year, and each admin level, and (optionally) give it a country
@@ -172,10 +171,9 @@ Reading the district column above, row by row:
 - `…KAN-XYZ-24-001` is **`unresolved`** too: nothing else in the data shares its
   prefix, and no external reference was given.
 
-The two key guarantees are visible here: a present value is **never
-overwritten** (everything that started with a district still reads `original`),
-and an ambiguous or unsupported gap is **never invented** — it stays `NA` and is
-labelled `unresolved`, so silent fabrication is impossible.
+Existing values are retained and labelled `original`. In this example, gaps
+with conflicting or absent matches remain `NA` and are labelled `unresolved`.
+Filled values depend on the accuracy of the matching records and references.
 
 Admin0 tells the same story through a different strategy:
 
@@ -271,7 +269,7 @@ result$meta
 
 </details>
 
-## The strategies, and when each earns its keep
+## Matching strategies
 
 `impute_geo_from_epid()` tries strategies in order and stops as soon as a cell is
 filled. You control which run, and in what order, with `strategies`.
@@ -283,7 +281,7 @@ filled. You control which run, and in what order, with `strategies`.
 | `reference` | the data has *no* names of its own to borrow | an external `epid`- or `prefix`-keyed table you pass in |
 | `country_prefix` | only the country is missing | the `country_ref` code → name crosswalk |
 
-Two knobs shape the matching:
+Two arguments control prefix matching:
 
 - **`year_window`** widens prefix-matching to neighbouring years (we used `1`
   above so a 2023 donor could fill a 2024 case). `0` keeps it strict.
@@ -321,11 +319,12 @@ polished::impute_geo_from_epid(
   dplyr::select(epid, adm2, adm2_source)
 ```
 
-## Running it twice is safe
+## Running the function again
 
-Because filled cells become `original` on the next pass, re-running the cleaner
-on its own output changes nothing — handy when it sits inside a pipeline that
-may execute more than once.
+On a second pass, previously filled cells are treated as existing values and
+their source labels become `original`. Keep the first result if you need its
+provenance and fill counts. Remaining gaps may be filled if the updated input
+provides new matches.
 
 ```{r}
 #| label: idempotent
@@ -346,9 +345,8 @@ identical(second$data$adm2, result$data$adm2)
 
 ## Building blocks (advanced)
 
-`impute_geo_from_epid()` is the function you will reach for. The cascade is
-assembled from smaller exported pieces, exposed for the rare cases where you want
-to parse or match EPIDs yourself:
+Use these functions to parse EPIDs or build matching tables separately from
+`impute_geo_from_epid()`:
 
 - `epid_split()`, `epid_country_code()`, `epid_prefix()`,
   `epid_strip_contact()` — pure parsers that pull codes out of an EPID.
@@ -357,8 +355,7 @@ to parse or match EPIDs yourself:
 - `resolve_epid_country()` — the code → country resolver behind
   `country_prefix`.
 
-You almost never need these directly; see each function's help page (e.g.
-`?epid_prefix`) for details.
+See each function's help page (e.g. `?epid_prefix`) for details.
 
 ```{r}
 #| label: building-blocks

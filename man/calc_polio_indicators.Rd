@@ -148,9 +148,9 @@ and district (\code{adm2}) level, by year. Each indicator is a registry spec; th
 full catalogue is discoverable with \code{\link[=available_indicators]{available_indicators()}}.
 }
 \details{
-Indicators whose source table or required columns are absent are \strong{skipped
-with a warning} rather than erroring, so a partial schema (e.g. \code{cases} +
-\code{population} only) still computes every applicable indicator. Rates that need
+Indicators whose source table or required columns are absent are skipped
+with a warning. The function stops if none of the requested indicators can be
+computed. Rates that need
 a population denominator require a \code{population} table of \emph{under-15} population
 per admin unit per year.
 }

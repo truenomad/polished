@@ -507,11 +507,11 @@
 
 #' Run AFP data-quality checks
 #'
-#' Surfaces data-quality problems in a cleaned AFP table by reading columns the
+#' Identifies data-quality problems in a cleaned AFP table using columns the
 #' cleaner already produced (duplicates, blank keys, unreconciled GUIDs,
 #' missing/zero coordinates, future onset dates, out-of-range age, negative
 #' timeliness intervals, inadequate stool). Checks whose required columns are
-#' absent are skipped, so a trimmed input is handled gracefully.
+#' absent are listed as `not_run`, with their missing columns recorded.
 #'
 #' @param afp A cleaned AFP tibble (from [clean_afp()]).
 #' @param reference_date Date treated as "today" for future-date checks

@@ -102,9 +102,9 @@ polis_afp_diagnosis_class <- function() {
 
 #' Harmonise the AFP clinical diagnosis
 #'
-#' Coalesces the four scattered POLIS diagnosis fields into one canonical
-#' `diagnosis_harmonised` and derives the analytic variables that separate true
-#' non-AFP illness from the acute-flaccid-paralysis differentials. The four
+#' Combines the four POLIS diagnosis fields into one standard
+#' `diagnosis_harmonised` label and classifies the reported diagnosis as non-AFP
+#' illness or an acute-flaccid-paralysis differential. The four
 #' sources are read in priority order -- a confirmed-polio override from
 #' `classification`, then coded `diagnosis_final`, then the ICD-10
 #' `diagnosis_other`, then the free-text `diagnosis_other_specified`, then the

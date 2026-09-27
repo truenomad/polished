@@ -1,9 +1,9 @@
 #' Download POLIS tables
 #'
 #' @description
-#' The canonical entry point for fetching data from the POLIS OData service.
-#' Works around three POLIS quirks that make naive OData clients silently
-#' lose data:
+#' Downloads tables from the POLIS OData service to a local cache, with
+#' resumable batches and optional parallel downloads by year. The downloader
+#' accounts for these API behaviours:
 #'
 #' * **Date filters are year-aligned only.** POLIS only honours `field le
 #'   YYYY-12-31` bounds; any sub-year `le` returns 0 rows. The function
@@ -15,8 +15,8 @@
 #'   `$orderby=Id&$top=2000&$filter=... and Id gt <last>`.
 #' * **The clinical date columns (`CaseDate`, `VirusDate`, ...) have NULL
 #'   coverage** for historical records. The function filters on the
-#'   table's populated filter column (`LastUpdateDate` / `UpdatedDate` / `Start` /
-#'   `PublishDate`) which probes have confirmed is 100%-populated.
+#'   `date_field` in [polis_tables_mapping]: a revision date (`LastUpdateDate` /
+#'   `UpdatedDate`) or an event date (`Start` / `PublishDate`).
 #'
 #' @details
 #' **Cache layout and recovery.** Pages are committed under
@@ -86,7 +86,7 @@
 #'   `<polis_folder>/`. Default
 #'   `tools::R_user_dir("polished", which = "cache")` -- the standard
 #'   per-user cache location, persistent across sessions so incremental
-#'   updates "just work". Pass an explicit path to keep data alongside a
+#'   updates reuse the same cache. Pass an explicit path to keep data alongside a
 #'   project.
 #' @param output_format Output format. One of `"rds"` (default), `"rda"`,
 #'   `"csv"`, `"parquet"`, `"qs2"`. `"parquet"` requires the `arrow`
@@ -223,7 +223,9 @@ get_polis_data <- function(
     cli::cli_abort("min_date and max_date must define a valid date range.")
   }
   region <- toupper(region)
-  if (!is.null(country_code)) country_code <- toupper(country_code)
+  if (!is.null(country_code)) {
+    country_code <- toupper(country_code)
+  }
 
   if (!isTRUE(quiet)) {
     cli::cli_h1("Downloading POLIS data")
@@ -281,8 +283,11 @@ get_polis_data <- function(
       ext
     )
     manifest_path <- .polis_download_manifest(data_dir, stem, ext)
-    state <- if (file.exists(manifest_path))
-      tryCatch(readRDS(manifest_path), error = function(e) NULL) else NULL
+    state <- if (file.exists(manifest_path)) {
+      tryCatch(readRDS(manifest_path), error = function(e) NULL)
+    } else {
+      NULL
+    }
     same_scope <- is.list(state) &&
       identical(state$version, 1L) &&
       identical(state$scope, scope)
@@ -319,9 +324,12 @@ get_polis_data <- function(
         if (!identical(state$versions, versions)) .polis_prune_parts(parts_dir)
       }
       if (reusable) {
-        if (isTRUE(prune_parts)) .polis_prune_parts(parts_dir)
-        if (!isTRUE(quiet))
+        if (isTRUE(prune_parts)) {
+          .polis_prune_parts(parts_dir)
+        }
+        if (!isTRUE(quiet)) {
           cli::cli_alert_info("Up to date. Using the completed snapshot.")
+        }
         next
       }
     }
@@ -655,11 +663,12 @@ get_polis_data <- function(
                 date_col = date_field
               )
               .polis_io_write_atomic(combined, out_file, ext)
-              if (!isTRUE(quiet))
+              if (!isTRUE(quiet)) {
                 cli::cli_alert_success(paste0(
                   nm,
                   ": verification + refetch complete."
                 ))
+              }
             }
           } else if (!isTRUE(quiet)) {
             cli::cli_alert_success(paste0(
@@ -675,8 +684,11 @@ get_polis_data <- function(
 
     # Publish only after the complete candidate passes verification.
     downloaded <- .polis_io_read(out_file, ext)
-    versions <- if (!no_date)
-      .polis_record_versions(downloaded, date_field) else NULL
+    versions <- if (!no_date) {
+      .polis_record_versions(downloaded, date_field)
+    } else {
+      NULL
+    }
     if (
       isTRUE(auto_refetch) && date_field %in% c("LastUpdateDate", "UpdatedDate")
     ) {
@@ -694,10 +706,11 @@ get_polis_data <- function(
         workers
       )
     }
-    if (!file.rename(out_file, canonical_file))
+    if (!file.rename(out_file, canonical_file)) {
       cli::cli_abort(
         "Failed to commit the verified snapshot; previous file retained."
       )
+    }
     out_file <- canonical_file
     .polis_save_manifest(manifest_path, scope, out_file, versions)
     .polis_archive(out_file, polis_folder, stem, ext, keep_archives)
@@ -718,13 +731,11 @@ get_polis_data <- function(
 #' Static mapping of the tables `get_polis_data()` supports.
 #'
 #' @details
-#' Each `date_field` is the date column the package uses when
-#' filtering. Probes against POLIS confirmed each value is 100%-populated
-#' AND clustered post-2010 (records were imported into POLIS then), so a
-#' filter on this field catches every row in the table including pre-2000
-#' legacy records. The clinical/event columns (`CaseDate`, `VirusDate`,
-#' `CollectionDate`) are skipped because they contain pre-2000 legacy
-#' dates that fall outside typical user-supplied ranges.
+#' Each `date_field` identifies the column used for date filtering. Revision
+#' dates (`LastUpdateDate` or `UpdatedDate`) also support checks for edited
+#' records. Tables filtered by event dates (`Start` or `PublishDate`) require
+#' a full refresh to detect edits. Records with missing filter dates, or dates
+#' outside the requested years, are excluded by the date filter.
 #'
 #' A `date_field` of `NA` marks a **reference table** (e.g. `population`) that
 #' carries no usable update date: it is pulled whole in a single Id-paginated

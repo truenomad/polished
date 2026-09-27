@@ -22,7 +22,7 @@ defaults. Supply \code{cfg$synonyms} to remap merged EPIDs and \code{cfg$qa} to 
 ambiguity flags.}
 
 \item{shape}{Optional district shape that drives admin recovery. Either form
-works and a single input does everything:
+is accepted:
 \itemize{
 \item a polygon layer (\code{spatial_global_adm2}, an \code{sf} object) -- its long
 form is derived here (as \code{\link[=process_spatial]{process_spatial()}} does) for the GUID/name
@@ -91,9 +91,9 @@ derived columns. Records sharing the business key
 \code{epid} + \code{paralysis_onset_date} + \code{adm0} (the same case re-entered under a new
 POLIS Id) are collapsed to the latest by \code{last_update_date}; cases that share
 an EPID and country but differ in onset date are treated as distinct and kept.
-A tripwire then flags any \code{epid} + \code{adm0} still spanning multiple Ids to QA,
-never dropping it -- so a genuine reclassification or a same-EPID onset
-conflict surfaces for review rather than vanishing.
+Remaining \code{epid} + \code{adm0} combinations that span multiple Ids are flagged
+for review. These rows are retained, including reclassifications and records
+with conflicting onset dates.
 }
 \examples{
 raw <- data.frame(

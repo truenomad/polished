@@ -18,18 +18,15 @@ knitr:
 ---
 
 ::: callout-note
-Every layer in this vignette is **synthetic** — a toy world of rectangles with
-fabricated names, built on the fly and deliberately broken so you can watch the
-cleaner repair it. No real boundary data is used.
+The examples use synthetic polygons and place names, with deliberate geometry
+and attribute errors to demonstrate the checks and repairs.
 :::
 
 ## What `process_spatial()` is for
 
 WHO ships administrative boundaries (country `ADM0`, province `ADM1`, district
 `ADM2`) as spatial layers — an Esri geodatabase, a GeoPackage, or a folder of
-shapefiles. Before that geography can drive analysis it has to be made
-trustworthy, and raw boundary exports rarely are. The same export will typically
-carry:
+shapefiles. Boundary exports can contain issues that affect spatial joins:
 
 - **invalid geometries** — self-intersections and bad ring topology that break
   spatial joins;
@@ -143,7 +140,7 @@ tibble::tibble(
 detached sliver part; `D4` is duplicated; and four of the five rows are
 open-ended (`enddate` year `9999`).
 
-## One call
+## Process the boundary layers
 
 Point `process_spatial()` at the folder, map each admin level to the filename
 stem of its layer, and pick an output format. Repair is on by default.
@@ -263,20 +260,20 @@ it repairs the output geometry through four steps:
 
 <div class="desc-table">
 
-| Step | What it does | Safe because… |
+| Step | What it does | Effect to review |
 |---|---|---|
-| drop Z/M | strips elevation/measure to clean 2D | admin work is planar |
-| `st_make_valid()` | fixes self-intersections and ring topology | preserves the shape |
-| remove sliver **holes** | drops interior rings below `sliver_area` | real enclaves/lakes are larger and kept |
-| remove sliver **parts** | drops detached fragments below `sliver_area` | a feature never loses its **largest** part |
+| drop Z/M | removes elevation and measure dimensions | output geometry is two-dimensional |
+| `st_make_valid()` | repairs invalid geometry | polygon structure can change |
+| remove sliver **holes** | removes interior rings below `sliver_area` | small real holes can also be removed |
+| remove sliver **parts** | removes detached fragments below `sliver_area` | the largest part is retained; other small real parts can be removed |
 
 </div>
 
-The two sliver steps are **threshold-based**: only artifacts smaller than
-`sliver_area` (default `1e4` m² = 1 hectare) are removed. A genuine enclave, lake
-or island above the threshold is left untouched, and no feature is ever emptied —
-each keeps at least its largest polygon. You can see all three repairs land on
-the district layer:
+The two sliver steps use area alone, with `sliver_area` defaulting to `1e4` m²
+(1 hectare). They cannot distinguish a digitising artifact from a real small
+enclave, lake or island. Review the threshold for your data. Each feature keeps
+its largest polygon during part removal. The example shows the resulting
+district geometries:
 
 ```{r}
 #| label: repair-evidence
@@ -397,6 +394,5 @@ boundary layer.
 
 </div>
 
-For large global layers, `"qs2"` writes and reads the geometry far faster than
-`"rds"` (it needs the `qs2` package), and `fix_issues = FALSE` is the quickest
-flag-only pass when you already trust the geometry.
+The `"qs2"` output format requires the optional `qs2` package. Use
+`fix_issues = FALSE` to run checks without geometry repair.

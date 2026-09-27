@@ -302,20 +302,30 @@
 
 .polis_read_meta <- function(part_file, ext, date_field) {
   state <- .polis_read_journal(part_file, validate_pages = FALSE)
-  if (!is.null(state)) return(state$meta)
-  if (!file.exists(part_file)) return(.polis_empty_meta())
+  if (!is.null(state)) {
+    return(state$meta)
+  }
+  if (!file.exists(part_file)) {
+    return(.polis_empty_meta())
+  }
   signature <- .polis_part_signature(part_file)
   path <- .polis_meta_path(part_file)
-  meta <- if (file.exists(path))
-    tryCatch(readRDS(path), error = function(e) NULL) else NULL
+  meta <- if (file.exists(path)) {
+    tryCatch(readRDS(path), error = function(e) NULL)
+  } else {
+    NULL
+  }
   if (
     is.list(meta) &&
       all(c("n_rows", "min_id", "max_id") %in% names(meta)) &&
       identical(meta$file, signature)
-  )
+  ) {
     return(meta)
+  }
   df <- tryCatch(.polis_io_read(part_file, ext), error = function(e) NULL)
-  if (is.null(df)) return(.polis_empty_meta())
+  if (is.null(df)) {
+    return(.polis_empty_meta())
+  }
   meta <- .polis_compute_part_meta(df, date_field)
   meta$file <- signature
   tryCatch(
@@ -1614,8 +1624,11 @@
   io_env <- environment()
 
   write_df <- function(value, path) {
-    stamp <- if (requireNamespace("digest", quietly = TRUE))
-      .polis_hash(value) else NULL
+    stamp <- if (requireNamespace("digest", quietly = TRUE)) {
+      .polis_hash(value)
+    } else {
+      NULL
+    }
     name <- basename(path)
     if (
       !isTRUE(refresh) &&
@@ -1905,7 +1918,7 @@ order_columns <- function(data, roles) {
 }
 
 # =============================================================================
-# Deduplication: upsert-by-Id keep-latest, plus an ambiguity tripwire
+# Deduplication: upsert-by-Id keep-latest, plus an ambiguity check
 #
 # POLIS is an Id-keyed, keep-latest store: a record is uniquely the row with
 # the newest update timestamp for its Id. polis_upsert() is the single primitive
@@ -1919,8 +1932,7 @@ order_columns <- function(data, roles) {
 #'
 #' Combines an existing store with an optional new pull, optionally collapses
 #' exact duplicate rows at a finer grain, then keeps exactly one row per `id`:
-#' the one with the maximum `date`. This is unconditional (no Id-range
-#' shortcut), so a single primitive governs recency everywhere.
+#' the one with the maximum `date`.
 #'
 #' @param store A data frame (the accumulated store, or simply the data to
 #'   dedup).
@@ -2016,10 +2028,9 @@ polis_upsert <- function(
 
 #' Flag (do not drop) rows whose business key spans multiple Ids
 #'
-#' A tripwire on the assumed business uniqueness key. After [polis_upsert()] has
-#' reduced the data to one row per `id`, a well-formed dataset should also be
-#' unique on its business key. Rows that violate this are surfaced to QA -- and
-#' left in the data -- so a genuine reclassification is never silently dropped.
+#' After [polis_upsert()] reduces the data to one row per `id`, checks whether
+#' multiple Ids share the supplied business key. Matching rows are flagged for
+#' review and retained in the data.
 #'
 #' @param data A data frame (already deduped by `id`).
 #' @param key Character vector naming the business key columns.

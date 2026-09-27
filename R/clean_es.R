@@ -18,9 +18,9 @@
 #' \itemize{
 #'   \item canonical snake_case names (via the crosswalk + janitor);
 #'   \item every collection/laboratory date parsed to `Date` and sanitised with
-#'     the same "sensible date" rule clean_afp() uses -- a value before the dawn
-#'     of surveillance (`min_year`) or in the future is a data-entry error and is
-#'     set to `NA`, never dropped (audit timestamps such as `last_update_date`
+#'     the same date-range rule [clean_afp()] uses: values before `min_year` or
+#'     after the configured reference date are set to `NA`; rows are retained
+#'     (audit timestamps such as `last_update_date`
 #'     stay ISO strings for the keep-latest dedup);
 #'   \item `year_collection` / `month_collection` from the sanitised
 #'     `collection_date`;
@@ -46,8 +46,8 @@
 #' `vaccine*`/`vdpv*`/`wild*` fields and `sample_condition` are kept as-is
 #' alongside the derived columns. The business key `sample_id` + `adm0` (the ES
 #' analogue of the AFP `epid` + `adm0` key, `sample_id` being the EPID-equivalent
-#' sample identifier) is asserted as a tripwire: violations are flagged to QA,
-#' never dropped. (Unlike AFP, a sample can legitimately yield several virus
+#' sample identifier) is checked for duplicates: matching rows are flagged for
+#' review and retained. (Unlike AFP, a sample can yield several virus
 #' detections, so this key is not collapsed.)
 #'
 #' @param data A raw POLIS environmental-samples data frame.
@@ -721,8 +721,7 @@ clean_es_classification <- function(data) {
 #'
 #' Diagnostic check: environmental site names present in `data` but missing from
 #' the reference `sites` list are flagged -- particularly new sites that also
-#' lack coordinates, which usually signal a data-entry issue rather than a
-#' genuine new site. Names are compared upper-cased and whitespace-squished
+#' lack coordinates and need review. Names are compared upper-cased and whitespace-squished
 #' (embedded newlines collapsed) on both sides. `data` is returned unchanged,
 #' with the unmatched sites attached as the `"polis_new_sites"` attribute, so the
 #' check composes into [clean_es()] without writing to disk or touching global

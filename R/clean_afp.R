@@ -48,9 +48,9 @@
 #' `epid` + `paralysis_onset_date` + `adm0` (the same case re-entered under a new
 #' POLIS Id) are collapsed to the latest by `last_update_date`; cases that share
 #' an EPID and country but differ in onset date are treated as distinct and kept.
-#' A tripwire then flags any `epid` + `adm0` still spanning multiple Ids to QA,
-#' never dropping it -- so a genuine reclassification or a same-EPID onset
-#' conflict surfaces for review rather than vanishing.
+#' Remaining `epid` + `adm0` combinations that span multiple Ids are flagged
+#' for review. These rows are retained, including reclassifications and records
+#' with conflicting onset dates.
 #'
 #' @param data A raw POLIS case data frame.
 #' @param cfg A [polis_config()] object. Defaults to [polis_active_config()] --
@@ -59,7 +59,7 @@
 #'   defaults. Supply `cfg$synonyms` to remap merged EPIDs and `cfg$qa` to route
 #'   ambiguity flags.
 #' @param shape Optional district shape that drives admin recovery. Either form
-#'   works and a single input does everything:
+#'   is accepted:
 #'   \itemize{
 #'     \item a polygon layer (`spatial_global_adm2`, an `sf` object) -- its long
 #'       form is derived here (as [process_spatial()] does) for the GUID/name
@@ -230,7 +230,7 @@ clean_afp <- function(
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
     .geo_guid_display_cols() |>
-    # tripwire on the coarser epid + adm0: surfaces (never drops) any EPID that
+    # check the coarser epid + adm0 key: flag and retain any EPID that
     # still spans multiple Ids in a country -- e.g. the distinct-onset cases the
     # collapse above deliberately kept -- for analyst review.
     flag_ambiguous(key = c("epid", "adm0"), sink = cfg$qa) |>

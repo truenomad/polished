@@ -49,9 +49,10 @@ virus/SIA tables alone.
 ## Inputs
 
 `calc_polio_indicators()` needs only a cleaned `cases` table to start; `es`,
-`sia`, `virus`, `lab`, `population` and `admin_units` are optional and unlock
-the indicators that depend on them. A missing source simply skips its
-indicators with a message rather than erroring.
+`sia`, `virus`, `lab`, `population` and `admin_units` supply data for additional
+indicators. Indicators with missing sources or required columns are skipped
+with a message. The function stops if none of the requested indicators can be
+computed.
 
 The example below builds a small **cleaned** AFP table by hand so it renders
 without a live pull — in practice `cases` is the output of `clean_afp()` or

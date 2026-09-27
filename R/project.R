@@ -14,8 +14,7 @@
 #' Sets up the standard project layout under `root` and returns a `polis_project`
 #' describing it. The layout has four role-named zones plus logs:
 #' \describe{
-#'   \item{`raw`}{downloaded source tables (precious -- never written by
-#'     cleaning).}
+#'   \item{`raw`}{downloaded source tables; cleaners write to `processed`.}
 #'   \item{`processed`}{cleaned analytic outputs (derived); a natural value for
 #'     `polis_config(output_dir = )`.}
 #'   \item{`validation`}{data-quality reports and checks.}
@@ -28,8 +27,8 @@
 #' their `project` argument; nothing relies on a hidden global.
 #'
 #' @param root Path to the project root. Created (recursively) if absent.
-#' @param gitignore Write a `.gitignore` ignoring the regenerable/precious-but-
-#'   bulky zones (`raw/`, `cache/`, `logs/`) when one is not already present.
+#' @param gitignore Write a `.gitignore` excluding `raw/`, `cache/` and `logs/`
+#'   when one is not already present.
 #'   Default `TRUE`.
 #' @param quiet Suppress the success message. Default `FALSE`.
 #'
@@ -161,9 +160,8 @@ project_path <- function(project, zone = "root", ...) {
 
 #' Clear a project's regenerable cache
 #'
-#' Deletes everything in the project's `cache/` zone and nothing else -- the
-#' precious `raw/` and derived `processed/`/`validation/` zones are never
-#' touched. Safe to call when the cache is already empty.
+#' Deletes the contents of the project's `cache/` directory. Leaves `raw/`,
+#' `processed/` and `validation/` unchanged. An empty cache needs no action.
 #'
 #' @param project A `polis_project`.
 #' @param quiet Suppress the success message. Default `FALSE`.
@@ -192,13 +190,12 @@ clear_cache <- function(project, quiet = FALSE) {
 #' Scaffold a full polished pipeline project
 #'
 #' Creates the domain-numbered data-pipeline layout this package is built around
-#' (`01_data/` domains, `02_scripts/`, `03_outputs/`) and writes a wired
-#' `.Rprofile` (the `cfg` manifest), a `.gitignore`, and starter
-#' `2a_download_data.R` / `2b_process_data.R` scripts. Everything the generated
-#' `cfg` points at exists on disk, so after dropping the WHO polio GDB layers in
-#' `01_data/1a_shapefiles/raw/`, sourcing `2a` then `2b` runs the whole
-#' download -> clean pipeline (downloads POLIS streams + WorldPop, processes the
-#' shapefile, extracts WorldPop, and runs [run_pipeline()] over every stream).
+#' (`01_data/` domains, `02_scripts/`, `03_outputs/`). Writes a `.Rprofile`
+#' that defines `cfg`, a `.gitignore`, and starter `2a_download_data.R` /
+#' `2b_process_data.R` scripts. Before running the scripts, install their required
+#' packages, set a POLIS API key and supply the WHO polio GDB layers in
+#' `01_data/1a_shapefiles/raw/`. The scripts download POLIS and WorldPop data,
+#' process boundaries, extract population estimates and run [run_pipeline()].
 #'
 #' Distinct from [init_polis_project()], which scaffolds a lighter generic
 #' `raw/processed/validation/cache/logs` layout.
@@ -213,7 +210,7 @@ clear_cache <- function(project, quiet = FALSE) {
 #'   of `"reconciled"`, `"polis"`, `"worldpop"`. Default `"reconciled"`.
 #' @param domains Which `01_data` domains to create: any of `"shapefiles"`,
 #'   `"population"`, `"polis"`, `"vaccination"`. Default all four.
-#' @param write_rprofile,write_scripts,gitignore Whether to write the wired
+#' @param write_rprofile,write_scripts,gitignore Whether to write the project
 #'   `.Rprofile`, the starter `02_scripts/`, and the `.gitignore`. Default
 #'   `TRUE`.
 #' @param overwrite Overwrite `.Rprofile` / scripts / `.gitignore` that already

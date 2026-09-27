@@ -76,8 +76,8 @@ onto each sub-activity by \code{sia_sub_activity_code} (parent columns that
 clash take an \verb{_activity} suffix; the redundant geographic parent copies
 -- region, ISO, admin name/GUID, shape id, IST -- are dropped);
 \item every campaign/planning date parsed to \code{Date} and sanitised with the
-same "sensible date" rule (a value before \code{min_year} or in the future is a
-data-entry error and set to \code{NA}); audit timestamps stay ISO strings for
+same date-range rule (values before \code{min_year} or after the configured
+reference date are set to \code{NA}); audit timestamps stay ISO strings for
 the keep-latest dedup;
 \item \code{year_start} / \code{month_start} from the sanitised \code{date_from} (the
 sub-activity start);

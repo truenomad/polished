@@ -56,9 +56,9 @@ analytic variables surveillance relies on:
 \itemize{
 \item canonical snake_case names (via the crosswalk + janitor);
 \item every collection/laboratory date parsed to \code{Date} and sanitised with
-the same "sensible date" rule \code{\link[=clean_afp]{clean_afp()}} uses -- a value before the
-dawn of surveillance (\code{min_year}) or in the future is a data-entry error
-and is set to \code{NA}, never dropped (audit timestamps such as
+the same date-range rule \code{\link[=clean_afp]{clean_afp()}} uses: values before \code{min_year} or
+after the configured reference date are set to \code{NA}; rows are retained
+(audit timestamps such as
 \code{last_update_date} stay ISO strings for the keep-latest dedup);
 \item \code{year_collection} / \code{month_collection} from the sanitised
 \code{date_stool_collected}, plus the lab-turnaround intervals (in days)
@@ -86,8 +86,8 @@ apply as specimens carry no coordinates;
 }
 The raw POLIS \code{virus_types}, \code{vdpv_classification}, the per-serotype result
 fields and the lab-result columns are kept as-is alongside the derived
-columns. The business key \code{specimen_id} + \code{adm0} is asserted as a tripwire:
-violations are flagged to QA, never dropped.
+columns. Duplicate \code{specimen_id} + \code{adm0} combinations are flagged for review;
+the matching rows are retained.
 }
 \examples{
 raw <- data.frame(

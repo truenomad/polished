@@ -10,5 +10,6 @@ bibentry(
   ),
   year    = "2026",
   note    = paste("R package version", meta$Version),
-  url     = "https://github.com/truenomad/polished"
+  url     = "https://github.com/truenomad/polished",
+  doi     = "10.5281/zenodo.22998766"
 )

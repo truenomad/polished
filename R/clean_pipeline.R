@@ -44,7 +44,7 @@ polis_active_config <- function() {
 #'
 #' Creates the settings object shared by the cleaners ([clean_afp()],
 #' [clean_es()], [clean_virus()], [clean_sia()]) and the orchestrator
-#' ([run_pipeline()]). Every field has a sensible default and can be overridden.
+#' ([run_pipeline()]). Arguments control the shared defaults.
 #'
 #' @param start_year Earliest onset/collection year to retain (default `2020`).
 #' @param regions WHO region codes the pipeline is scoped to. Cleaned rows are
@@ -872,7 +872,7 @@ run_pipeline <- function(
   # nothing; built from the post-scope cleaned tables, hence the scope in the key.
   if (!is.null(cleaned$afp) || !is.null(cleaned$es)) {
     cli::cli_h1("Building virus / positives")
-    virus_key <- if (!is.null(cfg$cache_dir))
+    virus_key <- if (!is.null(cfg$cache_dir)) {
       list(
         name = "virus",
         # Fingerprint EVERY source, not just afp/es: the GUID backfill above pools
@@ -885,6 +885,7 @@ run_pipeline <- function(
         scope = .polis_scope_key(cfg),
         version = .polis_clean_versions[["virus"]]
       )
+    }
     virus <- .polis_cache_run(
       "virus",
       virus_key,
@@ -919,7 +920,7 @@ run_pipeline <- function(
     # Cached on every source it derives from (afp/es/sia/hum_spec fingerprints),
     # the population + shape fingerprints, and the scope. On a hit the population
     # and shape files are never read -- population_fn()/shape_fn() run only here.
-    ind_key <- if (!is.null(cfg$cache_dir))
+    ind_key <- if (!is.null(cfg$cache_dir)) {
       list(
         name = "indicators",
         # Fingerprint every source for the same reason as the virus key: the
@@ -938,6 +939,7 @@ run_pipeline <- function(
         scope = .polis_scope_key(cfg),
         version = .polis_clean_versions[["indicators"]]
       )
+    }
     indicators <- tryCatch(
       .polis_cache_run(
         "indicators",
@@ -1584,8 +1586,11 @@ load_polished <- function(
   key_parts <- list(
     name = name,
     inputs = fingerprints,
-    shape = if (!is.null(cfg$.fingerprints)) cfg$.fingerprints$shape else
-      .polis_fingerprint(cfg$shape),
+    shape = if (!is.null(cfg$.fingerprints)) {
+      cfg$.fingerprints$shape
+    } else {
+      .polis_fingerprint(cfg$shape)
+    },
     cfg = .polis_clean_cache_fields(cfg),
     version = version,
     # any extra run inputs a stream's output depends on beyond its handles

@@ -1,3 +1,10 @@
+# polished (development version)
+
+* Repeated API IDs no longer abort year downloads or revision checks. Both
+  use the existing latest-revision rule, with the first row retained on ties.
+  Invalid IDs and non-advancing cursors still stop without advancing the
+  checkpoint.
+
 # polished 0.3.0
 
 * Population rate denominators now include districts without reported cases
@@ -80,18 +87,18 @@
   or `"worldpop"`. The chosen value keeps `<age>_pop_polis` and `<age>_pop_wp`
   alongside it so every source stays inspectable.
 * Added `init_polis_pipeline()`, a full pipeline-project scaffold: the
-  domain-numbered layout (`01_data`, `02_scripts`, `03_outputs`), a wired
-  `.Rprofile` carrying the `cfg` manifest, a `.gitignore`, and runnable
+  domain-numbered layout (`01_data`, `02_scripts`, `03_outputs`), a
+  `.Rprofile` defining `cfg`, a `.gitignore`, and runnable
   download / process scripts, so the project runs end to end once the boundary
   layers are dropped in. `renv = TRUE` pins package versions for collaborators.
   It is distinct from the lighter `init_polis_project()`.
-* `run_pipeline()` now emits a lean `detections` table alongside `virus` — a
+* `run_pipeline()` now returns a `detections` table alongside `virus` — a
   per-detection projection of the positives table (epid, adm0-adm2 + adm2 GUID,
   latitude/longitude, the virus label, vtype, emergence group, surveillance
   type/source, and dates) that recomputes nothing.
 * Added `polis_dictionary()`, a data dictionary for the raw and cleaned tables.
 * Added citation metadata: a `CITATION.cff` (GitHub's "Cite this repository")
-  and `inst/CITATION`, so `citation("polished")` returns a proper reference.
+  and `inst/CITATION`, so `citation("polished")` returns the package reference.
 
 # polished 0.1.0
 

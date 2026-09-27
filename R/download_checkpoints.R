@@ -8,14 +8,20 @@
 
 .polis_read_journal <- function(part_file, validate_pages = TRUE) {
   path <- .polis_journal_path(part_file)
-  if (!file.exists(path)) return(NULL)
+  if (!file.exists(path)) {
+    return(NULL)
+  }
   state <- tryCatch(suppressWarnings(readRDS(path)), error = function(e) {
     # A worker can remove the finished journal between a progress poll's
     # existence check and read. The committed part is then authoritative.
-    if (!file.exists(path)) return(NULL)
+    if (!file.exists(path)) {
+      return(NULL)
+    }
     stop(e)
   })
-  if (is.null(state)) return(NULL)
+  if (is.null(state)) {
+    return(NULL)
+  }
   if (
     !is.list(state) ||
       !identical(state$version, 1L) ||
@@ -36,13 +42,18 @@
 
 .polis_checkpoint_read <- function(part_file, ext, date_field) {
   state <- .polis_read_journal(part_file)
-  frames <- if (file.exists(part_file))
-    list(.polis_io_read(part_file, ext)) else list()
+  frames <- if (file.exists(part_file)) {
+    list(.polis_io_read(part_file, ext))
+  } else {
+    list()
+  }
   if (!is.null(state)) {
     pages <- file.path(.polis_journal_dir(part_file), state$pages)
     frames <- c(frames, lapply(pages, .polis_io_read, fmt = ext))
   }
-  if (!length(frames)) return(data.frame(Id = numeric()))
+  if (!length(frames)) {
+    return(data.frame(Id = numeric()))
+  }
   .polis_dedup(dplyr::bind_rows(frames), id_col = "Id", date_col = date_field)
 }
 
@@ -98,8 +109,9 @@
       last_id = last_id,
       page_size = spec$page_size
     )
-    if (!is.data.frame(page))
+    if (!is.data.frame(page)) {
       cli::cli_abort("Invalid response for year {spec$year}.")
+    }
     if (!nrow(page)) {
       state$finished <- TRUE
       .polis_io_write_atomic(state, .polis_journal_path(part), "rds")
@@ -113,12 +125,16 @@
     ids <- suppressWarnings(as.numeric(page$Id))
     if (
       any(!is.finite(ids)) ||
-        anyDuplicated(ids) ||
         (!is.null(last_id) && any(ids <= last_id))
     ) {
       cli::cli_abort(
         "Invalid or stalled Id cursor for year {spec$year}; checkpoint retained."
       )
+    }
+    # Repeated API IDs use the same latest-revision rule as year compaction.
+    if (anyDuplicated(ids)) {
+      page <- .polis_dedup(page, id_col = "Id", date_col = spec$date_field)
+      ids <- suppressWarnings(as.numeric(page$Id))
     }
     name <- sprintf("page_%08d.%s", length(state$pages) + 1L, spec$ext)
     .polis_io_write_atomic(
@@ -132,8 +148,11 @@
     state$meta$min_id <- min(c(state$meta$min_id, ids), na.rm = TRUE)
     state$meta$max_id <- max(ids)
     dates <- c(state$meta$max_date, batch$max_date)
-    state$meta$max_date <- if (all(is.na(dates))) as.Date(NA) else
+    state$meta$max_date <- if (all(is.na(dates))) {
+      as.Date(NA)
+    } else {
       max(dates, na.rm = TRUE)
+    }
     state$meta$saved_at <- Sys.time()
     .polis_io_write_atomic(state, .polis_journal_path(part), "rds")
     last_id <- state$meta$max_id

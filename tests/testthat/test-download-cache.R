@@ -18,10 +18,12 @@ download_service <- function(root, rows, table = "case") {
         drop = FALSE
       ]
     }
-    if (!is.null(country_code))
+    if (!is.null(country_code)) {
       x <- x[x$CountryISO3Code == country_code, , drop = FALSE]
-    if (toupper(region) != "GLOBAL" && "WHORegion" %in% names(x))
+    }
+    if (toupper(region) != "GLOBAL" && "WHORegion" %in% names(x)) {
       x <- x[x$WHORegion == region, , drop = FALSE]
+    }
     x
   }
   testthat::local_mocked_bindings(
@@ -49,9 +51,13 @@ download_service <- function(root, rows, table = "case") {
     ) {
       e$calls <- e$calls + 1L
       x <- select_rows(min_date, max_date, region, country_code)
-      if (!is.null(last_id)) x <- x[x$Id > last_id, , drop = FALSE]
+      if (!is.null(last_id)) {
+        x <- x[x$Id > last_id, , drop = FALSE]
+      }
       x <- x[order(x$Id), , drop = FALSE]
-      if (!is.null(select)) x <- x[, select, drop = FALSE]
+      if (!is.null(select)) {
+        x <- x[, select, drop = FALSE]
+      }
       utils::head(x, 2L)
     },
     .polis_refetch_missing = function(endpoint, ids, ...) {
@@ -256,7 +262,9 @@ testthat::test_that("resuming an interrupted pull reconciles edits below its cur
   fetch <- polished:::.polis_fetch_id_page
   testthat::local_mocked_bindings(
     .polis_fetch_id_page = function(last_id = NULL, ...) {
-      if (!is.null(last_id) && last_id >= 2) stop("disconnected")
+      if (!is.null(last_id) && last_id >= 2) {
+        stop("disconnected")
+      }
       fetch(last_id = last_id, ...)
     },
     .package = "polished"
@@ -287,4 +295,43 @@ testthat::test_that("event-date tables refresh edits even when their dates are u
   e$rows$value[1] <- 88L
   e$run(min_date = "2024-01-01", max_date = "2024-12-31")
   testthat::expect_equal(readRDS(file.path(root, "raw_im.rds"))$value[1], 88L)
+})
+
+testthat::test_that("duplicate IDs allow download and refresh", {
+  root <- withr::local_tempdir()
+  rows <- cache_rows()
+  duplicate <- rows[1L, , drop = FALSE]
+  duplicate$value <- 44L
+  service <- download_service(root, rbind(rows, duplicate))
+  service$run(min_date = "2024-01-01", max_date = "2024-12-31")
+  path <- file.path(root, "raw_afp.rds")
+  testthat::expect_equal(readRDS(path), rows)
+  service$rows$LastUpdateDate[4L] <- "2024-06-16T08:00:00Z"
+  service$run(min_date = "2024-01-01", max_date = "2024-12-31")
+  expected <- rows
+  expected$value[1L] <- 44L
+  expected$LastUpdateDate[1L] <- service$rows$LastUpdateDate[4L]
+  testthat::expect_equal(readRDS(path), expected)
+  testthat::expect_equal(service$refetched, 1L)
+  calls <- service$calls
+  service$run(min_date = "2024-01-01", max_date = "2024-12-31")
+  testthat::expect_gt(service$calls, calls)
+  testthat::expect_equal(service$refetched, 1L)
+  testthat::expect_equal(readRDS(path), expected)
+})
+
+testthat::test_that("duplicate revisions do not conceal invalid metadata", {
+  rows <- cache_rows()
+  duplicate <- rows[1L, , drop = FALSE]
+  duplicate$LastUpdateDate <- NA_character_
+  testthat::expect_null(polished:::.polis_record_versions(
+    rbind(rows, duplicate),
+    "LastUpdateDate"
+  ))
+  duplicate$Id <- NA_real_
+  duplicate$LastUpdateDate <- rows$LastUpdateDate[1L]
+  testthat::expect_null(polished:::.polis_record_versions(
+    rbind(rows, duplicate),
+    "LastUpdateDate"
+  ))
 })
