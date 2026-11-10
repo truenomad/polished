@@ -32,6 +32,8 @@ utils::globalVariables(c(
   "samples",
   "site_guid",
   "site_name",
+  "sites",
+  "to",
   "x",
   "y"
 ))

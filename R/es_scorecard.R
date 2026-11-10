@@ -12,7 +12,7 @@ utils::globalVariables(c(
   "resolved", "retention_pct", "sabin", "sample_id", "samples_per_month",
   "site", "site_code", "site_name", "span_months", "start", "target",
   "verdict", "weeks", "x", "y", "floor_n", "hit", "km", "first_date",
-  "adm1", "adm2"
+  "adm1", "adm2", "vaccine", "closest"
 ))
 
 # ---- settings ----------------------------------------------------------------
@@ -588,7 +588,7 @@ es_score_cols <- function() {
   samples <- samples |>
     dplyr::left_join(
       campaigns,
-      by = dplyr::join_by(guid, dplyr::closest(date >= start)),
+      by = dplyr::join_by(guid, closest(date >= start)),
       na_matches = "never"
     ) |>
     dplyr::mutate(weeks = as.numeric(date - start) / 7) |>

@@ -31,6 +31,7 @@ utils::globalVariables(c(
   "followup_date",
   "followup_days",
   "followup_findings",
+  "inadequate",
   "invest_n",
   "invest_ok",
   "invest_to_stool1",
@@ -39,6 +40,7 @@ utils::globalVariables(c(
   "no_followup",
   "notify_n",
   "notify_ok",
+  "notify_to_invest",
   "on_time",
   "one_or_none",
   "onset_date",
@@ -48,6 +50,7 @@ utils::globalVariables(c(
   "received",
   "review",
   "specimens",
+  "step",
   "stool_n",
   "stool_ok",
   "stool1_date",
@@ -435,6 +438,7 @@ afp_stool_components <- function(
 #' the `"polished"` rule and leaves unassessed cases out of its denominator.
 #'
 #' @inheritParams afp_stool_components
+#' @inheritParams calc_afp_timeliness
 #' @return A tibble with one row per unit and step: `level`, `guid`, `name`,
 #'   `step`, `met`, `cases` and `pct`.
 #' @examples
@@ -500,6 +504,7 @@ calc_specimen_pathway <- function(
 #' * The percentage is `NA` when there are no inadequate cases.
 #'
 #' @inheritParams afp_stool_components
+#' @inheritParams calc_afp_timeliness
 #' @return A tibble with one row per unit and reason: `level`, `guid`, `name`,
 #'   `reason`, `n`, `inadequate` and `pct`. Units with no inadequate case are
 #'   left out.

@@ -19,6 +19,13 @@ calc_specimen_pathway(
 \arguments{
 \item{cases}{Cleaned AFP cases, one row per case (data.frame or tibble).}
 
+\item{level}{Administrative level to group by: \code{"adm0"} (country, the
+default), \code{"adm1"} (province) or \code{"adm2"} (district). Cases with no
+identifier at that level are left out.}
+
+\item{from, to}{First and last onset date of the reporting window, or \code{NULL}
+for no bound.}
+
 \item{collection_days}{Latest day after onset at which a stool counts as
 collected in time (default 14).}
 
