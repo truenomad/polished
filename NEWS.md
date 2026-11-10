@@ -1,3 +1,62 @@
+# polished 0.3.0
+
+* Added AFP case quality indicators. `calc_afp_timeliness()` reports onset to
+  notification, notification to investigation and investigation to first
+  stool, each over the cases whose interval is recorded.
+  `calc_specimen_pathway()` reports the stool collection steps over every
+  case in the unit and window, and `calc_specimen_reasons()` splits the
+  inadequate cases by reason over the cases classed inadequate.
+  `calc_specimen_receipt_monthly()` and `calc_specimen_receipt_by_area()`
+  give percentiles of days from collection to laboratory receipt among the
+  specimens received, with no threshold. `calc_afp_followup()` counts 60-day
+  follow-up, with completion and timeliness over the inadequate cases due
+  for follow-up. The building blocks are `afp_stool_adequacy()`, now the
+  single stool adequacy classifier with three named definitions,
+  `afp_stool_components()`, `afp_specimen_receipt()` and
+  `afp_followup_status()`.
+* Added the pending classification stage ladder. `calc_pending_stage()`
+  counts open cases by month of onset and by the furthest laboratory stage
+  their specimens reached, with `open_share` over all cases in the month and
+  each stage share over the open cases. `afp_pending_open()`,
+  `afp_pending_dates()`, `afp_specimen_rung()` and `afp_pending_stage()`
+  are the steps it is built from.
+* Added environmental surveillance performance indicators.
+  `calc_es_resolution()` gives the share of samples resolved by collection
+  month, over all samples collected. `calc_es_districts()` and
+  `calc_es_sites()` give the enterovirus and poliovirus shares over resolved
+  samples, so samples still at the laboratory are left out, and site
+  regularity over the months a site was open. `es_reporting_window()`,
+  `es_complete_end()` and `es_sample_state()` set the window and the
+  minimum-sample rule.
+* Added counts of virus detections in comparison windows.
+  `calc_detection_windows()` counts detections, reported cases, positive
+  environmental samples, provinces and clusters in each window, and
+  `calc_detection_comparison()` compares window pairs with the direction
+  rule in `detection_direction()`. These are counts, with no denominator.
+  `detection_slice()`, `detection_default_windows()` and
+  `detection_default_pairs()` prepare the input and the windows.
+* Added the environmental site scorecard. `calc_es_scorecard()` judges each
+  active site on campaign response, over the samples collected within the
+  weeks after the latest campaign in its district, and on neighbour
+  recovery, over the months the site was sampled while a site nearby found
+  target virus.
+  `calc_es_score_network()` pools numerators and denominators across sites,
+  and `calc_es_score_profile()` gives the share of samples with Sabin virus
+  over all samples in each band of weeks since a campaign.
+  `es_score_settings()` and `es_score_cols()` hold the settings and column
+  map.
+* Added a generator of synthetic surveillance tables, moved here from the
+  stand-alone polioindicators package. `simulate_admin_frame()`,
+  `simulate_population()`, `simulate_afp_cases()`, `simulate_es_samples()`,
+  `simulate_detections()`, `simulate_human_specimens()` and
+  `simulate_campaigns()` build invented geography, population, cases,
+  samples, detections, stool specimens and campaign rounds, and
+  `simulate_polio_data()` builds them all on one geography. Every rate,
+  share, delay and label is an argument, results are the same for a seed,
+  and the caller's random state is left as it was. Tests run every
+  indicator module on these tables.
+* dplyr 1.1.0 or later is now required, and rlang is now imported.
+
 # polished 0.2.2
 
 * Read timeouts are now retried. `httr2::req_retry()` defaults

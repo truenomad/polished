@@ -182,6 +182,80 @@ reference:
   contents:
   - calc_polio_indicators
   - available_indicators
+- title: AFP case quality
+  desc: >
+    Timeliness of notification, investigation and stool collection, the stool
+    specimen pathway and the reasons stools were inadequate, days from
+    collection to laboratory receipt, and 60-day follow-up.
+    `afp_stool_adequacy()` is the single stool adequacy classifier.
+  contents:
+  - calc_afp_timeliness
+  - calc_specimen_pathway
+  - calc_specimen_reasons
+  - calc_specimen_receipt_monthly
+  - calc_specimen_receipt_by_area
+  - calc_afp_followup
+  - afp_stool_adequacy
+  - afp_stool_components
+  - afp_specimen_receipt
+  - afp_followup_status
+- title: Pending classification
+  desc: >
+    Cases still awaiting classification by month of onset, placed on a ladder
+    by the furthest laboratory stage their specimens reached.
+  contents:
+  - calc_pending_stage
+  - afp_pending_open
+  - afp_pending_dates
+  - afp_specimen_rung
+  - afp_pending_stage
+- title: Environmental surveillance performance
+  desc: >
+    Sample resolution by month, and enterovirus and poliovirus shares and site
+    regularity by district and by site over a reporting window.
+  contents:
+  - calc_es_resolution
+  - calc_es_districts
+  - calc_es_sites
+  - es_reporting_window
+  - es_complete_end
+  - es_sample_state
+- title: Detection windows
+  desc: >
+    Virus detections counted in comparison windows before a reporting date,
+    and the direction between pairs of windows.
+  contents:
+  - calc_detection_windows
+  - calc_detection_comparison
+  - detection_direction
+  - detection_slice
+  - detection_default_windows
+  - detection_default_pairs
+- title: Environmental site scorecard
+  desc: >
+    Each active environmental site judged on its Sabin virus response after
+    campaigns and on recovery of target virus found at nearby sites, with the
+    network rates and the Sabin profile by weeks since a campaign.
+  contents:
+  - calc_es_scorecard
+  - calc_es_score_network
+  - calc_es_score_profile
+  - es_score_settings
+  - es_score_cols
+- title: Synthetic data
+  desc: >
+    Invented geography, population, AFP cases, environmental samples, virus
+    detections, stool specimens and campaign rounds, shaped like the cleaned
+    tables, for testing and demonstrating indicator code without real records.
+  contents:
+  - simulate_polio_data
+  - simulate_admin_frame
+  - simulate_population
+  - simulate_afp_cases
+  - simulate_es_samples
+  - simulate_detections
+  - simulate_human_specimens
+  - simulate_campaigns
 - title: Data-quality checks
   desc: >
     Per-dataset checks that flag duplicates, blank keys, unreconciled GUIDs,

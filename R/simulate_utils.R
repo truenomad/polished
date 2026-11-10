@@ -13,7 +13,7 @@
         rm(".Random.seed", envir = env)
       }
     } else {
-      assign(".Random.seed", old_seed, envir = env)
+      env[[".Random.seed"]] <- old_seed
     }
   })
   set.seed(seed)

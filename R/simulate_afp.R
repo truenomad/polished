@@ -588,9 +588,11 @@ simulate_afp_cases <- function(admin = simulate_admin_frame(),
     dplyr::mutate(
       dplyr::across(
         dplyr::all_of(chain),
-        \(x) dplyr::if_else(
-          positive, pmin(x, end_date), .sim_censor_after(x, end_date)
-        )
+        \(x) {
+          dplyr::if_else(
+            positive, pmin(x, end_date), .sim_censor_after(x, end_date)
+          )
+        }
       ),
       dplyr::across(
         dplyr::all_of(results),
