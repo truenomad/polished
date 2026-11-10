@@ -9,11 +9,15 @@ Authors@R:
            comment = c(ORCID = "0000-0002-9339-4613"))
 Description: Retrieves and cleans poliovirus surveillance data from the
     World Health Organization Polio Information System ('POLIS') API.
-    Downloads tables to a local cache as 'raw_*' files using Id-range
+    Downloads tables to a local cache as \x27raw_*\x27 files using Id-range
     pagination and year-aligned date filters. Downloads can resume from
     saved checkpoints and run in parallel by year. The cleaning pipeline
-    writes 'polished_*' tables, with
-    optional surveillance indicators and data-quality checks.
+    writes \x27polished_*\x27 tables, with
+    optional surveillance indicators and data-quality checks. Indicator
+    modules cover AFP case quality, pending classification, environmental
+    surveillance performance, detections in comparison windows and the
+    environmental site scorecard, and a generator of synthetic surveillance
+    tables lets them be tested without real records.
 License: MIT + file LICENSE
 URL: https://github.com/truenomad/polished, https://truenomad.github.io/polished/
 BugReports: https://github.com/truenomad/polished/issues
@@ -23,12 +27,13 @@ Depends:
     R (>= 4.1.0)
 Imports:
     cli,
-    dplyr,
+    dplyr (>= 1.1.0),
     httr2,
     janitor,
     lubridate,
     parallel,
     readr,
+    rlang,
     sf,
     stats,
     stringr,
