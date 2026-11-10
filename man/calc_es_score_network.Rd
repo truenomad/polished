@@ -5,38 +5,40 @@
 \title{Network rate of each scorecard measure}
 \usage{
 calc_es_score_network(
-  es,
-  sia,
+  samples,
+  campaigns,
   benchmark_iso = NULL,
-  start_date = as.Date("2016-01-01"),
+  from = as.Date("2016-01-01"),
   as_of = Sys.Date(),
   settings = es_score_settings(),
   cols = list()
 )
 }
 \arguments{
-\item{es}{Cleaned environmental sample table, one row per sample, such as
-\code{polished_es}. Duplicate sample identifiers are kept once.}
+\item{samples}{Cleaned environmental sample table, one row per sample,
+such as \code{polished_es}. Duplicate sample identifiers are kept once.}
 
-\item{sia}{Cleaned campaign table, such as \code{polished_sia}.}
+\item{campaigns}{Cleaned campaign table, such as \code{polished_sia}.}
 
 \item{benchmark_iso}{ISO3 codes of the countries that make up the network.
-\code{NULL} (default) uses every country in \code{es}.}
+\code{NULL} (default) uses every country in \code{samples}.}
 
-\item{start_date}{First collection date read. Default 1 January 2016.}
+\item{from}{First collection date read. Default 1 January 2016.}
 
-\item{as_of}{Last collection date read. Default today.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. It is the last collection date read.}
 
 \item{settings}{Windows, distances, thresholds and labels, built with
 \code{\link[=es_score_settings]{es_score_settings()}}.}
 
-\item{cols}{Named list of column overrides, by source (\code{es}, \code{sia},
-\code{isolation}), in the style of \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}. See
-\code{\link[=es_score_cols]{es_score_cols()}} for the keys and defaults.}
+\item{cols}{Named list of column overrides keyed by table (\code{samples},
+\code{campaigns}, \code{isolation}), in the style of \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}.
+See \code{\link[=es_score_cols]{es_score_cols()}} for the keys and defaults.}
 }
 \value{
 A tibble with one row per measure (\code{axis}) and columns \code{sites},
-\code{occasions} (the pooled denominator) and \code{network_rate} (a proportion).
+\code{occasions} (the pooled denominator) and \code{network_rate} (a proportion on
+a scale of 0 to 1).
 }
 \description{
 Pools the two scorecard measures over every active site in the network that

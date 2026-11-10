@@ -11,10 +11,11 @@ afp_specimen_rung(specimens, cols = list())
 (from \code{\link[=clean_human_spec]{clean_human_spec()}}).}
 
 \item{cols}{A named list overriding the default column names, for example
-\code{list(specimens = list(collected = "my_date"))}. The keys this function
-reads from \code{specimens} are \code{epid} (\code{"epid"}), \code{collected}
-(\code{"date_stool_collected"}), \code{received} (\code{"date_stool_received_in_lab"}),
-\code{culture_date} (\code{"date_final_cell_culture_results"}), \code{itd_date}
+\code{list(specimens = list(date_collected = "my_date"))}. The keys this
+function reads from \code{specimens} are \code{epid} (\code{"epid"}), \code{date_collected}
+(\code{"date_stool_collected"}), \code{date_received}
+(\code{"date_stool_received_in_lab"}), \code{culture_date}
+(\code{"date_final_cell_culture_results"}), \code{itd_date}
 (\code{"date_itd_result_reported"}) and \code{sequencing_date}
 (\code{"dateof_sequencing"}).}
 }
@@ -23,8 +24,8 @@ A tibble with one row per specimen and the columns \code{epid},
 \code{collected}, \code{received}, \code{resulted} (dates) and \code{rung} (integer 0 to 3).
 }
 \description{
-Gives each specimen the rung of the laboratory ladder it has reached. The
-rungs are:
+Returns one row per stool specimen with its collection, receipt and result
+dates and the rung of the laboratory ladder it has reached. The rungs are:
 }
 \details{
 \itemize{
@@ -52,5 +53,7 @@ spec <- tibble::tibble(
 afp_specimen_rung(spec)
 }
 \seealso{
-\code{\link[=afp_pending_stage]{afp_pending_stage()}} for the rung of a case.
+\code{\link[=afp_specimen_receipt]{afp_specimen_receipt()}} for the days from collection to
+laboratory receipt of each specimen; \code{\link[=afp_pending_stage]{afp_pending_stage()}} for the rung
+of a case.
 }

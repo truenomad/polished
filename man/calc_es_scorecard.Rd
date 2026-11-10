@@ -5,46 +5,48 @@
 \title{Environmental site scorecard}
 \usage{
 calc_es_scorecard(
-  es,
-  sia,
+  samples,
+  campaigns,
   isolation = NULL,
   country_iso = NULL,
   benchmark_iso = country_iso,
-  start_date = as.Date("2016-01-01"),
+  from = as.Date("2016-01-01"),
   as_of = Sys.Date(),
   settings = es_score_settings(),
   cols = list()
 )
 }
 \arguments{
-\item{es}{Cleaned environmental sample table, one row per sample, such as
-\code{polished_es}. Duplicate sample identifiers are kept once.}
+\item{samples}{Cleaned environmental sample table, one row per sample,
+such as \code{polished_es}. Duplicate sample identifiers are kept once.}
 
-\item{sia}{Cleaned campaign table, such as \code{polished_sia}.}
+\item{campaigns}{Cleaned campaign table, such as \code{polished_sia}.}
 
 \item{isolation}{Optional site table carrying each site's enterovirus
-isolation percentage (\code{npev_pct}), the number of samples with a final
-result (\code{resolved}) and the months sampled (\code{months_sampled}), one row
-per site. Without it, the low isolation rule is not applied and those
-columns are \code{NA}.}
+isolation percentage (\code{ev_pct}, on a scale of 0 to 100), the number of
+samples with a final result (\code{resolved}) and the months sampled
+(\code{months_sampled}), one row per site, such as the result of
+\code{\link[=calc_es_site_performance]{calc_es_site_performance()}}. Without it, the low isolation rule is not
+applied and those columns are \code{NA}.}
 
 \item{country_iso}{ISO3 codes of the countries whose sites are reported.
-\code{NULL} (default) reports every country in \code{es}.}
+\code{NULL} (default) reports every country in \code{samples}.}
 
 \item{benchmark_iso}{ISO3 codes of the countries whose samples, campaigns
 and sites make up the network: the pool for neighbours, the latest
 sample and the network rates. Defaults to \code{country_iso}.}
 
-\item{start_date}{First collection date read. Default 1 January 2016.}
+\item{from}{First collection date read. Default 1 January 2016.}
 
-\item{as_of}{Last collection date read. Default today.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. It is the last collection date read.}
 
 \item{settings}{Windows, distances, thresholds and labels, built with
 \code{\link[=es_score_settings]{es_score_settings()}}.}
 
-\item{cols}{Named list of column overrides, by source (\code{es}, \code{sia},
-\code{isolation}), in the style of \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}. See
-\code{\link[=es_score_cols]{es_score_cols()}} for the keys and defaults.}
+\item{cols}{Named list of column overrides keyed by table (\code{samples},
+\code{campaigns}, \code{isolation}), in the style of \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}.
+See \code{\link[=es_score_cols]{es_score_cols()}} for the keys and defaults.}
 }
 \value{
 A tibble with one row per active site in \code{country_iso}, sorted by
@@ -52,7 +54,10 @@ verdict and judged percentage. For each measure (\code{campaign_response},
 \code{neighbour_recovery}) it carries \code{n_}, \code{k_}, \code{rate_}, \code{lo_} and \code{hi_}
 columns, followed by the isolation, retention, background and trend
 columns, the percentages, \code{judged_pct}, \code{judged_basis} and the \code{verdict}
-factor.
+factor. The \code{rate_}, \code{lo_} and \code{hi_} columns are proportions on a scale
+of 0 to 1. Every \verb{_pct} column is on a scale of 0 to 100, and
+\code{drop_pts} is in percentage points. \code{retention_pct} is a percentage of
+campaign response, so it can exceed 100.
 }
 \description{
 Judges whether each environmental surveillance site detects virus when
@@ -86,7 +91,8 @@ measures are reported beside the verdict but do not decide it: retention,
 the share of samples between \code{mid_weeks} weeks after a campaign with Sabin
 detected, as a percentage of campaign response; and background, the share
 of samples more than \code{floor_weeks} weeks after a campaign with Sabin
-detected.
+detected. Retention is \code{NA} when the site's campaign response rate is zero
+or missing, since it cannot be expressed as a percentage of nothing.
 }
 
 \section{Trend}{

@@ -9,7 +9,7 @@ calc_pending_stage(
   specimens = NULL,
   as_of = Sys.Date(),
   window_months = 12L,
-  window_end = NULL,
+  to = NULL,
   trim_window = TRUE,
   stale_days = 120L,
   level = "adm0",
@@ -27,13 +27,14 @@ It should already be limited to the country or countries of interest.}
 \code{\link[=clean_human_spec]{clean_human_spec()}}). When \code{NULL}, cases are placed from their own
 stool collection dates only.}
 
-\item{as_of}{The date the waiting time is measured to. It also decides
-which months are marked \code{partial}. Defaults to today.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. The waiting time is measured to it, and
+it decides which months are marked \code{partial}.}
 
 \item{window_months}{How many months of onset the window holds before
 trimming. The default is 12.}
 
-\item{window_end}{Any date in the last month of the window. When \code{NULL}
+\item{to}{Any date in the last month of onset in the window. When \code{NULL}
 (the default) it is the latest month of onset among the kept cases.}
 
 \item{trim_window}{If \code{TRUE} (the default), cut the start of the window
@@ -44,9 +45,8 @@ counted in \code{over_stale}. The default is 120, the point after which a
 result arrives too late to change the response.}
 
 \item{level}{The reporting level: \code{"adm0"} (country, the default),
-\code{"adm1"} (province) or \code{"adm2"} (district). The table carries the guid
-and name of the chosen level and of every level above it, and has one
-row per area that holds at least one kept case and month.}
+\code{"adm1"} (province) or \code{"adm2"} (district). The table has one row per
+area that holds at least one kept case, and month.}
 
 \item{surveillance_type}{Surveillance types to keep, matched against the
 \code{surveillance_type} column (\code{"surveillance_type_name"}). The default
@@ -68,7 +68,9 @@ of the chosen level.}
 }
 \value{
 A tibble with one row per area and month of onset, sorted by area
-and month, with the admin columns, \code{onset_month} and the counts above.
+and month: \code{level}, \code{guid} and \code{name} for the chosen level, the GUID and
+name columns of every level above it (for example \code{adm0_guid} and
+\code{adm0} when \code{level = "adm1"}), \code{onset_month} and the counts above.
 }
 \description{
 Builds the pending-classification stage table: one row per area and month
@@ -86,9 +88,8 @@ they have a paralysis onset date. Each case is flagged open with
 \section{The reporting window}{
 
 The window holds \code{window_months} calendar months of onset, ending with the
-month of \code{window_end}. By default \code{window_end} is the latest month of onset
-among the kept cases, not \code{as_of}, because the running month holds few
-onsets yet. With \code{trim_window = TRUE} the window is then cut back to the
+month of \code{to}. By default \code{to} is the latest month of onset among the kept
+cases, not \code{as_of}, because the running month holds few onsets yet. With \code{trim_window = TRUE} the window is then cut back to the
 oldest month that still holds an open case, so months the laboratory has
 fully cleared at the start of the window are dropped. Every month left in
 the window keeps a row in every area, including months with no cases.
@@ -100,12 +101,13 @@ Open cases with an onset before the window are not counted.
 \itemize{
 \item \code{records}: AFP cases with onset in the month.
 \item \code{open}: those cases still awaiting classification.
-\item \code{open_share}: \code{open / records}, or \code{NA} when the month has no cases.
+\item \code{open_share}: \code{open / records} on a scale of 0 to 1, or \code{NA} when the
+month has no cases.
 \item \verb{<stage>_n}: open cases on each stage of the ladder, one column per
 entry of \code{stages}. Every stage keeps a column even when no case
 reached it.
-\item \verb{<stage>_share}: each stage's share of the month's open cases, or \code{0}
-when the month has no open case.
+\item \verb{<stage>_share}: each stage's share of the month's open cases on a
+scale of 0 to 1, or \code{0} when the month has no open case.
 \item \code{median_days}: the median number of days from onset to \code{as_of} among
 the month's open cases, or \code{NA} when it has none.
 \item \code{over_stale}: open cases that have waited more than \code{stale_days} days

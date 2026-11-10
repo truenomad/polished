@@ -6,7 +6,7 @@
 \usage{
 es_reporting_window(
   samples,
-  as_of,
+  as_of = Sys.Date(),
   window_months = 12L,
   resolved_min = 0.8,
   settle_months = 3L,
@@ -17,8 +17,9 @@ es_reporting_window(
 \item{samples}{Cleaned environmental samples, one row per sample, as
 returned by \code{\link[=clean_es]{clean_es()}}.}
 
-\item{as_of}{Date the analysis runs to. Samples collected after it, or with
-no collection date, are left out.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. Samples collected after it, or with no
+collection date, are left out.}
 
 \item{window_months}{Number of collection months in the window. Default
 \code{12}.}
@@ -29,18 +30,21 @@ month to count as complete. Default \code{0.80}.}
 \item{settle_months}{Number of months after which a month still below
 \code{resolved_min} is taken as final. Default \code{3}.}
 
-\item{cols}{Named list overriding the default column names, in the same
-shape as in \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}, for example
-\code{list(es = list(vtype = "virus_type"))}. The defaults are the polished ES
-columns plus \code{vtype = "vtype"}, \code{site_guid = "site_guid"},
-\code{site_x = "site_x_coordinate"}, \code{site_y = "site_y_coordinate"} and
-\code{district_key = "adm2_guid"}.}
+\item{cols}{Named list overriding the default column names, keyed by
+table, in the same shape as in \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}, for example
+\code{list(samples = list(vtype = "virus_type"))}. The \code{samples} defaults are
+the polished ES columns, with \code{site_name = "site_name"}, plus
+\code{vtype = "vtype"}, \code{site_guid = "site_guid"},
+\code{longitude = "site_x_coordinate"}, \code{latitude = "site_y_coordinate"} and
+\code{district_key = "adm2_guid"}, the column samples are counted by district
+on.}
 }
 \value{
 A one-row tibble with \code{window_start}, \code{window_end}, \code{last_month}
 (the first day of the last month in the window) and \code{lag_months} (how many
 whole months the last month in the window sits behind the month of
-\code{as_of}).
+\code{as_of}). Pass \code{window_start} and \code{window_end} as \code{from} and \code{to} to
+\code{\link[=calc_es_district_performance]{calc_es_district_performance()}} or \code{\link[=calc_es_site_performance]{calc_es_site_performance()}}.
 }
 \description{
 Sets the window the ES indicators are computed over. The window ends on the

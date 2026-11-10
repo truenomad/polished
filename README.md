@@ -68,15 +68,19 @@ help page (e.g. `?get_polis_data`) for usage and data-formatting requirements.
 
 Five indicator modules read the cleaned `polished_*` tables alongside
 `calc_polio_indicators()`. Each module documents its numerator and
-denominator, and takes a `cols` argument when a column is named differently.
+denominator, and takes a `cols` argument, keyed by table name (`cases`,
+`specimens`, `samples`, `campaigns`, `detections`), when a column is named
+differently. The reporting date is always `as_of`, grouping by
+administrative area is always `level`, and area tables always carry
+`level`, `guid` and `name`.
 
-- AFP case quality: `calc_afp_timeliness()`, `calc_specimen_pathway()`,
-  `calc_specimen_reasons()`, `calc_specimen_receipt_monthly()`,
-  `calc_specimen_receipt_by_area()` and `calc_afp_followup()`, with
+- AFP case quality: `calc_afp_timeliness()`, `calc_afp_specimen_pathway()`,
+  `calc_afp_specimen_reasons()`, `calc_afp_specimen_receipt_monthly()`,
+  `calc_afp_specimen_receipt_by_area()` and `calc_afp_followup()`, with
   `afp_stool_adequacy()` as the single stool adequacy classifier.
 - Pending classification: `calc_pending_stage()`.
 - Environmental surveillance performance: `calc_es_resolution()`,
-  `calc_es_districts()` and `calc_es_sites()`.
+  `calc_es_district_performance()` and `calc_es_site_performance()`.
 - Detections in comparison windows: `calc_detection_windows()` and
   `calc_detection_comparison()`.
 - The environmental site scorecard: `calc_es_scorecard()`,

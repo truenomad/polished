@@ -4,14 +4,20 @@
 \alias{es_complete_end}
 \title{Last day of laboratory-complete environmental surveillance}
 \usage{
-es_complete_end(resolution, as_of, resolved_min = 0.8, settle_months = 3L)
+es_complete_end(
+  resolution,
+  as_of = Sys.Date(),
+  resolved_min = 0.8,
+  settle_months = 3L
+)
 }
 \arguments{
 \item{resolution}{A monthly summary with columns \code{month} (the first day of
 each collection month) and \code{resolved_share} (between 0 and 1), as returned
 by \code{\link[=calc_es_resolution]{calc_es_resolution()}}.}
 
-\item{as_of}{Date the analysis runs to.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. The result is never later than it.}
 
 \item{resolved_min}{Share of a month's samples that must be resolved for the
 month to count as complete. Default \code{0.80}.}

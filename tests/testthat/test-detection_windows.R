@@ -25,6 +25,11 @@ make_detw_detections <- function() {
         epid = "E-NA", country_iso3code = "AFG", virus_date = as.Date(NA),
         source = "AFP", adm1 = "P1", virus_cluster = "C1"
       )
+    ) |>
+    dplyr::mutate(
+      adm0_guid = paste0("G-", country_iso3code),
+      adm0 = country_iso3code,
+      adm1_guid = dplyr::if_else(is.na(adm1), NA, paste0("G-", adm1))
     )
 }
 
@@ -87,31 +92,33 @@ testthat::test_that("both ends of each window are included and no more", {
   testthat::expect_identical(in_window(767), character(0))
 })
 
-testthat::test_that("grouping by country completes every window with zeros", {
+testthat::test_that("counting by country completes every window with zeros", {
   d <- make_detw_detections()
-  res <- polished::calc_detection_windows(
-    d, detw_as_of, by = "country_iso3code"
-  )
-  pak <- dplyr::filter(res, country_iso3code == "PAK")
+  res <- polished::calc_detection_windows(d, detw_as_of, level = "adm0")
+  testthat::expect_identical(names(res)[1:3], c("level", "guid", "name"))
+  testthat::expect_identical(unique(res$level), "adm0")
+  pak <- dplyr::filter(res, guid == "G-PAK")
+  testthat::expect_identical(unique(pak$name), "PAK")
   testthat::expect_identical(pak$detections, c(1L, 0L, 1L, 1L))
   testthat::expect_identical(pak$provinces, c(1L, 0L, 1L, 1L))
   testthat::expect_identical(nrow(res), 8L)
 
   total <- polished::calc_detection_windows(d, detw_as_of)
+  testthat::expect_false(any(c("level", "guid", "name") %in% names(total)))
   summed <- dplyr::summarise(
     res, detections = sum(detections), .by = "window"
   )
   testthat::expect_identical(summed$detections, total$detections)
 })
 
-testthat::test_that("grouping by country and province is supported", {
+testthat::test_that("counting by province leaves out rows with no province", {
   res <- polished::calc_detection_windows(
-    make_detw_detections(), "2024-07-01",
-    by = c("country_iso3code", "adm1")
+    make_detw_detections(), "2024-07-01", level = "adm1"
   )
-  p2 <- dplyr::filter(res, adm1 == "P2")
+  p2 <- dplyr::filter(res, guid == "G-P2")
   testthat::expect_identical(p2$detections, c(0L, 2L, 1L, 1L))
   testthat::expect_true(all(res$provinces <= 1L))
+  testthat::expect_false(anyNA(res$guid))
 })
 
 testthat::test_that("windows, sources and columns can be changed", {
@@ -121,7 +128,7 @@ testthat::test_that("windows, sources and columns can be changed", {
     d, detw_as_of,
     windows = tibble::tibble(window = "week", from = 6, to = 0),
     env_sources = c("Environmental", "Contact"),
-    cols = list(virus_date = "onset", province = "prov")
+    cols = list(detections = list(virus_date = "onset", adm1 = "prov"))
   )
   testthat::expect_identical(res$window, "week")
   testthat::expect_identical(res$detections, 1L)
@@ -130,7 +137,7 @@ testthat::test_that("windows, sources and columns can be changed", {
     d, detw_as_of,
     windows = tibble::tibble(window = "all", from = 800, to = 0),
     env_sources = c("Environmental", "Contact"),
-    cols = list(virus_date = "onset", province = "prov")
+    cols = list(detections = list(virus_date = "onset", adm1 = "prov"))
   )
   testthat::expect_identical(wide$positive_es, 4L)
   testthat::expect_identical(wide$reported_cases, 5L)
@@ -163,9 +170,10 @@ testthat::test_that("the comparison sets each window against the previous", {
 testthat::test_that("the comparison handles zero periods and groups", {
   res <- polished::calc_detection_comparison(
     make_detw_detections(), detw_as_of,
-    by = "country_iso3code", metrics = "detections"
+    level = "adm0", metrics = "detections"
   )
-  pak <- dplyr::filter(res, country_iso3code == "PAK")
+  testthat::expect_identical(names(res)[1:3], c("level", "guid", "name"))
+  pak <- dplyr::filter(res, guid == "G-PAK")
   testthat::expect_identical(pak$current, c(1L, 1L))
   testthat::expect_identical(pak$previous, c(0L, 1L))
   testthat::expect_identical(pak$pct_change, c(Inf, 0))
@@ -251,10 +259,10 @@ testthat::test_that("the slice reads raw POLIS names through cols", {
   res <- polished::detection_slice(
     raw,
     key = c("EPID", "VirusTypeName"),
-    cols = list(
+    cols = list(detections = list(
       epid = "EPID", vtype = "VirusTypeName", country = "CountryISO3Code",
       virus_date = "VirusDate"
-    )
+    ))
   )
   testthat::expect_identical(res$EPID, "A-1")
   testthat::expect_identical(res$VirusTypeName, "WPV1")
@@ -266,7 +274,6 @@ testthat::test_that("arguments are validated", {
   testthat::expect_error(calc(list(), detw_as_of), "data.frame")
   testthat::expect_error(calc(d, "not a date"), "single date")
   testthat::expect_error(calc(d, detw_as_of + 0:1), "single date")
-  testthat::expect_error(calc(d), "single date")
   testthat::expect_error(
     calc(d, detw_as_of, windows = tibble::tibble(window = "a", from = 1)),
     "missing from"
@@ -287,16 +294,18 @@ testthat::test_that("arguments are validated", {
     "once"
   )
   testthat::expect_error(
-    calc(d, detw_as_of, cols = list(onset = "virus_date")), "unknown role"
+    calc(d, detw_as_of, cols = list(onset = "virus_date")), "Unknown source"
   )
   testthat::expect_error(
-    calc(d, detw_as_of, cols = list(province = "adm9")), "missing from"
+    calc(d, detw_as_of, cols = list(detections = list(onset = "virus_date"))),
+    "unknown role"
   )
-  testthat::expect_error(calc(d, detw_as_of, by = "nope"), "missing from")
   testthat::expect_error(
-    calc(dplyr::mutate(d, window = 1), detw_as_of, by = "window"),
-    "reserves"
+    calc(d, detw_as_of, cols = list(detections = list(adm1 = "adm9"))),
+    "missing from"
   )
+  testthat::expect_error(calc(d, detw_as_of, level = "adm3"), "level")
+  testthat::expect_error(calc(d, detw_as_of, level = "adm2"), "missing from")
   testthat::expect_error(calc(d, detw_as_of, env_sources = 1), "character")
 
   comp <- polished::calc_detection_comparison

@@ -26,7 +26,8 @@ calc_afp_followup(
 \arguments{
 \item{cases}{Cleaned AFP cases, one row per case (data.frame or tibble).}
 
-\item{as_of}{Date the day counts run to (default today).}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. Every day count runs to it.}
 
 \item{window_months}{Months of onset to report (default 6).}
 

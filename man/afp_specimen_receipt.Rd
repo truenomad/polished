@@ -39,11 +39,12 @@ A tibble with \code{epid}, \code{collected}, \code{received}, \code{days},
 \code{collection_month}, \code{level}, \code{guid} and \code{name}.
 }
 \description{
-One row per stool specimen from the supplied AFP cases, with the days from
-collection to receipt in the laboratory. A specimen without a collection
-date is dropped. A receipt dated before collection is treated as an entry
-error and its interval set to \code{NA}. Each specimen takes the administrative
-unit of the first case row with its EPID.
+Returns one row per stool specimen of the supplied AFP cases, with the days
+from collection to receipt in the laboratory and the case's administrative
+unit. A specimen without a collection date is dropped. A receipt dated
+before collection is treated as an entry error and its interval set to
+\code{NA}. Each specimen takes the administrative unit of the first case row
+with its EPID.
 }
 \examples{
 cases <- tibble::tibble(
@@ -58,4 +59,8 @@ specimens <- tibble::tibble(
   date_stool_received_in_lab = as.Date(c("2025-03-09", NA, NA))
 )
 afp_specimen_receipt(specimens, cases)
+}
+\seealso{
+\code{\link[=afp_specimen_rung]{afp_specimen_rung()}} for the laboratory stage each specimen has
+reached.
 }

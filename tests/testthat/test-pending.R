@@ -191,7 +191,11 @@ testthat::test_that("calc_pending_stage counts each stage by onset month", {
   testthat::expect_identical(tab$over_stale, c(1L, 0L, 0L, 0L))
   testthat::expect_equal(tab$open_share, c(2 / 3, 1, 0.5, 1))
   testthat::expect_identical(tab$partial, c(FALSE, FALSE, FALSE, TRUE))
-  testthat::expect_identical(tab$adm0_guid, rep("G0", 4))
+  testthat::expect_identical(names(tab)[1:3], c("level", "guid", "name"))
+  testthat::expect_identical(tab$level, rep("adm0", 4))
+  testthat::expect_identical(tab$guid, rep("G0", 4))
+  testthat::expect_identical(tab$name, rep("COUNTRY", 4))
+  testthat::expect_false(any(c("adm0_guid", "adm0") %in% names(tab)))
 })
 
 testthat::test_that("the stale flag counts only waits beyond stale_days", {
@@ -201,7 +205,7 @@ testthat::test_that("the stale flag counts only waits beyond stale_days", {
   testthat::expect_identical(pend_table(stale_days = 121L)$over_stale[1], 0L)
 })
 
-testthat::test_that("the window follows window_months, window_end and trim", {
+testthat::test_that("the window follows window_months, to and trim", {
   untrimmed <- pend_table(trim_window = FALSE)
   testthat::expect_identical(nrow(untrimmed), 12L)
   testthat::expect_identical(min(untrimmed$onset_month), as.Date("2024-07-01"))
@@ -212,7 +216,7 @@ testthat::test_that("the window follows window_months, window_end and trim", {
     short$onset_month, as.Date(c("2025-05-01", "2025-06-01"))
   )
 
-  ended <- pend_table(window_end = as.Date("2025-04-30"), trim_window = FALSE)
+  ended <- pend_table(to = as.Date("2025-04-30"), trim_window = FALSE)
   testthat::expect_identical(max(ended$onset_month), as.Date("2025-04-01"))
 })
 
@@ -241,14 +245,16 @@ testthat::test_that("surveillance_type = NULL keeps every type", {
 testthat::test_that("province level gives one row per province and month", {
   tab <- pend_table(level = "adm1")
   testthat::expect_identical(nrow(tab), 8L)
-  testthat::expect_true(
-    all(c("adm0_guid", "adm1_guid", "adm1") %in% names(tab))
+  testthat::expect_identical(
+    names(tab)[1:5], c("level", "guid", "name", "adm0_guid", "adm0")
   )
-  p1 <- dplyr::filter(tab, adm1_guid == "P1")
+  testthat::expect_identical(unique(tab$level), "adm1")
+  p1 <- dplyr::filter(tab, guid == "P1")
+  testthat::expect_identical(unique(p1$name), "PA")
   testthat::expect_identical(p1$records, c(3L, 0L, 1L, 0L))
   testthat::expect_identical(p1$open, c(2L, 0L, 0L, 0L))
   testthat::expect_true(is.na(p1$open_share[2]))
-  p2 <- dplyr::filter(tab, adm1_guid == "P2")
+  p2 <- dplyr::filter(tab, guid == "P2")
   testthat::expect_identical(p2$at_lab_n, c(0L, 1L, 0L, 0L))
   testthat::expect_identical(sum(tab$open), 5L)
 })
@@ -256,10 +262,10 @@ testthat::test_that("province level gives one row per province and month", {
 testthat::test_that("district level gives one row per district and month", {
   tab <- pend_table(level = "adm2")
   testthat::expect_identical(nrow(tab), 12L)
-  d1 <- dplyr::filter(tab, adm2_guid == "D1")
+  d1 <- dplyr::filter(tab, guid == "D1")
   testthat::expect_identical(d1$records, c(2L, 0L, 1L, 0L))
   testthat::expect_identical(d1$none_n, c(1L, 0L, 0L, 0L))
-  d2 <- dplyr::filter(tab, adm2_guid == "D2")
+  d2 <- dplyr::filter(tab, guid == "D2")
   testthat::expect_identical(d2$collected_n, c(1L, 0L, 0L, 0L))
   testthat::expect_identical(d2$median_days[1], 120)
   testthat::expect_identical(sum(tab$over_stale), 1L)
@@ -274,6 +280,14 @@ testthat::test_that("cols maps renamed columns", {
     cols = list(cases = list(onset_date = "onset_dt"))
   )
   testthat::expect_identical(tab$open, pend_table()$open)
+
+  spec <- dplyr::rename(pend_specimens(), got = "date_stool_received_in_lab")
+  rung <- polished::afp_specimen_rung(
+    spec, cols = list(specimens = list(date_received = "got"))
+  )
+  testthat::expect_identical(
+    rung$rung, polished::afp_specimen_rung(pend_specimens())$rung
+  )
 })
 
 # ---- validation -------------------------------------------------------------
@@ -285,6 +299,9 @@ testthat::test_that("arguments are validated", {
   testthat::expect_error(pend_table(stale_days = -1), "stale_days")
   testthat::expect_error(pend_table(stale_days = 1.5), "stale_days")
   testthat::expect_error(pend_table(trim_window = NA), "trim_window")
+  testthat::expect_error(
+    pend_table(to = as.Date(c("2025-01-01", "2025-02-01"))), "single date"
+  )
   testthat::expect_error(pend_table(stages = c("a", "b", "c")), "stages")
   testthat::expect_error(
     polished::calc_pending_stage(pend_cases(), as_of = NA), "as_of"

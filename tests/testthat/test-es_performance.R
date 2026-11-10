@@ -87,11 +87,14 @@ testthat::test_that("no complete month is an error", {
 })
 
 testthat::test_that("district shares divide by resolved samples", {
-  out <- calc_es_districts(
+  out <- calc_es_district_performance(
     esp_samples(), esp_as_of,
-    districts = esp_districts(), window_months = 6
+    admin_units = esp_districts(), window_months = 6
   )
+  testthat::expect_equal(names(out)[1:4], c("level", "guid", "name", "adm1"))
+  testthat::expect_equal(unique(out$level), "adm2")
   testthat::expect_equal(out$guid, c("D1", "D2", "D3"))
+  testthat::expect_equal(out$name, c("Da", "Db", "Dc"))
   testthat::expect_equal(out$sites, c(1L, 1L, 0L))
   testthat::expect_equal(out$samples, c(7L, 2L, 0L))
   testthat::expect_equal(out$resolved, c(6L, 2L, 0L))
@@ -107,9 +110,11 @@ testthat::test_that("district shares divide by resolved samples", {
 })
 
 testthat::test_that("without a district table only sampled districts appear", {
-  out <- calc_es_districts(esp_samples(), esp_as_of, window_months = 6)
+  out <- calc_es_district_performance(
+    esp_samples(), esp_as_of, window_months = 6
+  )
   testthat::expect_equal(out$guid, c("D1", "D2"))
-  testthat::expect_equal(out$adm2, c("Da", "Db"))
+  testthat::expect_equal(out$name, c("Da", "Db"))
 })
 
 testthat::test_that("a district with only pending samples has no share", {
@@ -120,9 +125,9 @@ testthat::test_that("a district with only pending samples has no share", {
       ),
       vtype = dplyr::if_else(adm2_guid == "D2", NA_character_, vtype)
     )
-  out <- calc_es_districts(
+  out <- calc_es_district_performance(
     es, esp_as_of,
-    window = as.Date(c("2024-01-01", "2024-06-30"))
+    from = "2024-01-01", to = "2024-06-30"
   )
   d2 <- dplyr::filter(out, guid == "D2")
   testthat::expect_equal(d2$resolved, 0L)
@@ -137,23 +142,23 @@ testthat::test_that("a retired district key is repaired through the lookup", {
       adm2_guid == "D2", "OLD", adm2_guid
     ))
   lookup <- tibble::tibble(from = "OLD", to = "D2")
-  out <- calc_es_districts(
+  out <- calc_es_district_performance(
     es, esp_as_of,
-    districts = esp_districts(), guid_lookup = lookup, window_months = 6
+    admin_units = esp_districts(), guid_lookup = lookup, window_months = 6
   )
   testthat::expect_equal(out$samples, c(7L, 2L, 0L))
   # the repaired key can also come in as a column
   es$repaired <- esp_samples()$adm2_guid
-  out2 <- calc_es_districts(
+  out2 <- calc_es_district_performance(
     es, esp_as_of,
-    districts = esp_districts(), window_months = 6,
-    cols = list(es = list(district_key = "repaired"))
+    admin_units = esp_districts(), window_months = 6,
+    cols = list(samples = list(district_key = "repaired"))
   )
   testthat::expect_equal(out2$samples, c(7L, 2L, 0L))
 })
 
 testthat::test_that("site regularity counts only the months a site was open", {
-  out <- calc_es_sites(esp_samples(), esp_as_of, window_months = 6)
+  out <- calc_es_site_performance(esp_samples(), esp_as_of, window_months = 6)
   # sorted lowest enterovirus share first
   testthat::expect_equal(out$site_guid, c("S2", "S1"))
   testthat::expect_equal(out$samples, c(2L, 7L))
@@ -179,14 +184,14 @@ testthat::test_that("site regularity counts only the months a site was open", {
 })
 
 testthat::test_that("rounding and thresholds follow the arguments", {
-  out <- calc_es_sites(
+  out <- calc_es_site_performance(
     esp_samples(), esp_as_of,
     window_months = 6, digits = NULL, ev_threshold = 60, min_samples = 2
   )
   testthat::expect_equal(out$ev_pct, c(50, 400 / 6))
   testthat::expect_equal(out$ev_meets_standard, c(FALSE, TRUE))
   testthat::expect_equal(as.character(out$ev_state), c("Measured", "Measured"))
-  three_in_four <- calc_es_sites(
+  three_in_four <- calc_es_site_performance(
     esp_samples(), esp_as_of,
     window_months = 6, regularity_breaks = c(50, 100)
   )
@@ -197,11 +202,29 @@ testthat::test_that("rounding and thresholds follow the arguments", {
 
 testthat::test_that("column names can be overridden", {
   es <- dplyr::rename(esp_samples(), virus_type = vtype)
-  out <- calc_es_sites(
+  out <- calc_es_site_performance(
     es, esp_as_of,
-    window_months = 6, cols = list(es = list(vtype = "virus_type"))
+    window_months = 6, cols = list(samples = list(vtype = "virus_type"))
   )
   testthat::expect_equal(out$ev_n, c(1L, 4L))
+
+  es <- dplyr::rename(esp_samples(), lon = site_x_coordinate)
+  out <- calc_es_site_performance(
+    es, esp_as_of,
+    window_months = 6, cols = list(samples = list(longitude = "lon"))
+  )
+  testthat::expect_equal(out$x, c(66, 65))
+})
+
+testthat::test_that("a window given by dates matches the computed window", {
+  win <- es_reporting_window(esp_samples(), esp_as_of, window_months = 6)
+  testthat::expect_equal(
+    calc_es_site_performance(
+      esp_samples(), esp_as_of,
+      from = win$window_start, to = win$window_end
+    ),
+    calc_es_site_performance(esp_samples(), esp_as_of, window_months = 6)
+  )
 })
 
 testthat::test_that("the minimum-sample rule has three states", {
@@ -234,41 +257,55 @@ testthat::test_that("arguments are validated", {
     es_reporting_window(es, esp_as_of, window_months = 0), "whole number"
   )
   testthat::expect_error(
-    calc_es_districts(es, esp_as_of, pv_pattern = NA), "regular expression"
+    calc_es_district_performance(es, esp_as_of, pv_pattern = NA),
+    "regular expression"
   )
   testthat::expect_error(
-    calc_es_districts(es, esp_as_of, ev_threshold = 150), "percentage"
+    calc_es_district_performance(es, esp_as_of, ev_threshold = 150),
+    "percentage"
   )
   testthat::expect_error(
-    calc_es_districts(
+    calc_es_district_performance(
       es, esp_as_of,
-      window = as.Date(c("2024-06-30", "2024-01-01"))
+      from = "2024-06-30", to = "2024-01-01"
     ),
-    "start date"
+    "single dates"
   )
   testthat::expect_error(
-    calc_es_districts(
+    calc_es_district_performance(es, esp_as_of, from = "2024-01-01"),
+    "both"
+  )
+  testthat::expect_error(
+    calc_es_district_performance(
       es, esp_as_of,
       window_months = 6, guid_lookup = tibble::tibble(from = "D1")
     ),
     "missing column"
   )
   testthat::expect_error(
-    calc_es_districts(
+    calc_es_district_performance(
       es, esp_as_of,
-      window_months = 6, districts = tibble::tibble(adm1 = "P1")
+      window_months = 6, admin_units = tibble::tibble(adm1 = "P1")
     ),
     "missing column"
   )
   testthat::expect_error(
-    calc_es_sites(es, esp_as_of, regularity_breaks = c(100, 75)),
+    calc_es_district_performance(
+      es, esp_as_of, window_months = 6, cols = list(es = list())
+    ),
+    "Unknown source"
+  )
+  testthat::expect_error(
+    calc_es_site_performance(es, esp_as_of, regularity_breaks = c(100, 75)),
     "strictly increasing"
   )
   testthat::expect_error(
-    calc_es_sites(es, esp_as_of, regularity_labels = c("a", "b")),
+    calc_es_site_performance(es, esp_as_of, regularity_labels = c("a", "b")),
     "distinct labels"
   )
-  testthat::expect_error(calc_es_sites(es, esp_as_of, cols = "x"), "list")
+  testthat::expect_error(
+    calc_es_site_performance(es, esp_as_of, cols = "x"), "list"
+  )
   testthat::expect_error(es_sample_state("a"), "numeric")
   testthat::expect_error(
     es_sample_state(1, thin_label = "Measured"), "distinct"

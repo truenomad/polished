@@ -72,10 +72,10 @@ detection_default_pairs <- function() {
 #' kept.
 #'
 #' The function does not add laboratory-confirmed detections that POLIS does
-#' not yet hold. A caller that needs them adds them to `virus` first.
+#' not yet hold. A caller that needs them adds them to `detections` first.
 #'
-#' @param virus A data frame of virus detections, such as the output of
-#'   [clean_virus()].
+#' @param detections A data frame of virus detections, one row per record,
+#'   such as the output of [clean_virus()].
 #' @param countries ISO3 codes of the countries to keep. `NULL` keeps every
 #'   country with a code. Default `c("AFG", "PAK")`.
 #' @param vtype_pattern Regular expression a virus type must match to count.
@@ -84,18 +84,19 @@ detection_default_pairs <- function() {
 #' @param sources Surveillance sources to keep, matched against the source
 #'   column. `NULL` (the default) keeps every source.
 #' @param key Columns that identify one detection. Default
-#'   `c("epid", "vtype")`. Give the names as they appear in `virus`.
+#'   `c("epid", "vtype")`. Give the names as they appear in `detections`.
 #' @param latest_by Columns to sort on, in descending order, before duplicates
 #'   are dropped. Default `NULL`, which keeps the first record in the input.
-#' @param cols Named list mapping the roles `epid`, `vtype`, `country`,
-#'   `source` and `virus_date` to columns in `virus`. Defaults are the
-#'   [clean_virus()] names `epid`, `vtype`, `country_iso3code`, `source` and
-#'   `virus_date`.
+#' @param cols Named list overriding the default column names, keyed by
+#'   table, for example `list(detections = list(vtype = "VirusTypeName"))`.
+#'   This function reads the `detections` roles `epid`, `vtype`, `country`,
+#'   `source` and `virus_date`, by default the [clean_virus()] names `epid`,
+#'   `vtype`, `country_iso3code`, `source` and `virus_date`.
 #'
-#' @return A tibble with the columns of `virus`, one row per detection,
+#' @return A tibble with the columns of `detections`, one row per detection,
 #'   ordered by virus date, country and EPID.
 #' @examples
-#' virus <- tibble::tibble(
+#' detections <- tibble::tibble(
 #'   epid = c("A-1", "A-1", "A-2", "B-1"),
 #'   vtype = c("WPV 1", "WPV 1", "cVDPV 2", "WPV 1"),
 #'   country_iso3code = c("AFG", "AFG", "AFG", "NGA"),
@@ -103,11 +104,11 @@ detection_default_pairs <- function() {
 #'   virus_date = as.Date(c("2024-01-05", "2024-01-05", "2024-02-01",
 #'                          "2024-03-01"))
 #' )
-#' detection_slice(virus)
-#' detection_slice(virus, vtype_pattern = "^WPV1$")
+#' detection_slice(detections)
+#' detection_slice(detections, vtype_pattern = "^WPV1$")
 #' @export
 detection_slice <- function(
-  virus,
+  detections,
   countries = c("AFG", "PAK"),
   vtype_pattern = "^WPV|^cVDPV|^VDPV|^aVDPV|^iVDPV",
   sources = NULL,
@@ -115,8 +116,8 @@ detection_slice <- function(
   latest_by = NULL,
   cols = list()
 ) {
-  .detw_check_df(virus, "virus")
-  col <- .detw_merge_cols(cols, .detw_slice_cols(), "cols")
+  .detw_check_df(detections, "detections")
+  col <- .detw_merge_cols(cols)
   if (!is.character(vtype_pattern) || length(vtype_pattern) != 1 ||
         is.na(vtype_pattern)) {
     cli::cli_abort("{.arg vtype_pattern} must be a single regular expression.")
@@ -134,9 +135,9 @@ detection_slice <- function(
     col$vtype, col$country, col$virus_date, key, latest_by,
     if (!is.null(sources)) col$source
   )
-  .detw_require(virus, unique(needed), "virus")
+  .detw_require(detections, unique(needed), "detections")
 
-  out <- virus |>
+  out <- detections |>
     dplyr::mutate(
       dplyr::across(dplyr::all_of(col$vtype), .detw_normalise_vtype)
     ) |>
@@ -168,12 +169,12 @@ detection_slice <- function(
 
 #' Count virus detections in each comparison window
 #'
-#' Counts the detections whose virus date falls in each window, optionally
-#' within groups such as country or province. A detection falls in a window
-#' when its virus date lies between `as_of - from` and `as_of - to` days, both
-#' ends included. A detection with no virus date falls in no window. Every
-#' group present in `detections` gets a row for every window, with zero where
-#' nothing was detected.
+#' Counts the detections whose virus date falls in each window, overall or
+#' by administrative unit. A detection falls in a window when its virus date
+#' lies between `as_of - from` and `as_of - to` days, both ends included. A
+#' detection with no virus date falls in no window. Every unit present in
+#' `detections` gets a row for every window, with zero where nothing was
+#' detected.
 #'
 #' Five counts are returned for each window:
 #' \itemize{
@@ -188,23 +189,30 @@ detection_slice <- function(
 #'
 #' @param detections A data frame with one row per detection, such as the
 #'   output of [detection_slice()].
-#' @param as_of The reporting date the windows are counted back from, as a
-#'   `Date` or a string `as.Date()` can read.
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. The windows are counted back from it.
 #' @param windows A data frame with the columns `window`, `from` and `to`,
 #'   where `from` and `to` are whole days before `as_of` and `from` is at
 #'   least `to`. Default [detection_default_windows()].
-#' @param by Columns to group by, for example `"country_iso3code"` or
-#'   `c("country_iso3code", "adm1")`. Default `NULL` counts all detections
-#'   together.
+#' @param level Administrative level to count by: `NULL` (the default) for
+#'   one row per window over all detections, or `"adm0"` (country), `"adm1"`
+#'   (province) or `"adm2"` (district). Detections with no identifier at that
+#'   level are left out.
 #' @param env_sources Source values that mark an environmental sample.
 #'   Default `"Environmental"`.
-#' @param cols Named list mapping the roles `virus_date`, `source`, `province`
-#'   and `cluster` to columns in `detections`. Defaults are the
-#'   [clean_virus()] names `virus_date`, `source`, `adm1` and `virus_cluster`.
+#' @param cols Named list overriding the default column names, keyed by
+#'   table, for example `list(detections = list(adm1 = "province"))`. This
+#'   function reads the `detections` roles `virus_date`, `source`, `adm1`
+#'   (the province counted in `provinces`) and `cluster`, by default the
+#'   [clean_virus()] names `virus_date`, `source`, `adm1` and
+#'   `virus_cluster`, and with `level` the GUID and name roles of that level
+#'   (`adm0_guid` and `adm0`, `adm1_guid` and `adm1`, or `adm2_guid` and
+#'   `adm2`).
 #'
-#' @return A tibble with the `by` columns, then `window`, `from`, `to`,
-#'   `window_start`, `window_end` and the five counts, one row per group and
-#'   window, in the order of `windows`.
+#' @return A tibble with one row per unit and window, in the order of
+#'   `windows`: with `level`, the columns `level`, `guid` and `name`; then
+#'   `window`, `from`, `to`, `window_start`, `window_end` and the five
+#'   counts.
 #' @examples
 #' detections <- tibble::tibble(
 #'   virus_date = as.Date(c("2024-06-01", "2024-01-15", "2023-05-01")),
@@ -216,46 +224,50 @@ detection_slice <- function(
 #' @export
 calc_detection_windows <- function(
   detections,
-  as_of,
+  as_of = Sys.Date(),
   windows = detection_default_windows(),
-  by = NULL,
+  level = NULL,
   env_sources = "Environmental",
   cols = list()
 ) {
   .detw_check_df(detections, "detections")
   as_of <- .detw_check_as_of(as_of)
   windows <- .detw_check_windows(windows)
-  col <- .detw_merge_cols(cols, .detw_window_cols(), "cols")
-  if (is.null(by)) {
-    by <- character(0)
-  }
-  if (!is.character(by) || anyNA(by)) {
-    cli::cli_abort("{.arg by} must be a character vector of column names.")
-  }
+  .detw_check_level(level)
+  col <- .detw_merge_cols(cols)
   if (!is.character(env_sources)) {
     cli::cli_abort("{.arg env_sources} must be a character vector.")
   }
+  keys <- .detw_level_keys(level)
   .detw_require(
     detections,
-    unique(c(by, col$virus_date, col$source, col$province, col$cluster)),
+    unique(c(
+      unlist(col[keys], use.names = FALSE), col$virus_date, col$source,
+      col$adm1, col$cluster
+    )),
     "detections"
   )
-  reserved <- intersect(by, .detw_reserved_names())
-  if (length(reserved) > 0) {
-    cli::cli_abort(
-      "{.arg by} uses a name the output reserves: {.val {reserved}}."
-    )
-  }
 
-  slim <- detections |>
-    dplyr::transmute(
-      dplyr::across(dplyr::all_of(by)),
-      .date = lubridate::as_date(.data[[col$virus_date]]),
-      .is_env = .data[[col$source]] %in% env_sources,
-      .province = .data[[col$province]],
-      .cluster = .data[[col$cluster]]
-    ) |>
-    dplyr::filter(!is.na(.date))
+  slim <- tibble::tibble(
+    .date = lubridate::as_date(detections[[col$virus_date]]),
+    .is_env = detections[[col$source]] %in% env_sources,
+    .province = detections[[col$adm1]],
+    .cluster = detections[[col$cluster]]
+  )
+  by <- character(0)
+  groups <- tibble::tibble(.rows = 1)
+  if (!is.null(level)) {
+    by <- c("guid", "name")
+    slim <- slim |>
+      dplyr::mutate(
+        guid = as.character(detections[[col[[keys[1]]]]]),
+        name = as.character(detections[[col[[keys[2]]]]])
+      ) |>
+      dplyr::filter(!is.na(.data$guid)) |>
+      dplyr::mutate(name = .polio_consensus_name(.data$name), .by = "guid")
+    groups <- dplyr::distinct(dplyr::select(slim, "guid", "name"))
+  }
+  slim <- dplyr::filter(slim, !is.na(.date))
 
   window_dates <- windows |>
     dplyr::mutate(
@@ -263,12 +275,6 @@ calc_detection_windows <- function(
       window_end = as_of - .data$to,
       .order = dplyr::row_number()
     )
-
-  groups <- if (length(by) == 0) {
-    tibble::tibble(.rows = 1)
-  } else {
-    dplyr::distinct(dplyr::select(detections, dplyr::all_of(by)))
-  }
 
   counts <- dplyr::cross_join(window_dates, slim) |>
     dplyr::filter(
@@ -295,11 +301,12 @@ calc_detection_windows <- function(
         \(x) dplyr::coalesce(as.integer(x), 0L)
       )
     ) |>
-    dplyr::arrange(dplyr::across(dplyr::all_of(by)), .data$.order) |>
+    dplyr::arrange(dplyr::across(dplyr::all_of(rev(by))), .data$.order) |>
+    .detw_add_level(level) |>
     dplyr::select(
-      dplyr::all_of(by), "window", "from", "to", "window_start",
-      "window_end", "detections", "reported_cases", "positive_es",
-      "provinces", "clusters"
+      dplyr::any_of("level"), dplyr::all_of(by), "window", "from", "to",
+      "window_start", "window_end", "detections", "reported_cases",
+      "positive_es", "provinces", "clusters"
     )
 }
 
@@ -310,8 +317,9 @@ calc_detection_windows <- function(
 #' the change with [detection_direction()].
 #'
 #' The percentage change is the difference divided by the previous count,
-#' times 100. When the previous count is zero it is `Inf` if the current count
-#' is above zero, and zero otherwise.
+#' times 100, so it is in per cent and can be negative or above 100. When the
+#' previous count is zero it is `Inf` if the current count is above zero, and
+#' zero otherwise.
 #'
 #' @inheritParams calc_detection_windows
 #' @param pairs A data frame with the columns `current` and `previous`, each
@@ -322,9 +330,10 @@ calc_detection_windows <- function(
 #'   `"reported_cases"`, `"positive_es"`, `"provinces"` and `"clusters"`.
 #'   Default all five.
 #'
-#' @return A tibble with the `by` columns, then `current_window`,
+#' @return A tibble with one row per unit, window pair and metric: with
+#'   `level`, the columns `level`, `guid` and `name`; then `current_window`,
 #'   `previous_window`, `metric`, `current`, `previous`, `difference`,
-#'   `pct_change` and `direction`, one row per group, window pair and metric.
+#'   `pct_change` and `direction`.
 #' @examples
 #' detections <- tibble::tibble(
 #'   virus_date = as.Date(c("2024-06-01", "2024-01-15", "2023-05-01")),
@@ -336,10 +345,10 @@ calc_detection_windows <- function(
 #' @export
 calc_detection_comparison <- function(
   detections,
-  as_of,
+  as_of = Sys.Date(),
   windows = detection_default_windows(),
   pairs = detection_default_pairs(),
-  by = NULL,
+  level = NULL,
   threshold = 15,
   metrics = c(
     "detections", "reported_cases", "positive_es", "provinces", "clusters"
@@ -348,9 +357,8 @@ calc_detection_comparison <- function(
   cols = list()
 ) {
   .detw_check_threshold(threshold)
-  if (is.null(by)) {
-    by <- character(0)
-  }
+  .detw_check_level(level)
+  by <- if (is.null(level)) character(0) else c("guid", "name")
   windows <- .detw_check_windows(windows)
   pairs <- .detw_check_pairs(pairs, windows$window)
   all_metrics <- c(
@@ -368,7 +376,7 @@ calc_detection_comparison <- function(
     detections,
     as_of = as_of,
     windows = windows,
-    by = by,
+    level = level,
     env_sources = env_sources,
     cols = cols
   ) |>
@@ -398,11 +406,13 @@ calc_detection_comparison <- function(
       )
     ) |>
     dplyr::arrange(
-      dplyr::across(dplyr::all_of(by)), .data$.pair, .data$.metric_order
+      dplyr::across(dplyr::all_of(rev(by))), .data$.pair, .data$.metric_order
     ) |>
+    .detw_add_level(level) |>
     dplyr::select(
-      dplyr::all_of(by), "current_window", "previous_window", "metric",
-      "current", "previous", "difference", "pct_change", "direction"
+      dplyr::any_of("level"), dplyr::all_of(by), "current_window",
+      "previous_window", "metric", "current", "previous", "difference",
+      "pct_change", "direction"
     )
 }
 
@@ -459,60 +469,89 @@ detection_direction <- function(current, previous, threshold = 15) {
 
 # ---- internal helpers -------------------------------------------------------
 
-#' Default column roles for detection_slice()
+#' Default column roles for the detections table
 #' @noRd
-.detw_slice_cols <- function() {
+.detw_default_cols <- function() {
+  base <- .polio_default_cols()$virus
   list(
     epid = "epid",
     vtype = "vtype",
     country = "country_iso3code",
     source = "source",
-    virus_date = "virus_date"
+    virus_date = base$virus_date,
+    cluster = "virus_cluster",
+    adm0_guid = base$adm0_guid,
+    adm0 = base$adm0,
+    adm1_guid = base$adm1_guid,
+    adm1 = base$adm1,
+    adm2_guid = base$adm2_guid,
+    adm2 = base$adm2
   )
 }
 
-#' Default column roles for calc_detection_windows()
+#' Merge `cols$detections` onto the defaults, rejecting unknown roles
 #' @noRd
-.detw_window_cols <- function() {
-  list(
-    virus_date = "virus_date",
-    source = "source",
-    province = "adm1",
-    cluster = "virus_cluster"
-  )
-}
-
-#' Output names a `by` column may not take
-#' @noRd
-.detw_reserved_names <- function() {
-  c(
-    "window", "from", "to", "window_start", "window_end", "detections",
-    "reported_cases", "positive_es", "provinces", "clusters", "metric",
-    "value", "current", "previous", "current_window", "previous_window",
-    "difference", "pct_change", "direction", ".date", ".is_env",
-    ".province", ".cluster", ".order", ".pair", ".metric_order"
-  )
-}
-
-#' Merge a user column map onto the defaults, rejecting unknown roles
-#' @noRd
-.detw_merge_cols <- function(cols, defaults, arg) {
-  if (!is.list(cols) && !is.character(cols)) {
-    cli::cli_abort("{.arg {arg}} must be a named list.")
+.detw_merge_cols <- function(cols) {
+  if (!is.list(cols)) {
+    cli::cli_abort("{.arg cols} must be a named list.")
   }
-  cols <- as.list(cols)
   if (length(cols) > 0 && (is.null(names(cols)) || any(names(cols) == ""))) {
-    cli::cli_abort("Every entry in {.arg {arg}} must be named.")
+    cli::cli_abort("Every entry in {.arg cols} must be named.")
   }
-  unknown <- setdiff(names(cols), names(defaults))
+  sources <- setdiff(names(cols), "detections")
+  if (length(sources) > 0) {
+    cli::cli_abort(c(
+      "Unknown source{?s} in {.arg cols}: {.val {sources}}.",
+      "i" = "Use {.val detections}."
+    ))
+  }
+  defaults <- .detw_default_cols()
+  roles <- as.list(cols$detections %||% list())
+  if (length(roles) > 0 &&
+        (is.null(names(roles)) || any(names(roles) == ""))) {
+    cli::cli_abort("Every entry in {.arg cols$detections} must be named.")
+  }
+  unknown <- setdiff(names(roles), names(defaults))
   if (length(unknown) > 0) {
     cli::cli_abort(c(
-      "{.arg {arg}} names {length(unknown)} unknown role{?s}:
+      "{.arg cols$detections} names {length(unknown)} unknown role{?s}:
        {.val {unknown}}.",
       "i" = "Known roles: {.val {names(defaults)}}."
     ))
   }
-  utils::modifyList(defaults, cols)
+  utils::modifyList(defaults, roles)
+}
+
+#' Abort unless `level` is NULL or one of the admin levels
+#' @noRd
+.detw_check_level <- function(level) {
+  ok <- is.null(level) || (is.character(level) && length(level) == 1 &&
+                             level %in% c("adm0", "adm1", "adm2"))
+  if (!ok) {
+    cli::cli_abort(
+      "{.arg level} must be {.val NULL} or one of {.val adm0}, {.val adm1}
+       or {.val adm2}."
+    )
+  }
+  invisible(level)
+}
+
+#' GUID and name roles of a level, or none for NULL
+#' @noRd
+.detw_level_keys <- function(level) {
+  if (is.null(level)) {
+    return(character(0))
+  }
+  c(paste0(level, "_guid"), level)
+}
+
+#' Add the level column when counting by an admin level
+#' @noRd
+.detw_add_level <- function(df, level) {
+  if (is.null(level)) {
+    return(df)
+  }
+  dplyr::mutate(df, level = level)
 }
 
 #' Abort unless `x` is a data frame

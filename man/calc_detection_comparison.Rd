@@ -6,10 +6,10 @@
 \usage{
 calc_detection_comparison(
   detections,
-  as_of,
+  as_of = Sys.Date(),
   windows = detection_default_windows(),
   pairs = detection_default_pairs(),
-  by = NULL,
+  level = NULL,
   threshold = 15,
   metrics = c("detections", "reported_cases", "positive_es", "provinces", "clusters"),
   env_sources = "Environmental",
@@ -20,8 +20,8 @@ calc_detection_comparison(
 \item{detections}{A data frame with one row per detection, such as the
 output of \code{\link[=detection_slice]{detection_slice()}}.}
 
-\item{as_of}{The reporting date the windows are counted back from, as a
-\code{Date} or a string \code{as.Date()} can read.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. The windows are counted back from it.}
 
 \item{windows}{A data frame with the columns \code{window}, \code{from} and \code{to},
 where \code{from} and \code{to} are whole days before \code{as_of} and \code{from} is at
@@ -30,9 +30,10 @@ least \code{to}. Default \code{\link[=detection_default_windows]{detection_defau
 \item{pairs}{A data frame with the columns \code{current} and \code{previous}, each
 naming a window in \code{windows}. Default \code{\link[=detection_default_pairs]{detection_default_pairs()}}.}
 
-\item{by}{Columns to group by, for example \code{"country_iso3code"} or
-\code{c("country_iso3code", "adm1")}. Default \code{NULL} counts all detections
-together.}
+\item{level}{Administrative level to count by: \code{NULL} (the default) for
+one row per window over all detections, or \code{"adm0"} (country), \code{"adm1"}
+(province) or \code{"adm2"} (district). Detections with no identifier at that
+level are left out.}
 
 \item{threshold}{Size of change, in percent, at or below which a move is
 called flat. Default \code{15}.}
@@ -44,14 +45,20 @@ Default all five.}
 \item{env_sources}{Source values that mark an environmental sample.
 Default \code{"Environmental"}.}
 
-\item{cols}{Named list mapping the roles \code{virus_date}, \code{source}, \code{province}
-and \code{cluster} to columns in \code{detections}. Defaults are the
-\code{\link[=clean_virus]{clean_virus()}} names \code{virus_date}, \code{source}, \code{adm1} and \code{virus_cluster}.}
+\item{cols}{Named list overriding the default column names, keyed by
+table, for example \code{list(detections = list(adm1 = "province"))}. This
+function reads the \code{detections} roles \code{virus_date}, \code{source}, \code{adm1}
+(the province counted in \code{provinces}) and \code{cluster}, by default the
+\code{\link[=clean_virus]{clean_virus()}} names \code{virus_date}, \code{source}, \code{adm1} and
+\code{virus_cluster}, and with \code{level} the GUID and name roles of that level
+(\code{adm0_guid} and \code{adm0}, \code{adm1_guid} and \code{adm1}, or \code{adm2_guid} and
+\code{adm2}).}
 }
 \value{
-A tibble with the \code{by} columns, then \code{current_window},
+A tibble with one row per unit, window pair and metric: with
+\code{level}, the columns \code{level}, \code{guid} and \code{name}; then \code{current_window},
 \code{previous_window}, \code{metric}, \code{current}, \code{previous}, \code{difference},
-\code{pct_change} and \code{direction}, one row per group, window pair and metric.
+\code{pct_change} and \code{direction}.
 }
 \description{
 Counts detections in each window with \code{\link[=calc_detection_windows]{calc_detection_windows()}}, then sets
@@ -60,8 +67,9 @@ the change with \code{\link[=detection_direction]{detection_direction()}}.
 }
 \details{
 The percentage change is the difference divided by the previous count,
-times 100. When the previous count is zero it is \code{Inf} if the current count
-is above zero, and zero otherwise.
+times 100, so it is in per cent and can be negative or above 100. When the
+previous count is zero it is \code{Inf} if the current count is above zero, and
+zero otherwise.
 }
 \examples{
 detections <- tibble::tibble(

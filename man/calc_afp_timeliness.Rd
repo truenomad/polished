@@ -49,7 +49,8 @@ polished defaults plus the module columns listed under Details of
 \value{
 A tibble with one row per unit: \code{level}, \code{guid}, \code{name}, \code{cases},
 then for each step (\code{notify}, \code{invest}, \code{stool}) the denominator \verb{_n}, the
-numerator \verb{_ok} and the percentage \verb{_pct}.
+numerator \verb{_ok} and the percentage \verb{_pct}. The \verb{_pct} columns are on a
+scale of 0 to 100.
 }
 \description{
 For each administrative unit, the share of AFP cases that met each of
@@ -79,8 +80,9 @@ Columns used beyond the defaults of \code{\link[=calc_polio_indicators]{calc_pol
 \code{epid}, \code{onset_to_notify}, \code{invest_to_stool1}, \code{stool1collection_date},
 \code{adequate_stool_polis} (\code{adequate_stool_with_condition}),
 \code{followup_findings}, \code{doses_reported} (\code{total_number_of_doses}) and
-\code{doses_calculated} (\code{calc_doses_risi}); in \code{lab}, \code{epid}, \code{date_collected}
-(\code{date_stool_collected}) and \code{date_received} (\code{date_stool_received_in_lab}).
+\code{doses_calculated} (\code{calc_doses_risi}); in \code{specimens}, \code{epid},
+\code{date_collected} (\code{date_stool_collected}) and \code{date_received}
+(\code{date_stool_received_in_lab}).
 }
 \examples{
 cases <- tibble::tibble(

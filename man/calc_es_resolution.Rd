@@ -4,26 +4,29 @@
 \alias{calc_es_resolution}
 \title{Monthly laboratory resolution of environmental samples}
 \usage{
-calc_es_resolution(samples, as_of, cols = list())
+calc_es_resolution(samples, as_of = Sys.Date(), cols = list())
 }
 \arguments{
 \item{samples}{Cleaned environmental samples, one row per sample, as
 returned by \code{\link[=clean_es]{clean_es()}}.}
 
-\item{as_of}{Date the analysis runs to. Samples collected after it, or with
-no collection date, are left out.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. Samples collected after it, or with no
+collection date, are left out.}
 
-\item{cols}{Named list overriding the default column names, in the same
-shape as in \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}, for example
-\code{list(es = list(vtype = "virus_type"))}. The defaults are the polished ES
-columns plus \code{vtype = "vtype"}, \code{site_guid = "site_guid"},
-\code{site_x = "site_x_coordinate"}, \code{site_y = "site_y_coordinate"} and
-\code{district_key = "adm2_guid"}.}
+\item{cols}{Named list overriding the default column names, keyed by
+table, in the same shape as in \code{\link[=calc_polio_indicators]{calc_polio_indicators()}}, for example
+\code{list(samples = list(vtype = "virus_type"))}. The \code{samples} defaults are
+the polished ES columns, with \code{site_name = "site_name"}, plus
+\code{vtype = "vtype"}, \code{site_guid = "site_guid"},
+\code{longitude = "site_x_coordinate"}, \code{latitude = "site_y_coordinate"} and
+\code{district_key = "adm2_guid"}, the column samples are counted by district
+on.}
 }
 \value{
 A tibble with one row per collection month, sorted by month:
 \code{month} (the first day of the month), \code{samples}, \code{resolved}, \code{pending}
-and \code{resolved_share} (resolved over samples, between 0 and 1).
+and \code{resolved_share} (resolved over samples, on a scale of 0 to 1).
 }
 \description{
 Counts the environmental samples collected in each month up to \code{as_of} and

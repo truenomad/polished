@@ -190,10 +190,10 @@ reference:
     `afp_stool_adequacy()` is the single stool adequacy classifier.
   contents:
   - calc_afp_timeliness
-  - calc_specimen_pathway
-  - calc_specimen_reasons
-  - calc_specimen_receipt_monthly
-  - calc_specimen_receipt_by_area
+  - calc_afp_specimen_pathway
+  - calc_afp_specimen_reasons
+  - calc_afp_specimen_receipt_monthly
+  - calc_afp_specimen_receipt_by_area
   - calc_afp_followup
   - afp_stool_adequacy
   - afp_stool_components
@@ -215,8 +215,8 @@ reference:
     regularity by district and by site over a reporting window.
   contents:
   - calc_es_resolution
-  - calc_es_districts
-  - calc_es_sites
+  - calc_es_district_performance
+  - calc_es_site_performance
   - es_reporting_window
   - es_complete_end
   - es_sample_state

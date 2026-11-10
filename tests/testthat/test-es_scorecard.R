@@ -102,7 +102,7 @@ testthat::test_that("peak window boundary moves the count", {
   testthat::expect_equal(sc_row(res, "A")$n_campaign_response, 3L)
 })
 
-testthat::test_that("a site with no campaign in its district is unjudged", {
+testthat::test_that("a site with no campaign response samples is unjudged", {
   res <- polished::calc_es_scorecard(
     sc_measure_es(), sc_measure_sia(), as_of = as.Date("2024-12-31")
   )
@@ -114,11 +114,53 @@ testthat::test_that("a site with no campaign in its district is unjudged", {
     sc_measure_es(), sc_measure_sia(), as_of = as.Date("2024-12-31"),
     settings = polished::es_score_settings(neighbour_km = 120)
   )
+  # C has no campaign in its district, so no campaign response sample at all
   c_site <- sc_row(wide, "C")
   testthat::expect_true(is.na(c_site$n_campaign_response))
+  testthat::expect_true(is.na(c_site$rate_campaign_response))
+  testthat::expect_true(is.na(c_site$retention_pct))
   testthat::expect_equal(c_site$n_neighbour_recovery, 1L)
   testthat::expect_equal(c_site$k_neighbour_recovery, 1L)
   testthat::expect_equal(as.character(c_site$verdict), "Too few samples")
+  # the unjudged label follows the settings
+  relabelled <- polished::calc_es_scorecard(
+    sc_measure_es(), sc_measure_sia(), as_of = as.Date("2024-12-31"),
+    settings = polished::es_score_settings(
+      neighbour_km = 120,
+      verdict_labels = c(
+        below_floor = "a", falling = "b", low_isolation = "c",
+        working = "d", unjudged = "not judged"
+      )
+    )
+  )
+  testthat::expect_equal(
+    as.character(sc_row(relabelled, "C")$verdict), "not judged"
+  )
+})
+
+testthat::test_that("retention is NA when campaign response is zero", {
+  # five samples 0 to 4 weeks after the campaign, none with Sabin, then one
+  # sample 8 weeks after it with Sabin
+  samples <- sc_site(
+    "Z", "V9", 31,
+    as.Date("2024-03-01") + c(0, 7, 14, 21, 28, 56),
+    sabin = c(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE)
+  ) |>
+    sc_ids()
+  campaigns <- tibble::tibble(
+    country_iso3code = "AFG", adm2_guid = "v9", activity_status = "Done",
+    activity_vaccine_type = "bOPV",
+    activity_date_from = as.Date("2024-03-01")
+  )
+  res <- polished::calc_es_scorecard(
+    samples, campaigns, as_of = as.Date("2024-12-31")
+  )
+  z <- sc_row(res, "Z")
+  testthat::expect_equal(z$n_campaign_response, 5L)
+  testthat::expect_equal(z$rate_campaign_response, 0)
+  testthat::expect_equal(z$mid_n, 1L)
+  testthat::expect_true(is.na(z$retention_pct))
+  testthat::expect_equal(as.character(z$verdict), "Below the floor")
 })
 
 testthat::test_that("neighbour recovery counts months near a neighbour find", {
@@ -155,10 +197,10 @@ testthat::test_that("window and distance boundaries are honoured", {
   testthat::expect_equal(run(neighbour_km = 120)$n_neighbour_recovery, 5L)
 })
 
-testthat::test_that("as_of and start_date bound the samples read", {
+testthat::test_that("from and as_of bound the samples read", {
   res <- polished::calc_es_scorecard(
     sc_measure_es(), sc_measure_sia(),
-    start_date = as.Date("2024-01-01"), as_of = as.Date("2024-06-30")
+    from = as.Date("2024-01-01"), as_of = as.Date("2024-06-30")
   )
   testthat::expect_setequal(res$site, c("A", "B"))
   testthat::expect_equal(sc_row(res, "A")$panel_samples, 6L)
@@ -198,7 +240,7 @@ sc_verdict_inputs <- function() {
     )
   isolation <- tibble::tibble(
     site_guid = c("low", "lowiso", "ok"),
-    npev_pct = c(20, 20, 80),
+    ev_pct = c(20, 20, 80),
     resolved = c(3L, 10L, 10L),
     months_sampled = 10L
   )
@@ -246,7 +288,7 @@ testthat::test_that("without isolation the low isolation rule is skipped", {
     x$es, x$sia, as_of = as.Date("2024-12-31")
   )
   testthat::expect_equal(as.character(sc_row(res, "lowiso")$verdict), "Working")
-  testthat::expect_true(all(is.na(res$npev_pct)))
+  testthat::expect_true(all(is.na(res$ev_pct)))
 })
 
 testthat::test_that("trend thresholds decide a decline", {
@@ -324,12 +366,16 @@ testthat::test_that("cols overrides map renamed columns", {
   res <- polished::calc_es_scorecard(
     es, sia, as_of = as.Date("2024-12-31"),
     cols = list(
-      es = list(site_id = "site_id"), sia = list(vaccine_type = "vtype")
+      samples = list(site_guid = "site_id"),
+      campaigns = list(vaccine_type = "vtype")
     )
   )
   testthat::expect_equal(sc_row(res, "A")$n_campaign_response, 4L)
   testthat::expect_equal(
-    polished::es_score_cols()$sia$vaccine_type, "activity_vaccine_type"
+    polished::es_score_cols()$campaigns$vaccine_type, "activity_vaccine_type"
+  )
+  testthat::expect_named(
+    polished::es_score_cols(), c("samples", "campaigns", "isolation")
   )
 })
 
@@ -351,9 +397,9 @@ testthat::test_that("arguments are validated", {
   )
   testthat::expect_error(
     polished::calc_es_scorecard(
-      es, sia, start_date = "2025-01-01", as_of = "2024-01-01"
+      es, sia, from = "2025-01-01", as_of = "2024-01-01"
     ),
-    "start_date"
+    "must not fall after"
   )
   testthat::expect_error(
     polished::calc_es_scorecard(es, sia, as_of = "not a date"), "as_of"
@@ -381,7 +427,7 @@ testthat::test_that("arguments are validated", {
     polished::es_score_settings(opv_types = character()), "opv_types"
   )
   iso <- tibble::tibble(
-    site_guid = c("A", "A"), npev_pct = 1, resolved = 1L, months_sampled = 1L
+    site_guid = c("A", "A"), ev_pct = 1, resolved = 1L, months_sampled = 1L
   )
   testthat::expect_error(
     polished::calc_es_scorecard(es, sia, isolation = iso), "one row per site"

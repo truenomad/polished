@@ -5,7 +5,7 @@
 \title{Select the virus detections that count}
 \usage{
 detection_slice(
-  virus,
+  detections,
   countries = c("AFG", "PAK"),
   vtype_pattern = "^WPV|^cVDPV|^VDPV|^aVDPV|^iVDPV",
   sources = NULL,
@@ -15,8 +15,8 @@ detection_slice(
 )
 }
 \arguments{
-\item{virus}{A data frame of virus detections, such as the output of
-\code{\link[=clean_virus]{clean_virus()}}.}
+\item{detections}{A data frame of virus detections, one row per record,
+such as the output of \code{\link[=clean_virus]{clean_virus()}}.}
 
 \item{countries}{ISO3 codes of the countries to keep. \code{NULL} keeps every
 country with a code. Default \code{c("AFG", "PAK")}.}
@@ -29,18 +29,19 @@ and every kind of vaccine-derived poliovirus.}
 column. \code{NULL} (the default) keeps every source.}
 
 \item{key}{Columns that identify one detection. Default
-\code{c("epid", "vtype")}. Give the names as they appear in \code{virus}.}
+\code{c("epid", "vtype")}. Give the names as they appear in \code{detections}.}
 
 \item{latest_by}{Columns to sort on, in descending order, before duplicates
 are dropped. Default \code{NULL}, which keeps the first record in the input.}
 
-\item{cols}{Named list mapping the roles \code{epid}, \code{vtype}, \code{country},
-\code{source} and \code{virus_date} to columns in \code{virus}. Defaults are the
-\code{\link[=clean_virus]{clean_virus()}} names \code{epid}, \code{vtype}, \code{country_iso3code}, \code{source} and
-\code{virus_date}.}
+\item{cols}{Named list overriding the default column names, keyed by
+table, for example \code{list(detections = list(vtype = "VirusTypeName"))}.
+This function reads the \code{detections} roles \code{epid}, \code{vtype}, \code{country},
+\code{source} and \code{virus_date}, by default the \code{\link[=clean_virus]{clean_virus()}} names \code{epid},
+\code{vtype}, \code{country_iso3code}, \code{source} and \code{virus_date}.}
 }
 \value{
-A tibble with the columns of \code{virus}, one row per detection,
+A tibble with the columns of \code{detections}, one row per detection,
 ordered by virus date, country and EPID.
 }
 \description{
@@ -62,10 +63,10 @@ recently edited record is kept. Otherwise the first record in the input is
 kept.
 
 The function does not add laboratory-confirmed detections that POLIS does
-not yet hold. A caller that needs them adds them to \code{virus} first.
+not yet hold. A caller that needs them adds them to \code{detections} first.
 }
 \examples{
-virus <- tibble::tibble(
+detections <- tibble::tibble(
   epid = c("A-1", "A-1", "A-2", "B-1"),
   vtype = c("WPV 1", "WPV 1", "cVDPV 2", "WPV 1"),
   country_iso3code = c("AFG", "AFG", "AFG", "NGA"),
@@ -73,6 +74,6 @@ virus <- tibble::tibble(
   virus_date = as.Date(c("2024-01-05", "2024-01-05", "2024-02-01",
                          "2024-03-01"))
 )
-detection_slice(virus)
-detection_slice(virus, vtype_pattern = "^WPV1$")
+detection_slice(detections)
+detection_slice(detections, vtype_pattern = "^WPV1$")
 }

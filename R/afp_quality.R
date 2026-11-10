@@ -240,8 +240,9 @@ afp_stool_adequacy <- function(
 #' `epid`, `onset_to_notify`, `invest_to_stool1`, `stool1collection_date`,
 #' `adequate_stool_polis` (`adequate_stool_with_condition`),
 #' `followup_findings`, `doses_reported` (`total_number_of_doses`) and
-#' `doses_calculated` (`calc_doses_risi`); in `lab`, `epid`, `date_collected`
-#' (`date_stool_collected`) and `date_received` (`date_stool_received_in_lab`).
+#' `doses_calculated` (`calc_doses_risi`); in `specimens`, `epid`,
+#' `date_collected` (`date_stool_collected`) and `date_received`
+#' (`date_stool_received_in_lab`).
 #'
 #' @inheritParams afp_stool_adequacy
 #' @param level Administrative level to group by: `"adm0"` (country, the
@@ -262,7 +263,8 @@ afp_stool_adequacy <- function(
 #'
 #' @return A tibble with one row per unit: `level`, `guid`, `name`, `cases`,
 #'   then for each step (`notify`, `invest`, `stool`) the denominator `_n`, the
-#'   numerator `_ok` and the percentage `_pct`.
+#'   numerator `_ok` and the percentage `_pct`. The `_pct` columns are on a
+#'   scale of 0 to 100.
 #' @examples
 #' cases <- tibble::tibble(
 #'   adm0_guid = "G0",
@@ -440,7 +442,7 @@ afp_stool_components <- function(
 #' @inheritParams afp_stool_components
 #' @inheritParams calc_afp_timeliness
 #' @return A tibble with one row per unit and step: `level`, `guid`, `name`,
-#'   `step`, `met`, `cases` and `pct`.
+#'   `step`, `met`, `cases` and `pct`. `pct` is on a scale of 0 to 100.
 #' @examples
 #' cases <- tibble::tibble(
 #'   adm0_guid = "G0",
@@ -450,9 +452,9 @@ afp_stool_components <- function(
 #'   stool2collection_date = as.Date(c("2025-03-04", NA)),
 #'   adequate_stool_with_condition = c("Yes", "No")
 #' )
-#' calc_specimen_pathway(cases)
+#' calc_afp_specimen_pathway(cases)
 #' @export
-calc_specimen_pathway <- function(
+calc_afp_specimen_pathway <- function(
   cases,
   level = "adm0",
   from = NULL,
@@ -506,8 +508,8 @@ calc_specimen_pathway <- function(
 #' @inheritParams afp_stool_components
 #' @inheritParams calc_afp_timeliness
 #' @return A tibble with one row per unit and reason: `level`, `guid`, `name`,
-#'   `reason`, `n`, `inadequate` and `pct`. Units with no inadequate case are
-#'   left out.
+#'   `reason`, `n`, `inadequate` and `pct`. `pct` is on a scale of 0 to 100.
+#'   Units with no inadequate case are left out.
 #' @examples
 #' cases <- tibble::tibble(
 #'   adm0_guid = "G0",
@@ -517,9 +519,9 @@ calc_specimen_pathway <- function(
 #'   stool2collection_date = as.Date(c("2025-03-04", NA)),
 #'   adequate_stool_with_condition = c("Yes", "No")
 #' )
-#' calc_specimen_reasons(cases)
+#' calc_afp_specimen_reasons(cases)
 #' @export
-calc_specimen_reasons <- function(
+calc_afp_specimen_reasons <- function(
   cases,
   level = "adm0",
   from = NULL,
@@ -561,11 +563,12 @@ calc_specimen_reasons <- function(
 
 #' Link stool specimens to AFP cases with the days to laboratory receipt
 #'
-#' One row per stool specimen from the supplied AFP cases, with the days from
-#' collection to receipt in the laboratory. A specimen without a collection
-#' date is dropped. A receipt dated before collection is treated as an entry
-#' error and its interval set to `NA`. Each specimen takes the administrative
-#' unit of the first case row with its EPID.
+#' Returns one row per stool specimen of the supplied AFP cases, with the days
+#' from collection to receipt in the laboratory and the case's administrative
+#' unit. A specimen without a collection date is dropped. A receipt dated
+#' before collection is treated as an entry error and its interval set to
+#' `NA`. Each specimen takes the administrative unit of the first case row
+#' with its EPID.
 #'
 #' @inheritParams calc_afp_timeliness
 #' @param specimens Cleaned human specimen table from [clean_human_spec()],
@@ -576,6 +579,8 @@ calc_specimen_reasons <- function(
 #'
 #' @return A tibble with `epid`, `collected`, `received`, `days`,
 #'   `collection_month`, `level`, `guid` and `name`.
+#' @seealso [afp_specimen_rung()] for the laboratory stage each specimen has
+#'   reached.
 #' @examples
 #' cases <- tibble::tibble(
 #'   epid = c("E1", "E2"),
@@ -612,7 +617,7 @@ afp_specimen_receipt <- function(
     dplyr::slice_head(n = 1, by = epid)
 
   specimens |>
-    .afpq_take(m$lab, c("epid", "date_collected", "date_received")) |>
+    .afpq_take(m$specimens, c("epid", "date_collected", "date_received")) |>
     dplyr::filter(epid %in% units$epid) |>
     dplyr::transmute(
       epid,
@@ -642,8 +647,9 @@ afp_specimen_receipt <- function(
 #' its last day, as of `as_of`.
 #'
 #' @inheritParams afp_specimen_receipt
-#' @param as_of Date against which months are judged provisional (default
-#'   today).
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. Months are judged provisional against
+#'   it.
 #' @param probs Named percentiles to report (default
 #'   `c(p50 = 0.5, p75 = 0.75, p90 = 0.9)`), as quantile type 7.
 #' @param tail_prob Percentile whose interval decides when a month is no
@@ -666,9 +672,9 @@ afp_specimen_receipt <- function(
 #'   ),
 #'   date_stool_received_in_lab = as.Date(c("2025-03-09", NA, "2025-03-06"))
 #' )
-#' calc_specimen_receipt_monthly(specimens, cases, as_of = "2025-06-30")
+#' calc_afp_specimen_receipt_monthly(specimens, cases, as_of = "2025-06-30")
 #' @export
-calc_specimen_receipt_monthly <- function(
+calc_afp_specimen_receipt_monthly <- function( # nolint: object_length_linter.
   specimens,
   cases,
   level = "adm0",
@@ -715,7 +721,7 @@ calc_specimen_receipt_monthly <- function(
 #' `min_received` received specimens are left out. Rows are sorted from the
 #' longest interval at the highest percentile in `probs`, then at the lowest.
 #'
-#' @inheritParams calc_specimen_receipt_monthly
+#' @inheritParams calc_afp_specimen_receipt_monthly
 #' @param level Administrative level to group by (default `"adm1"`, province).
 #' @param min_received Fewest received specimens a unit needs to be listed
 #'   (default 20).
@@ -736,9 +742,9 @@ calc_specimen_receipt_monthly <- function(
 #'   ),
 #'   date_stool_received_in_lab = as.Date(c("2025-03-09", NA, "2025-03-06"))
 #' )
-#' calc_specimen_receipt_by_area(specimens, cases, min_received = 1)
+#' calc_afp_specimen_receipt_by_area(specimens, cases, min_received = 1)
 #' @export
-calc_specimen_receipt_by_area <- function(
+calc_afp_specimen_receipt_by_area <- function( # nolint: object_length_linter.
   specimens,
   cases,
   level = "adm1",
@@ -795,7 +801,8 @@ calc_specimen_receipt_by_area <- function(
 #' A case `adequacy` cannot assess is never due.
 #'
 #' @inheritParams afp_stool_components
-#' @param as_of Date the day counts run to (default today).
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. Every day count runs to it.
 #' @param due_days Days after onset from which follow-up of an inadequate case
 #'   is due (default 60).
 #' @param on_time_days First and last day after onset at which a follow-up is
@@ -1133,7 +1140,7 @@ calc_afp_followup <- function(
         doses_calculated = "calc_doses_risi"
       )
     ),
-    lab = utils::modifyList(
+    specimens = utils::modifyList(
       base$lab,
       list(
         epid = "epid",

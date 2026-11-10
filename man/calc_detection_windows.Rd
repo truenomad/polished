@@ -6,9 +6,9 @@
 \usage{
 calc_detection_windows(
   detections,
-  as_of,
+  as_of = Sys.Date(),
   windows = detection_default_windows(),
-  by = NULL,
+  level = NULL,
   env_sources = "Environmental",
   cols = list()
 )
@@ -17,36 +17,43 @@ calc_detection_windows(
 \item{detections}{A data frame with one row per detection, such as the
 output of \code{\link[=detection_slice]{detection_slice()}}.}
 
-\item{as_of}{The reporting date the windows are counted back from, as a
-\code{Date} or a string \code{as.Date()} can read.}
+\item{as_of}{The reporting date, as a \code{Date} or a string that \code{as.Date()}
+reads. Defaults to \code{Sys.Date()}. The windows are counted back from it.}
 
 \item{windows}{A data frame with the columns \code{window}, \code{from} and \code{to},
 where \code{from} and \code{to} are whole days before \code{as_of} and \code{from} is at
 least \code{to}. Default \code{\link[=detection_default_windows]{detection_default_windows()}}.}
 
-\item{by}{Columns to group by, for example \code{"country_iso3code"} or
-\code{c("country_iso3code", "adm1")}. Default \code{NULL} counts all detections
-together.}
+\item{level}{Administrative level to count by: \code{NULL} (the default) for
+one row per window over all detections, or \code{"adm0"} (country), \code{"adm1"}
+(province) or \code{"adm2"} (district). Detections with no identifier at that
+level are left out.}
 
 \item{env_sources}{Source values that mark an environmental sample.
 Default \code{"Environmental"}.}
 
-\item{cols}{Named list mapping the roles \code{virus_date}, \code{source}, \code{province}
-and \code{cluster} to columns in \code{detections}. Defaults are the
-\code{\link[=clean_virus]{clean_virus()}} names \code{virus_date}, \code{source}, \code{adm1} and \code{virus_cluster}.}
+\item{cols}{Named list overriding the default column names, keyed by
+table, for example \code{list(detections = list(adm1 = "province"))}. This
+function reads the \code{detections} roles \code{virus_date}, \code{source}, \code{adm1}
+(the province counted in \code{provinces}) and \code{cluster}, by default the
+\code{\link[=clean_virus]{clean_virus()}} names \code{virus_date}, \code{source}, \code{adm1} and
+\code{virus_cluster}, and with \code{level} the GUID and name roles of that level
+(\code{adm0_guid} and \code{adm0}, \code{adm1_guid} and \code{adm1}, or \code{adm2_guid} and
+\code{adm2}).}
 }
 \value{
-A tibble with the \code{by} columns, then \code{window}, \code{from}, \code{to},
-\code{window_start}, \code{window_end} and the five counts, one row per group and
-window, in the order of \code{windows}.
+A tibble with one row per unit and window, in the order of
+\code{windows}: with \code{level}, the columns \code{level}, \code{guid} and \code{name}; then
+\code{window}, \code{from}, \code{to}, \code{window_start}, \code{window_end} and the five
+counts.
 }
 \description{
-Counts the detections whose virus date falls in each window, optionally
-within groups such as country or province. A detection falls in a window
-when its virus date lies between \code{as_of - from} and \code{as_of - to} days, both
-ends included. A detection with no virus date falls in no window. Every
-group present in \code{detections} gets a row for every window, with zero where
-nothing was detected.
+Counts the detections whose virus date falls in each window, overall or
+by administrative unit. A detection falls in a window when its virus date
+lies between \code{as_of - from} and \code{as_of - to} days, both ends included. A
+detection with no virus date falls in no window. Every unit present in
+\code{detections} gets a row for every window, with zero where nothing was
+detected.
 }
 \details{
 Five counts are returned for each window:

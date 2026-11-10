@@ -3,12 +3,13 @@
 * Added AFP case quality indicators. `calc_afp_timeliness()` reports onset to
   notification, notification to investigation and investigation to first
   stool, each over the cases whose interval is recorded.
-  `calc_specimen_pathway()` reports the stool collection steps over every
-  case in the unit and window, and `calc_specimen_reasons()` splits the
+  `calc_afp_specimen_pathway()` reports the stool collection steps over every
+  case in the unit and window, and `calc_afp_specimen_reasons()` splits the
   inadequate cases by reason over the cases classed inadequate.
-  `calc_specimen_receipt_monthly()` and `calc_specimen_receipt_by_area()`
-  give percentiles of days from collection to laboratory receipt among the
-  specimens received, with no threshold. `calc_afp_followup()` counts 60-day
+  `calc_afp_specimen_receipt_monthly()` and
+  `calc_afp_specimen_receipt_by_area()` give percentiles of days from
+  collection to laboratory receipt among the specimens received, with no
+  threshold. `calc_afp_followup()` counts 60-day
   follow-up, with completion and timeliness over the inadequate cases due
   for follow-up. The building blocks are `afp_stool_adequacy()`, now the
   single stool adequacy classifier with three named definitions,
@@ -22,10 +23,10 @@
   are the steps it is built from.
 * Added environmental surveillance performance indicators.
   `calc_es_resolution()` gives the share of samples resolved by collection
-  month, over all samples collected. `calc_es_districts()` and
-  `calc_es_sites()` give the enterovirus and poliovirus shares over resolved
-  samples, so samples still at the laboratory are left out, and site
-  regularity over the months a site was open. `es_reporting_window()`,
+  month, over all samples collected. `calc_es_district_performance()` and
+  `calc_es_site_performance()` give the enterovirus and poliovirus shares
+  over resolved samples, so samples still at the laboratory are left out,
+  and site regularity over the months a site was open. `es_reporting_window()`,
   `es_complete_end()` and `es_sample_state()` set the window and the
   minimum-sample rule.
 * Added counts of virus detections in comparison windows.
@@ -44,7 +45,16 @@
   and `calc_es_score_profile()` gives the share of samples with Sabin virus
   over all samples in each band of weeks since a campaign.
   `es_score_settings()` and `es_score_cols()` hold the settings and column
-  map.
+  map. Retention is `NA` for a site whose campaign response rate is zero.
+* The five indicator modules share one set of conventions. Input tables are
+  named `cases`, `specimens`, `samples`, `campaigns` and `detections`, and
+  `cols` is a list keyed by those table names, with the same role name for
+  the same column in every module. Functions that group by administrative
+  level take `level` (`"adm0"`, `"adm1"` or `"adm2"`) and return `level`,
+  `guid` and `name`. The reporting date is `as_of`, defaulting to
+  `Sys.Date()`, and a window given by dates is `from` and `to`. A column
+  ending `_pct` is on a scale of 0 to 100, and one ending `_share` or
+  `_rate` on a scale of 0 to 1.
 * Added a generator of synthetic surveillance tables, moved here from the
   stand-alone polioindicators package. `simulate_admin_frame()`,
   `simulate_population()`, `simulate_afp_cases()`, `simulate_es_samples()`,

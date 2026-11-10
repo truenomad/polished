@@ -58,8 +58,8 @@ utils::globalVariables(c(
     ),
     specimens = list(
       epid = "epid",
-      collected = "date_stool_collected",
-      received = "date_stool_received_in_lab",
+      date_collected = "date_stool_collected",
+      date_received = "date_stool_received_in_lab",
       culture_date = "date_final_cell_culture_results",
       itd_date = "date_itd_result_reported",
       sequencing_date = "dateof_sequencing"
@@ -266,8 +266,8 @@ afp_pending_dates <- function(cases,
 
 #' Place each stool specimen on the laboratory ladder
 #'
-#' Gives each specimen the rung of the laboratory ladder it has reached. The
-#' rungs are:
+#' Returns one row per stool specimen with its collection, receipt and result
+#' dates and the rung of the laboratory ladder it has reached. The rungs are:
 #'
 #' * 0: no collection date is recorded.
 #' * 1, collected: the stool collection date is recorded, and no later date.
@@ -283,16 +283,19 @@ afp_pending_dates <- function(cases,
 #' @param specimens A cleaned human-specimen table, one row per specimen
 #'   (from [clean_human_spec()]).
 #' @param cols A named list overriding the default column names, for example
-#'   `list(specimens = list(collected = "my_date"))`. The keys this function
-#'   reads from `specimens` are `epid` (`"epid"`), `collected`
-#'   (`"date_stool_collected"`), `received` (`"date_stool_received_in_lab"`),
-#'   `culture_date` (`"date_final_cell_culture_results"`), `itd_date`
+#'   `list(specimens = list(date_collected = "my_date"))`. The keys this
+#'   function reads from `specimens` are `epid` (`"epid"`), `date_collected`
+#'   (`"date_stool_collected"`), `date_received`
+#'   (`"date_stool_received_in_lab"`), `culture_date`
+#'   (`"date_final_cell_culture_results"`), `itd_date`
 #'   (`"date_itd_result_reported"`) and `sequencing_date`
 #'   (`"dateof_sequencing"`).
 #'
 #' @return A tibble with one row per specimen and the columns `epid`,
 #'   `collected`, `received`, `resulted` (dates) and `rung` (integer 0 to 3).
-#' @seealso [afp_pending_stage()] for the rung of a case.
+#' @seealso [afp_specimen_receipt()] for the days from collection to
+#'   laboratory receipt of each specimen; [afp_pending_stage()] for the rung
+#'   of a case.
 #' @examples
 #' spec <- tibble::tibble(
 #'   epid = c("A-1", "A-2", "A-3"),
@@ -310,7 +313,7 @@ afp_specimen_rung <- function(specimens, cols = list()) {
   .pend_need(
     specimens, m,
     c(
-      "epid", "collected", "received", "culture_date", "itd_date",
+      "epid", "date_collected", "date_received", "culture_date", "itd_date",
       "sequencing_date"
     ),
     "specimens"
@@ -319,8 +322,8 @@ afp_specimen_rung <- function(specimens, cols = list()) {
     tibble::as_tibble() |>
     dplyr::transmute(
       epid = .data[[m$epid]],
-      collected = .pend_as_date(.data[[m$collected]]),
-      received = .pend_as_date(.data[[m$received]]),
+      collected = .pend_as_date(.data[[m$date_collected]]),
+      received = .pend_as_date(.data[[m$date_received]]),
       resulted = dplyr::coalesce(
         .pend_as_date(.data[[m$culture_date]]),
         .pend_as_date(.data[[m$itd_date]]),
@@ -475,9 +478,8 @@ afp_pending_stage <- function(cases,
 #'
 #' @section The reporting window:
 #' The window holds `window_months` calendar months of onset, ending with the
-#' month of `window_end`. By default `window_end` is the latest month of onset
-#' among the kept cases, not `as_of`, because the running month holds few
-#' onsets yet. With `trim_window = TRUE` the window is then cut back to the
+#' month of `to`. By default `to` is the latest month of onset among the kept
+#' cases, not `as_of`, because the running month holds few onsets yet. With `trim_window = TRUE` the window is then cut back to the
 #' oldest month that still holds an open case, so months the laboratory has
 #' fully cleared at the start of the window are dropped. Every month left in
 #' the window keeps a row in every area, including months with no cases.
@@ -486,12 +488,13 @@ afp_pending_stage <- function(cases,
 #' @section Counts:
 #' * `records`: AFP cases with onset in the month.
 #' * `open`: those cases still awaiting classification.
-#' * `open_share`: `open / records`, or `NA` when the month has no cases.
+#' * `open_share`: `open / records` on a scale of 0 to 1, or `NA` when the
+#'   month has no cases.
 #' * `<stage>_n`: open cases on each stage of the ladder, one column per
 #'   entry of `stages`. Every stage keeps a column even when no case
 #'   reached it.
-#' * `<stage>_share`: each stage's share of the month's open cases, or `0`
-#'   when the month has no open case.
+#' * `<stage>_share`: each stage's share of the month's open cases on a
+#'   scale of 0 to 1, or `0` when the month has no open case.
 #' * `median_days`: the median number of days from onset to `as_of` among
 #'   the month's open cases, or `NA` when it has none.
 #' * `over_stale`: open cases that have waited more than `stale_days` days
@@ -515,11 +518,12 @@ afp_pending_stage <- function(cases,
 #' @inheritParams afp_pending_open
 #' @param cases A cleaned AFP table, one row per case (from [clean_afp()]).
 #'   It should already be limited to the country or countries of interest.
-#' @param as_of The date the waiting time is measured to. It also decides
-#'   which months are marked `partial`. Defaults to today.
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. The waiting time is measured to it, and
+#'   it decides which months are marked `partial`.
 #' @param window_months How many months of onset the window holds before
 #'   trimming. The default is 12.
-#' @param window_end Any date in the last month of the window. When `NULL`
+#' @param to Any date in the last month of onset in the window. When `NULL`
 #'   (the default) it is the latest month of onset among the kept cases.
 #' @param trim_window If `TRUE` (the default), cut the start of the window
 #'   back to the oldest month that still holds an open case.
@@ -527,9 +531,8 @@ afp_pending_stage <- function(cases,
 #'   counted in `over_stale`. The default is 120, the point after which a
 #'   result arrives too late to change the response.
 #' @param level The reporting level: `"adm0"` (country, the default),
-#'   `"adm1"` (province) or `"adm2"` (district). The table carries the guid
-#'   and name of the chosen level and of every level above it, and has one
-#'   row per area that holds at least one kept case and month.
+#'   `"adm1"` (province) or `"adm2"` (district). The table has one row per
+#'   area that holds at least one kept case, and month.
 #' @param surveillance_type Surveillance types to keep, matched against the
 #'   `surveillance_type` column (`"surveillance_type_name"`). The default
 #'   `"AFP"` leaves out contact and healthy-child samples. Use `NULL` to
@@ -541,7 +544,9 @@ afp_pending_stage <- function(cases,
 #'   of the chosen level.
 #'
 #' @return A tibble with one row per area and month of onset, sorted by area
-#'   and month, with the admin columns, `onset_month` and the counts above.
+#'   and month: `level`, `guid` and `name` for the chosen level, the GUID and
+#'   name columns of every level above it (for example `adm0_guid` and
+#'   `adm0` when `level = "adm1"`), `onset_month` and the counts above.
 #' @seealso [afp_pending_open()], [afp_pending_stage()],
 #'   [afp_pending_dates()].
 #' @examples
@@ -563,7 +568,7 @@ calc_pending_stage <- function(cases,
                                specimens = NULL,
                                as_of = Sys.Date(),
                                window_months = 12L,
-                               window_end = NULL,
+                               to = NULL,
                                trim_window = TRUE,
                                stale_days = 120L,
                                level = "adm0",
@@ -630,13 +635,13 @@ calc_pending_stage <- function(cases,
     )))
 
   # ---- window --------------------------------------------------------------
-  end <- if (is.null(window_end)) {
+  end <- if (is.null(to)) {
     max(staged$onset_month)
   } else {
-    .pend_as_date(window_end)
+    .pend_as_date(to)
   }
   if (length(end) != 1 || is.na(end)) {
-    cli::cli_abort("{.arg window_end} must be a single date or {.val NULL}.")
+    cli::cli_abort("{.arg to} must be a single date or {.val NULL}.")
   }
   window <- .pend_window(end, window_months)
   if (trim_window) {
@@ -698,5 +703,10 @@ calc_pending_stage <- function(cases,
       partial = onset_month >= .pend_month(as_of),
       month_label = format(onset_month, "%b %Y")
     ) |>
-    dplyr::arrange(dplyr::across(dplyr::all_of(by)))
+    dplyr::arrange(dplyr::across(dplyr::all_of(by))) |>
+    dplyr::rename(dplyr::all_of(c(
+      guid = paste0(level, "_guid"), name = level
+    ))) |>
+    dplyr::mutate(level = level) |>
+    dplyr::relocate("level", "guid", "name")
 }

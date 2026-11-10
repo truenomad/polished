@@ -32,13 +32,13 @@ test_that("AFP case quality indicators run on the synthetic cases", {
     expect_share(timeliness[[step]], 100)
   }
 
-  pathway <- calc_specimen_pathway(cases)
+  pathway <- calc_afp_specimen_pathway(cases)
   expect_sim_table(
     pathway, c("level", "guid", "name", "step", "met", "cases", "pct")
   )
   expect_share(pathway$pct, 100)
 
-  reasons <- calc_specimen_reasons(cases)
+  reasons <- calc_afp_specimen_reasons(cases)
   expect_sim_table(
     reasons,
     c("level", "guid", "name", "reason", "n", "inadequate", "pct")
@@ -63,7 +63,7 @@ test_that("specimen receipt indicators run on the synthetic specimens", {
   cases <- sim_polio$afp_cases
   specimens <- sim_polio$human_specimens
 
-  monthly <- calc_specimen_receipt_monthly(
+  monthly <- calc_afp_specimen_receipt_monthly(
     specimens, cases, as_of = sim_as_of
   )
   expect_sim_table(
@@ -76,7 +76,7 @@ test_that("specimen receipt indicators run on the synthetic specimens", {
   expect_true(all(monthly$received <= monthly$specimens))
   expect_gt(sum(monthly$received), 0)
 
-  by_area <- calc_specimen_receipt_by_area(
+  by_area <- calc_afp_specimen_receipt_by_area(
     specimens, cases, min_received = 5
   )
   expect_sim_table(
@@ -92,7 +92,7 @@ test_that("the pending stage ladder runs on the synthetic tables", {
   expect_sim_table(
     stages,
     c(
-      "adm0_guid", "adm0", "onset_month", "records", "open", "none_n",
+      "level", "guid", "name", "onset_month", "records", "open", "none_n",
       "collected_n", "at_lab_n", "resulted_n", "none_share",
       "collected_share", "at_lab_share", "resulted_share", "median_days",
       "over_stale", "open_share", "partial"
@@ -117,18 +117,19 @@ test_that("ES performance indicators run on the synthetic samples", {
   )
   expect_share(resolution$resolved_share, 1)
 
-  districts <- calc_es_districts(samples, as_of = sim_as_of)
+  districts <- calc_es_district_performance(samples, as_of = sim_as_of)
   expect_sim_table(
     districts,
     c(
-      "adm1", "adm2", "guid", "sites", "samples", "resolved", "pending",
-      "ev_n", "pv_n", "ev_pct", "pv_pct", "ev_state", "ev_meets_standard"
+      "level", "guid", "name", "adm1", "sites", "samples", "resolved",
+      "pending", "ev_n", "pv_n", "ev_pct", "pv_pct", "ev_state",
+      "ev_meets_standard"
     )
   )
   expect_share(districts$ev_pct, 100)
   expect_share(districts$pv_pct, 100)
 
-  sites <- calc_es_sites(samples, as_of = sim_as_of)
+  sites <- calc_es_site_performance(samples, as_of = sim_as_of)
   expect_sim_table(
     sites,
     c(
@@ -157,6 +158,12 @@ test_that("detection windows run on the synthetic detections", {
     )
   )
   expect_gt(sum(windows$detections), 0)
+
+  by_province <- calc_detection_windows(
+    detections, as_of = sim_as_of, level = "adm1"
+  )
+  expect_sim_table(by_province, c("level", "guid", "name", "detections"))
+  expect_identical(sum(by_province$detections), sum(windows$detections))
 
   comparison <- calc_detection_comparison(detections, as_of = sim_as_of)
   expect_sim_table(
@@ -196,6 +203,13 @@ test_that("the ES site scorecard runs on the synthetic samples", {
                     na.rm = TRUE))
   }
   expect_share(scorecard$judged_pct, 100)
+
+  # the site performance table plugs in as the isolation table
+  isolation <- calc_es_site_performance(samples, as_of = sim_as_of)
+  with_iso <- calc_es_scorecard(
+    samples, campaigns, isolation = isolation, as_of = sim_as_of
+  )
+  expect_gt(sum(!is.na(with_iso$ev_pct)), 0)
 
   network <- calc_es_score_network(samples, campaigns, as_of = sim_as_of)
   expect_sim_table(network, c("axis", "sites", "occasions", "network_rate"))

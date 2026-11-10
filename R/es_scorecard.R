@@ -6,7 +6,7 @@ utils::globalVariables(c(
   "judged_basis", "judged_pct", "k", "k_earlier", "k_recent", "last_sample",
   "latitude", "lo", "longitude", "mid", "mid_n", "month", "months_sampled",
   "n_campaign_response", "n_earlier", "n_neighbour_recovery", "n_recent",
-  "neighbour_recovery_pct", "network_rate", "new_site", "npev_pct", "other",
+  "neighbour_recovery_pct", "network_rate", "new_site", "ev_pct", "other",
   "other_month", "p_value", "panel_samples", "rate",
   "rate_campaign_response", "rate_neighbour_recovery", "recent_pct",
   "resolved", "retention_pct", "sabin", "sample_id", "samples_per_month",
@@ -205,7 +205,8 @@ es_score_settings <- function(
 #' the share of samples between `mid_weeks` weeks after a campaign with Sabin
 #' detected, as a percentage of campaign response; and background, the share
 #' of samples more than `floor_weeks` weeks after a campaign with Sabin
-#' detected.
+#' detected. Retention is `NA` when the site's campaign response rate is zero
+#' or missing, since it cannot be expressed as a percentage of nothing.
 #'
 #' @section Trend:
 #' A site's campaign response samples are split at `trend_years` years before
@@ -233,45 +234,50 @@ es_score_settings <- function(
 #'    `low_isolation`. This rule needs `isolation`.
 #' 5. Otherwise: `working`.
 #'
-#' @param es Cleaned environmental sample table, one row per sample, such as
-#'   `polished_es`. Duplicate sample identifiers are kept once.
-#' @param sia Cleaned campaign table, such as `polished_sia`.
+#' @param samples Cleaned environmental sample table, one row per sample,
+#'   such as `polished_es`. Duplicate sample identifiers are kept once.
+#' @param campaigns Cleaned campaign table, such as `polished_sia`.
 #' @param isolation Optional site table carrying each site's enterovirus
-#'   isolation percentage (`npev_pct`), the number of samples with a final
-#'   result (`resolved`) and the months sampled (`months_sampled`), one row
-#'   per site. Without it, the low isolation rule is not applied and those
-#'   columns are `NA`.
+#'   isolation percentage (`ev_pct`, on a scale of 0 to 100), the number of
+#'   samples with a final result (`resolved`) and the months sampled
+#'   (`months_sampled`), one row per site, such as the result of
+#'   [calc_es_site_performance()]. Without it, the low isolation rule is not
+#'   applied and those columns are `NA`.
 #' @param country_iso ISO3 codes of the countries whose sites are reported.
-#'   `NULL` (default) reports every country in `es`.
+#'   `NULL` (default) reports every country in `samples`.
 #' @param benchmark_iso ISO3 codes of the countries whose samples, campaigns
 #'   and sites make up the network: the pool for neighbours, the latest
 #'   sample and the network rates. Defaults to `country_iso`.
-#' @param start_date First collection date read. Default 1 January 2016.
-#' @param as_of Last collection date read. Default today.
+#' @param from First collection date read. Default 1 January 2016.
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. It is the last collection date read.
 #' @param settings Windows, distances, thresholds and labels, built with
 #'   [es_score_settings()].
-#' @param cols Named list of column overrides, by source (`es`, `sia`,
-#'   `isolation`), in the style of [calc_polio_indicators()]. See
-#'   [es_score_cols()] for the keys and defaults.
+#' @param cols Named list of column overrides keyed by table (`samples`,
+#'   `campaigns`, `isolation`), in the style of [calc_polio_indicators()].
+#'   See [es_score_cols()] for the keys and defaults.
 #'
 #' @return A tibble with one row per active site in `country_iso`, sorted by
 #'   verdict and judged percentage. For each measure (`campaign_response`,
 #'   `neighbour_recovery`) it carries `n_`, `k_`, `rate_`, `lo_` and `hi_`
 #'   columns, followed by the isolation, retention, background and trend
 #'   columns, the percentages, `judged_pct`, `judged_basis` and the `verdict`
-#'   factor.
+#'   factor. The `rate_`, `lo_` and `hi_` columns are proportions on a scale
+#'   of 0 to 1. Every `_pct` column is on a scale of 0 to 100, and
+#'   `drop_pts` is in percentage points. `retention_pct` is a percentage of
+#'   campaign response, so it can exceed 100.
 #' @examples
 #' \donttest{
 #' es_score_cols()
 #' }
 #' @export
 calc_es_scorecard <- function(
-  es,
-  sia,
+  samples,
+  campaigns,
   isolation = NULL,
   country_iso = NULL,
   benchmark_iso = country_iso,
-  start_date = as.Date("2016-01-01"),
+  from = as.Date("2016-01-01"),
   as_of = Sys.Date(),
   settings = es_score_settings(),
   cols = list()
@@ -279,7 +285,9 @@ calc_es_scorecard <- function(
   .essc_check_settings(settings)
   m <- .essc_merge_cols(cols)
   if (!is.null(country_iso)) .essc_check_chr(country_iso, "country_iso")
-  base <- .essc_base(es, sia, benchmark_iso, start_date, as_of, settings, m)
+  base <- .essc_base(
+    samples, campaigns, benchmark_iso, from, as_of, settings, m
+  )
   measured <- .essc_measured(base, settings)
   network <- .essc_network(measured, settings)
   s <- base$samples
@@ -334,23 +342,26 @@ calc_es_scorecard <- function(
 #'
 #' @inheritParams calc_es_scorecard
 #' @param benchmark_iso ISO3 codes of the countries that make up the network.
-#'   `NULL` (default) uses every country in `es`.
+#'   `NULL` (default) uses every country in `samples`.
 #'
 #' @return A tibble with one row per measure (`axis`) and columns `sites`,
-#'   `occasions` (the pooled denominator) and `network_rate` (a proportion).
+#'   `occasions` (the pooled denominator) and `network_rate` (a proportion on
+#'   a scale of 0 to 1).
 #' @export
 calc_es_score_network <- function(
-  es,
-  sia,
+  samples,
+  campaigns,
   benchmark_iso = NULL,
-  start_date = as.Date("2016-01-01"),
+  from = as.Date("2016-01-01"),
   as_of = Sys.Date(),
   settings = es_score_settings(),
   cols = list()
 ) {
   .essc_check_settings(settings)
   m <- .essc_merge_cols(cols)
-  base <- .essc_base(es, sia, benchmark_iso, start_date, as_of, settings, m)
+  base <- .essc_base(
+    samples, campaigns, benchmark_iso, from, as_of, settings, m
+  )
   .essc_network(.essc_measured(base, settings), settings)
 }
 
@@ -365,20 +376,23 @@ calc_es_score_network <- function(
 #' @inheritParams calc_es_score_network
 #'
 #' @return A tibble with columns `iso`, `bin` (a factor), `samples` and
-#'   `sabin_pct` (rounded to one decimal place), sorted by country and band.
+#'   `sabin_pct` (on a scale of 0 to 100, rounded to one decimal place),
+#'   sorted by country and band.
 #' @export
 calc_es_score_profile <- function(
-  es,
-  sia,
+  samples,
+  campaigns,
   benchmark_iso = NULL,
-  start_date = as.Date("2016-01-01"),
+  from = as.Date("2016-01-01"),
   as_of = Sys.Date(),
   settings = es_score_settings(),
   cols = list()
 ) {
   .essc_check_settings(settings)
   m <- .essc_merge_cols(cols)
-  base <- .essc_base(es, sia, benchmark_iso, start_date, as_of, settings, m)
+  base <- .essc_base(
+    samples, campaigns, benchmark_iso, from, as_of, settings, m
+  )
   base$samples |>
     dplyr::filter(!is.na(weeks)) |>
     dplyr::mutate(
@@ -397,27 +411,31 @@ calc_es_score_profile <- function(
 
 #' Default columns read by the environmental site scorecard
 #'
-#' Lists, by source, the column each scorecard input is read from. Keys shared
+#' Lists, by table, the column each scorecard input is read from. Keys shared
 #' with [calc_polio_indicators()] take the same defaults. Override any of them
 #' through the `cols` argument, for example
-#' `cols = list(sia = list(vaccine_type = "vaccine_type"))`.
+#' `cols = list(campaigns = list(vaccine_type = "vaccine_type"))`.
 #'
-#' The `es` keys `sabin` and `target` each take several columns. A sample has
-#' Sabin (or target) virus detected when any of those columns is `TRUE`, a
+#' The `samples` keys `sabin` and `target` each take several columns. A sample
+#' has Sabin (or target) virus detected when any of those columns is `TRUE`, a
 #' non-zero number or a non-blank string. By default target virus is WPV1 or
 #' VDPV2.
 #'
-#' @return A named list with elements `es`, `sia` and `isolation`.
+#' The `isolation` defaults are the column names that
+#' [calc_es_site_performance()] returns, so its result can be passed as
+#' `isolation` directly.
+#'
+#' @return A named list with elements `samples`, `campaigns` and `isolation`.
 #' @examples
-#' es_score_cols()$sia
+#' es_score_cols()$campaigns
 #' @export
 es_score_cols <- function() {
   base <- .polio_default_cols()
   list(
-    es = list(
-      iso = "country_iso3code",
+    samples = list(
+      country = "country_iso3code",
       sample_id = "sample_id",
-      site_id = "site_guid",
+      site_guid = "site_guid",
       site_code = "site_code",
       site_name = base$es$site,
       adm1 = base$es$adm1,
@@ -429,16 +447,16 @@ es_score_cols <- function() {
       sabin = c("vaccine1", "vaccine2", "vaccine3"),
       target = c("wild1", "vdpv2")
     ),
-    sia = list(
-      iso = "country_iso3code",
+    campaigns = list(
+      country = "country_iso3code",
       adm2_guid = base$sia$adm2_guid,
       status = "activity_status",
       vaccine_type = "activity_vaccine_type",
       start_date = "activity_date_from"
     ),
     isolation = list(
-      site_id = "site_guid",
-      npev_pct = "npev_pct",
+      site_guid = "site_guid",
+      ev_pct = "ev_pct",
       resolved = "resolved",
       months_sampled = "months_sampled"
     )
@@ -520,23 +538,23 @@ es_score_cols <- function() {
 #' Samples placed against their district's campaigns, and the latest sample.
 #' @keywords internal
 #' @noRd
-.essc_base <- function(es, sia, benchmark_iso, start_date, as_of, settings,
-                       m) {
-  .essc_require_cols(es, m$es, "es")
-  .essc_require_cols(sia, m$sia, "sia")
+.essc_base <- function(samples, campaigns, benchmark_iso, from, as_of,
+                       settings, m) {
+  .essc_require_cols(samples, m$samples, "samples")
+  .essc_require_cols(campaigns, m$campaigns, "campaigns")
   if (!is.null(benchmark_iso)) .essc_check_chr(benchmark_iso, "benchmark_iso")
-  start_date <- .essc_as_date(start_date, "start_date")
+  from <- .essc_as_date(from, "from")
   as_of <- .essc_as_date(as_of, "as_of")
-  if (start_date > as_of) {
-    cli::cli_abort("{.arg start_date} must not fall after {.arg as_of}.")
+  if (from > as_of) {
+    cli::cli_abort("{.arg from} must not fall after {.arg as_of}.")
   }
-  e <- m$es
+  e <- m$samples
 
-  samples <- es |>
+  samples <- samples |>
     dplyr::transmute(
-      iso = as.character(.data[[e$iso]]),
+      iso = as.character(.data[[e$country]]),
       sample_id = .data[[e$sample_id]],
-      site = as.character(.data[[e$site_id]]),
+      site = as.character(.data[[e$site_guid]]),
       site_code = .data[[e$site_code]],
       site_name = .data[[e$site_name]],
       adm1 = .data[[e$adm1]],
@@ -554,7 +572,7 @@ es_score_cols <- function() {
     ) |>
     dplyr::filter(
       is.null(benchmark_iso) | iso %in% benchmark_iso,
-      !is.na(date), date >= start_date, date <= as_of, !is.na(site),
+      !is.na(date), date >= from, date <= as_of, !is.na(site),
       !is.na(x), !is.na(y)
     ) |>
     dplyr::distinct(sample_id, .keep_all = TRUE) |>
@@ -563,15 +581,15 @@ es_score_cols <- function() {
   if (nrow(samples) == 0) {
     cli::cli_abort(c(
       "No environmental samples remain to score.",
-      "i" = "Check {.arg benchmark_iso}, {.arg start_date}, {.arg as_of} and
-      the site coordinates."
+      "i" = "Check {.arg benchmark_iso}, {.arg from}, {.arg as_of} and the
+      site coordinates."
     ))
   }
 
-  a <- m$sia
-  campaigns <- sia |>
+  a <- m$campaigns
+  campaigns <- campaigns |>
     dplyr::transmute(
-      iso = as.character(.data[[a$iso]]),
+      iso = as.character(.data[[a$country]]),
       status = .data[[a$status]],
       vaccine = .data[[a$vaccine_type]],
       guid = .essc_guid_key(.data[[a$adm2_guid]]),
@@ -769,15 +787,15 @@ es_score_cols <- function() {
 .essc_isolation <- function(isolation, m) {
   if (is.null(isolation)) {
     return(tibble::tibble(
-      site = character(), npev_pct = numeric(), resolved = integer(),
+      site = character(), ev_pct = numeric(), resolved = integer(),
       months_sampled = integer()
     ))
   }
   .essc_require_cols(isolation, m, "isolation")
   out <- dplyr::transmute(
     isolation,
-    site = as.character(.data[[m$site_id]]),
-    npev_pct = .data[[m$npev_pct]],
+    site = as.character(.data[[m$site_guid]]),
+    ev_pct = .data[[m$ev_pct]],
     resolved = .data[[m$resolved]],
     months_sampled = .data[[m$months_sampled]]
   )
@@ -806,7 +824,11 @@ es_score_cols <- function() {
       by = "site"
     ) |>
     dplyr::mutate(
-      retention_pct = round(100 * mid / pmax(rate_campaign_response, 1e-6), 1),
+      retention_pct = dplyr::if_else(
+        rate_campaign_response > 0,
+        round(100 * mid / rate_campaign_response, 1),
+        NA_real_
+      ),
       background_pct = round(100 * floor, 1),
       campaign_response_pct = round(100 * rate_campaign_response, 1),
       neighbour_recovery_pct = round(100 * rate_neighbour_recovery, 1),
@@ -824,7 +846,7 @@ es_score_cols <- function() {
         judged_pct < settings$floor_pct ~ lab[["below_floor"]],
         declined %in% TRUE ~ lab[["falling"]],
         resolved >= settings$isolation_min_samples &
-          npev_pct < settings$isolation_min_pct ~ lab[["low_isolation"]],
+          ev_pct < settings$isolation_min_pct ~ lab[["low_isolation"]],
         .default = lab[["working"]]
       ),
       verdict = factor(verdict, levels = unname(lab))

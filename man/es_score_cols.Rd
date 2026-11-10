@@ -7,20 +7,24 @@
 es_score_cols()
 }
 \value{
-A named list with elements \code{es}, \code{sia} and \code{isolation}.
+A named list with elements \code{samples}, \code{campaigns} and \code{isolation}.
 }
 \description{
-Lists, by source, the column each scorecard input is read from. Keys shared
+Lists, by table, the column each scorecard input is read from. Keys shared
 with \code{\link[=calc_polio_indicators]{calc_polio_indicators()}} take the same defaults. Override any of them
 through the \code{cols} argument, for example
-\code{cols = list(sia = list(vaccine_type = "vaccine_type"))}.
+\code{cols = list(campaigns = list(vaccine_type = "vaccine_type"))}.
 }
 \details{
-The \code{es} keys \code{sabin} and \code{target} each take several columns. A sample has
-Sabin (or target) virus detected when any of those columns is \code{TRUE}, a
+The \code{samples} keys \code{sabin} and \code{target} each take several columns. A sample
+has Sabin (or target) virus detected when any of those columns is \code{TRUE}, a
 non-zero number or a non-blank string. By default target virus is WPV1 or
 VDPV2.
+
+The \code{isolation} defaults are the column names that
+\code{\link[=calc_es_site_performance]{calc_es_site_performance()}} returns, so its result can be passed as
+\code{isolation} directly.
 }
 \examples{
-es_score_cols()$sia
+es_score_cols()$campaigns
 }

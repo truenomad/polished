@@ -284,7 +284,7 @@ testthat::test_that("calc_afp_timeliness validates its arguments", {
 # ---- specimen pathway --------------------------------------------------------
 
 testthat::test_that("the specimen pathway gives the hand-worked shares", {
-  res <- polished::calc_specimen_pathway(specimen_cases())
+  res <- polished::calc_afp_specimen_pathway(specimen_cases())
   testthat::expect_identical(
     res$step,
     c("first_in_window", "both_in_window", "apart", "adequate")
@@ -303,9 +303,9 @@ testthat::test_that("the pathway adequacy follows the chosen definition", {
     stool1condition = "Good",
     stool2condition = "Good"
   )
-  res <- polished::calc_specimen_pathway(cases, adequacy = "followup")
+  res <- polished::calc_afp_specimen_pathway(cases, adequacy = "followup")
   testthat::expect_identical(res$met[4], 1L)
-  res <- polished::calc_specimen_pathway(
+  res <- polished::calc_afp_specimen_pathway(
     cases,
     adequacy = "followup",
     adequacy_args = list(
@@ -317,14 +317,14 @@ testthat::test_that("the pathway adequacy follows the chosen definition", {
 })
 
 testthat::test_that("the pathway groups by province", {
-  res <- polished::calc_specimen_pathway(specimen_cases(), level = "adm1")
+  res <- polished::calc_afp_specimen_pathway(specimen_cases(), level = "adm1")
   p2 <- dplyr::filter(res, guid == "P2")
   testthat::expect_identical(p2$met, c(0L, 0L, 1L, 0L))
   testthat::expect_identical(unique(p2$cases), 2L)
 })
 
 testthat::test_that("specimen reasons count among inadequate cases", {
-  res <- polished::calc_specimen_reasons(specimen_cases())
+  res <- polished::calc_afp_specimen_reasons(specimen_cases())
   testthat::expect_identical(res$reason, c("late", "one_or_none"))
   testthat::expect_identical(res$n, c(1L, 1L))
   testthat::expect_identical(unique(res$inadequate), 3L)
@@ -335,22 +335,22 @@ testthat::test_that("specimen reasons count among inadequate cases", {
     adequate_stool_with_condition = "Yes"
   )
   testthat::expect_identical(
-    nrow(polished::calc_specimen_reasons(none)),
+    nrow(polished::calc_afp_specimen_reasons(none)),
     0L
   )
 })
 
 testthat::test_that("specimen functions validate their arguments", {
   testthat::expect_error(
-    polished::calc_specimen_pathway(specimen_cases(), collection_days = "x"),
+    polished::calc_afp_specimen_pathway(specimen_cases(), collection_days = "x"),
     "collection_days"
   )
   testthat::expect_error(
-    polished::calc_specimen_pathway(specimen_cases(), adequacy_args = 1),
+    polished::calc_afp_specimen_pathway(specimen_cases(), adequacy_args = 1),
     "adequacy_args"
   )
   testthat::expect_error(
-    polished::calc_specimen_reasons(specimen_cases(), level = 2),
+    polished::calc_afp_specimen_reasons(specimen_cases(), level = 2),
     "level"
   )
 })
@@ -362,10 +362,20 @@ testthat::test_that("receipt drops undated specimens and negative intervals", {
   testthat::expect_identical(res$epid, c("E1", "E1", "E2", "E4"))
   testthat::expect_identical(res$days, c(7L, 2L, NA, NA))
   testthat::expect_identical(unique(res$guid), "G0")
+
+  renamed <- dplyr::rename(lab_specimens(), got = date_stool_received_in_lab)
+  testthat::expect_identical(
+    polished::afp_specimen_receipt(
+      renamed,
+      specimen_cases(),
+      cols = list(specimens = list(date_received = "got"))
+    )$days,
+    res$days
+  )
 })
 
 testthat::test_that("monthly receipt gives counts, percentiles and status", {
-  res <- polished::calc_specimen_receipt_monthly(
+  res <- polished::calc_afp_specimen_receipt_monthly(
     lab_specimens(),
     specimen_cases(),
     as_of = "2025-04-10"
@@ -384,7 +394,7 @@ testthat::test_that("monthly receipt gives counts, percentiles and status", {
 })
 
 testthat::test_that("receipt by area applies the floor and sorts", {
-  res <- polished::calc_specimen_receipt_by_area(
+  res <- polished::calc_afp_specimen_receipt_by_area(
     lab_specimens(),
     specimen_cases(),
     min_received = 1
@@ -392,14 +402,14 @@ testthat::test_that("receipt by area applies the floor and sorts", {
   testthat::expect_identical(res$guid, "P1")
   testthat::expect_identical(res$received, 2L)
   testthat::expect_identical(
-    nrow(polished::calc_specimen_receipt_by_area(
+    nrow(polished::calc_afp_specimen_receipt_by_area(
       lab_specimens(),
       specimen_cases()
     )),
     0L
   )
 
-  district <- polished::calc_specimen_receipt_by_area(
+  district <- polished::calc_afp_specimen_receipt_by_area(
     lab_specimens(),
     dplyr::mutate(specimen_cases(), adm2_guid = c("D1", "D2", "D3", "D3")),
     level = "adm2",
@@ -411,7 +421,7 @@ testthat::test_that("receipt by area applies the floor and sorts", {
 
 testthat::test_that("receipt functions validate their arguments", {
   testthat::expect_error(
-    polished::calc_specimen_receipt_monthly(
+    polished::calc_afp_specimen_receipt_monthly(
       lab_specimens(),
       specimen_cases(),
       probs = c(0.5, 0.9)
@@ -419,7 +429,7 @@ testthat::test_that("receipt functions validate their arguments", {
     "probs"
   )
   testthat::expect_error(
-    polished::calc_specimen_receipt_monthly(
+    polished::calc_afp_specimen_receipt_monthly(
       lab_specimens(),
       specimen_cases(),
       as_of = NULL

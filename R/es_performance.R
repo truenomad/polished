@@ -18,6 +18,9 @@ utils::globalVariables(c(
   "ev_pct",
   "first_month",
   "from",
+  "level",
+  "name",
+  "guid",
   "is_resolved",
   "months_open",
   "months_sampled",
@@ -49,18 +52,21 @@ utils::globalVariables(c(
 #'
 #' @param samples Cleaned environmental samples, one row per sample, as
 #'   returned by [clean_es()].
-#' @param as_of Date the analysis runs to. Samples collected after it, or with
-#'   no collection date, are left out.
-#' @param cols Named list overriding the default column names, in the same
-#'   shape as in [calc_polio_indicators()], for example
-#'   `list(es = list(vtype = "virus_type"))`. The defaults are the polished ES
-#'   columns plus `vtype = "vtype"`, `site_guid = "site_guid"`,
-#'   `site_x = "site_x_coordinate"`, `site_y = "site_y_coordinate"` and
-#'   `district_key = "adm2_guid"`.
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. Samples collected after it, or with no
+#'   collection date, are left out.
+#' @param cols Named list overriding the default column names, keyed by
+#'   table, in the same shape as in [calc_polio_indicators()], for example
+#'   `list(samples = list(vtype = "virus_type"))`. The `samples` defaults are
+#'   the polished ES columns, with `site_name = "site_name"`, plus
+#'   `vtype = "vtype"`, `site_guid = "site_guid"`,
+#'   `longitude = "site_x_coordinate"`, `latitude = "site_y_coordinate"` and
+#'   `district_key = "adm2_guid"`, the column samples are counted by district
+#'   on.
 #'
 #' @return A tibble with one row per collection month, sorted by month:
 #'   `month` (the first day of the month), `samples`, `resolved`, `pending`
-#'   and `resolved_share` (resolved over samples, between 0 and 1).
+#'   and `resolved_share` (resolved over samples, on a scale of 0 to 1).
 #' @examples
 #' es <- tibble::tibble(
 #'   collection_date = as.Date(c("2024-01-05", "2024-01-20", "2024-02-03")),
@@ -68,7 +74,7 @@ utils::globalVariables(c(
 #' )
 #' calc_es_resolution(es, as_of = as.Date("2024-03-01"))
 #' @export
-calc_es_resolution <- function(samples, as_of, cols = list()) {
+calc_es_resolution <- function(samples, as_of = Sys.Date(), cols = list()) {
   m <- .esp_cols(cols)
   as_of <- .esp_check_date(as_of, "as_of")
   .esp_prepare(samples, as_of, m, c("collection_date", "class")) |>
@@ -96,7 +102,8 @@ calc_es_resolution <- function(samples, as_of, cols = list()) {
 #' @param resolution A monthly summary with columns `month` (the first day of
 #'   each collection month) and `resolved_share` (between 0 and 1), as returned
 #'   by [calc_es_resolution()].
-#' @param as_of Date the analysis runs to.
+#' @param as_of The reporting date, as a `Date` or a string that `as.Date()`
+#'   reads. Defaults to `Sys.Date()`. The result is never later than it.
 #' @param resolved_min Share of a month's samples that must be resolved for the
 #'   month to count as complete. Default `0.80`.
 #' @param settle_months Number of months after which a month still below
@@ -112,7 +119,7 @@ calc_es_resolution <- function(samples, as_of, cols = list()) {
 #' @export
 es_complete_end <- function(
   resolution,
-  as_of,
+  as_of = Sys.Date(),
   resolved_min = 0.80,
   settle_months = 3L
 ) {
@@ -156,7 +163,8 @@ es_complete_end <- function(
 #' @return A one-row tibble with `window_start`, `window_end`, `last_month`
 #'   (the first day of the last month in the window) and `lag_months` (how many
 #'   whole months the last month in the window sits behind the month of
-#'   `as_of`).
+#'   `as_of`). Pass `window_start` and `window_end` as `from` and `to` to
+#'   [calc_es_district_performance()] or [calc_es_site_performance()].
 #' @examples
 #' es <- tibble::tibble(
 #'   collection_date = as.Date(c("2024-01-05", "2024-02-03", "2024-03-10")),
@@ -166,7 +174,7 @@ es_complete_end <- function(
 #' @export
 es_reporting_window <- function(
   samples,
-  as_of,
+  as_of = Sys.Date(),
   window_months = 12L,
   resolved_min = 0.80,
   settle_months = 3L,
@@ -255,17 +263,18 @@ es_sample_state <- function(
 #' A percentage is `NA` when the district has no resolved samples. Samples are
 #' counted by district on `district_key`, so a retired district GUID can be
 #' repaired before the call (supply the repaired key as a column and point
-#' `cols$es$district_key` at it) or through `guid_lookup`.
+#' `cols$samples$district_key` at it) or through `guid_lookup`.
 #'
 #' @inheritParams es_reporting_window
-#' @param window The reporting window: a tibble with `window_start` and
-#'   `window_end` (as returned by [es_reporting_window()]), or a length-two
-#'   `Date` vector. `NULL` (default) computes it from `samples` and `as_of`
-#'   with `window_months`, `resolved_min` and `settle_months`.
-#' @param districts Optional table of every district to report, with the
-#'   columns named by `cols$es$adm1`, `cols$es$adm2` and `cols$es$adm2_guid`.
-#'   A district with no sample in the window is kept with zero counts. `NULL`
-#'   (default) reports only districts with a sample in the window.
+#' @param from,to First and last collection date of the reporting window.
+#'   When both are `NULL` (the default) the window is computed from `samples`
+#'   and `as_of` with [es_reporting_window()], using `window_months`,
+#'   `resolved_min` and `settle_months`.
+#' @param admin_units Optional table of every district to report, with the
+#'   columns named by `cols$samples$adm1`, `cols$samples$adm2` and
+#'   `cols$samples$adm2_guid`. A district with no sample in the window is kept
+#'   with zero counts. `NULL` (default) reports only districts with a sample
+#'   in the window.
 #' @param guid_lookup Optional table with columns `from` and `to` that maps a
 #'   retired district key to its current key. Keys not listed are kept.
 #' @param pv_pattern Regular expression a virus type must match to count as a
@@ -277,9 +286,10 @@ es_sample_state <- function(
 #' @param digits Decimal places to round percentages to, or `NULL` (default
 #'   for districts) for no rounding.
 #'
-#' @return A tibble with one row per district: `adm1`, `adm2`, `guid`, `sites`,
-#'   `samples`, `resolved`, `pending`, `ev_n`, `pv_n`, `ev_pct`, `pv_pct`,
-#'   `ev_state` and `ev_meets_standard`.
+#' @return A tibble with one row per district: `level` (`"adm2"`), `guid`,
+#'   `name`, the province name `adm1`, `sites`, `samples`, `resolved`,
+#'   `pending`, `ev_n`, `pv_n`, `ev_pct`, `pv_pct`, `ev_state` and
+#'   `ev_meets_standard`. `ev_pct` and `pv_pct` are on a scale of 0 to 100.
 #' @examples
 #' es <- tibble::tibble(
 #'   adm1 = "P1", adm2 = "D1", adm2_guid = "G1", site_guid = "S1",
@@ -287,13 +297,14 @@ es_sample_state <- function(
 #'   classification_all = "DONE",
 #'   vtype = c("NPEV", NA, "NPEV", "cVDPV2", NA, "NPEV")
 #' )
-#' calc_es_districts(es, as_of = as.Date("2024-07-15"), window_months = 6)
+#' calc_es_district_performance(es, as_of = as.Date("2024-07-15"), window_months = 6)
 #' @export
-calc_es_districts <- function(
+calc_es_district_performance <- function(
   samples,
-  as_of,
-  window = NULL,
-  districts = NULL,
+  as_of = Sys.Date(),
+  from = NULL,
+  to = NULL,
+  admin_units = NULL,
   guid_lookup = NULL,
   pv_pattern = "^WPV|^cVDPV|^VDPV|^aVDPV|^iVDPV",
   ev_threshold = 50,
@@ -311,7 +322,8 @@ calc_es_districts <- function(
   as_of <- .esp_check_date(as_of, "as_of")
   .esp_check_args(pv_pattern, ev_threshold, digits)
   bounds <- .esp_bounds(
-    window, samples, as_of, window_months, resolved_min, settle_months, cols
+    from, to, samples, as_of, window_months, resolved_min, settle_months,
+    cols
   )
   keys <- c(
     "collection_date", "class", "vtype", "adm1", "adm2", "district_key",
@@ -326,7 +338,7 @@ calc_es_districts <- function(
   district <- in_window |>
     dplyr::summarise(
       adm1 = dplyr::first(adm1),
-      adm2 = dplyr::first(adm2),
+      name = dplyr::first(adm2),
       sites = dplyr::n_distinct(site_guid),
       samples = dplyr::n(),
       resolved = sum(is_resolved),
@@ -337,10 +349,10 @@ calc_es_districts <- function(
     ) |>
     dplyr::rename(guid = .esp_key)
 
-  if (!is.null(districts)) {
-    district <- .esp_spine(districts, m) |>
+  if (!is.null(admin_units)) {
+    district <- .esp_spine(admin_units, m) |>
       dplyr::left_join(
-        dplyr::select(district, -adm1, -adm2),
+        dplyr::select(district, -adm1, -name),
         by = "guid"
       ) |>
       dplyr::mutate(
@@ -358,16 +370,17 @@ calc_es_districts <- function(
       ev_state = es_sample_state(
         resolved, min_samples, measured_label, thin_label, absent_label
       ),
-      ev_meets_standard = ev_pct >= ev_threshold
+      ev_meets_standard = ev_pct >= ev_threshold,
+      level = "adm2"
     ) |>
-    dplyr::relocate(adm1, adm2, guid)
+    dplyr::relocate(level, guid, name, adm1)
 }
 
 #' Environmental surveillance performance by site
 #'
 #' Computes ES performance for each site with a sample in the reporting
 #' window. The enterovirus share, poliovirus share, standard and minimum-sample
-#' rule are defined as in [calc_es_districts()], with the site as the unit.
+#' rule are defined as in [calc_es_district_performance()], with the site as the unit.
 #'
 #' * **Site regularity** (`regularity_pct`): months in the window with at
 #'   least one sample (`months_sampled`) over the months in the window the site
@@ -381,7 +394,7 @@ calc_es_districts <- function(
 #'
 #' Rows are sorted by `ev_pct`, lowest first.
 #'
-#' @inheritParams calc_es_districts
+#' @inheritParams calc_es_district_performance
 #' @param regularity_breaks Increasing lower bounds, in per cent, of each band
 #'   after the first. Default `c(75, 100)`.
 #' @param regularity_labels Band labels, one more than `regularity_breaks`.
@@ -392,10 +405,11 @@ calc_es_districts <- function(
 #'
 #' @return A tibble with one row per site: `adm1`, `adm2`, `site_name`,
 #'   `site_guid`, `samples`, `months_sampled`, `resolved`, `pending`, `ev_n`,
-#'   `pv_n`, `x`, `y`, `ev_pct`, `pv_pct`, `first_month`, `months_open`,
-#'   `regularity_pct`, `regularity_band`, `province_ev_pct`,
-#'   `province_regularity_pct`, `province_sites`, `ev_state` and
-#'   `ev_meets_standard`.
+#'   `pv_n`, `x` (longitude), `y` (latitude), `ev_pct`, `pv_pct`,
+#'   `first_month`, `months_open`, `regularity_pct`, `regularity_band`,
+#'   `province_ev_pct`, `province_regularity_pct`, `province_sites`,
+#'   `ev_state` and `ev_meets_standard`. Every `_pct` column is on a scale of
+#'   0 to 100.
 #' @examples
 #' es <- tibble::tibble(
 #'   adm1 = "P1", adm2 = "D1", site_name = "Site A", site_guid = "S1",
@@ -404,12 +418,13 @@ calc_es_districts <- function(
 #'   classification_all = "DONE",
 #'   vtype = c("NPEV", NA, "NPEV", "NPEV", NA)
 #' )
-#' calc_es_sites(es, as_of = as.Date("2024-07-15"), window_months = 6)
+#' calc_es_site_performance(es, as_of = as.Date("2024-07-15"), window_months = 6)
 #' @export
-calc_es_sites <- function(
+calc_es_site_performance <- function(
   samples,
-  as_of,
-  window = NULL,
+  as_of = Sys.Date(),
+  from = NULL,
+  to = NULL,
   pv_pattern = "^WPV|^cVDPV|^VDPV|^aVDPV|^iVDPV",
   ev_threshold = 50,
   min_samples = 5L,
@@ -431,11 +446,12 @@ calc_es_sites <- function(
   .esp_check_args(pv_pattern, ev_threshold, digits)
   .esp_check_bands(regularity_breaks, regularity_labels)
   bounds <- .esp_bounds(
-    window, samples, as_of, window_months, resolved_min, settle_months, cols
+    from, to, samples, as_of, window_months, resolved_min, settle_months,
+    cols
   )
   keys <- c(
-    "collection_date", "class", "vtype", "adm1", "adm2", "site", "site_guid",
-    "site_x", "site_y"
+    "collection_date", "class", "vtype", "adm1", "adm2", "site_name",
+    "site_guid", "longitude", "latitude"
   )
   prepared <- .esp_prepare(samples, as_of, m, keys, pv_pattern)
 
@@ -493,32 +509,44 @@ calc_es_sites <- function(
 
 # ---- internal helpers -------------------------------------------------------
 
-#' Default ES column map: the polished ES columns plus those this module needs.
+#' Default samples column map: the polished ES columns, with `site` named
+#' `site_name`, plus those this module needs.
 #' @keywords internal
 #' @noRd
 .esp_default_cols <- function() {
+  base <- .polio_default_cols()$es
+  site_name <- base$site
+  base$site <- NULL
   utils::modifyList(
-    .polio_default_cols()$es,
+    base,
     list(
+      site_name = site_name,
       vtype = "vtype",
       site_guid = "site_guid",
-      site_x = "site_x_coordinate",
-      site_y = "site_y_coordinate",
+      longitude = "site_x_coordinate",
+      latitude = "site_y_coordinate",
       district_key = "adm2_guid"
     )
   )
 }
 
-#' Merge user `cols$es` over the module defaults.
+#' Merge user `cols$samples` over the module defaults.
 #' @keywords internal
 #' @noRd
 .esp_cols <- function(cols) {
   if (!is.list(cols)) {
     cli::cli_abort(
-      "{.arg cols} must be a list, such as {.code list(es = ...)}."
+      "{.arg cols} must be a list, such as {.code list(samples = ...)}."
     )
   }
-  utils::modifyList(.esp_default_cols(), cols$es %||% list())
+  unknown <- setdiff(names(cols), "samples")
+  if (length(unknown) > 0) {
+    cli::cli_abort(c(
+      "Unknown source{?s} in {.arg cols}: {.val {unknown}}.",
+      "i" = "Use {.val samples}."
+    ))
+  }
+  utils::modifyList(.esp_default_cols(), cols$samples %||% list())
 }
 
 #' Canonical output names for the mapped source columns.
@@ -528,7 +556,8 @@ calc_es_sites <- function(
   c(
     collection_date = "collection_date", class = "class", vtype = "vtype",
     adm1 = "adm1", adm2 = "adm2", district_key = ".esp_key",
-    site = "site_name", site_guid = "site_guid", site_x = "x", site_y = "y"
+    site_name = "site_name", site_guid = "site_guid", longitude = "x",
+    latitude = "y"
   )
 }
 
@@ -585,16 +614,16 @@ calc_es_sites <- function(
     dplyr::select(-.esp_to)
 }
 
-#' Distinct district spine named adm1, adm2, guid.
+#' Distinct district spine named adm1, name, guid.
 #' @keywords internal
 #' @noRd
-.esp_spine <- function(districts, m) {
-  if (!is.data.frame(districts)) {
-    cli::cli_abort("{.arg districts} must be a data frame.")
+.esp_spine <- function(admin_units, m) {
+  if (!is.data.frame(admin_units)) {
+    cli::cli_abort("{.arg admin_units} must be a data frame.")
   }
-  src <- c(adm1 = m$adm1, adm2 = m$adm2, guid = m$adm2_guid)
-  .esp_check_cols(districts, src, "districts")
-  districts |>
+  src <- c(adm1 = m$adm1, name = m$adm2, guid = m$adm2_guid)
+  .esp_check_cols(admin_units, src, "admin_units")
+  admin_units |>
     tibble::as_tibble() |>
     dplyr::select(dplyr::all_of(src)) |>
     dplyr::distinct()
@@ -603,22 +632,27 @@ calc_es_sites <- function(
 #' Window bounds as a length-two Date vector.
 #' @keywords internal
 #' @noRd
-.esp_bounds <- function(window, samples, as_of, window_months, resolved_min,
-                        settle_months, cols) {
-  if (is.null(window)) {
-    window <- es_reporting_window(
+.esp_bounds <- function(from, to, samples, as_of, window_months,
+                        resolved_min, settle_months, cols) {
+  if (is.null(from) && is.null(to)) {
+    win <- es_reporting_window(
       samples, as_of, window_months, resolved_min, settle_months, cols
     )
+    return(c(win$window_start, win$window_end))
   }
-  if (is.data.frame(window)) {
-    .esp_check_cols(window, c("window_start", "window_end"), "window")
-    window <- c(window$window_start[1], window$window_end[1])
+  if (is.null(from) || is.null(to)) {
+    cli::cli_abort(
+      "Give both {.arg from} and {.arg to}, or neither of them."
+    )
   }
-  bounds <- suppressWarnings(as.Date(window))
+  bounds <- tryCatch(
+    suppressWarnings(c(as.Date(from), as.Date(to))),
+    error = function(e) as.Date(NA)
+  )
   if (length(bounds) != 2L || anyNA(bounds) || bounds[[1]] > bounds[[2]]) {
     cli::cli_abort(c(
-      "{.arg window} must give a start date on or before an end date.",
-      "i" = "Pass the result of {.fn es_reporting_window} or two dates."
+      "{.arg from} and {.arg to} must be single dates, {.arg from} first.",
+      "i" = "The result of {.fn es_reporting_window} gives both."
     ))
   }
   bounds
