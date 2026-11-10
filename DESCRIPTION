@@ -1,6 +1,6 @@
 Package: polished
 Title: Download and Clean WHO POLIS Data
-Version: 0.2.2
+Version: 0.3.0
 Authors@R:
     person(given = "Mohamed A.",
            family = "Yusuf",
@@ -13,7 +13,11 @@ Description: Retrieves and cleans poliovirus surveillance data from the
     the API's Id-range pagination and year-aligned date filters with
     checkpointed, parallel, resumable fetching. An end-to-end pipeline then
     cleans those inputs into analysis-ready 'polished_*' tables, with
-    optional surveillance indicators and data-quality checks.
+    optional surveillance indicators and data-quality checks. Indicator
+    modules cover AFP case quality, pending classification, environmental
+    surveillance performance, detections in comparison windows and the
+    environmental site scorecard, and a generator of synthetic surveillance
+    tables lets them be tested without real records.
 License: MIT + file LICENSE
 URL: https://github.com/truenomad/polished, https://truenomad.github.io/polished/
 BugReports: https://github.com/truenomad/polished/issues
@@ -23,12 +27,13 @@ Depends:
     R (>= 4.1.0)
 Imports:
     cli,
-    dplyr,
+    dplyr (>= 1.1.0),
     httr2,
     janitor,
     lubridate,
     parallel,
     readr,
+    rlang,
     sf,
     stats,
     stringr,
