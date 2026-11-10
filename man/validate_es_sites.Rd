@@ -28,8 +28,7 @@ unmatched site.
 \description{
 Diagnostic check: environmental site names present in \code{data} but missing from
 the reference \code{sites} list are flagged -- particularly new sites that also
-lack coordinates, which usually signal a data-entry issue rather than a
-genuine new site. Names are compared upper-cased and whitespace-squished
+lack coordinates and need review. Names are compared upper-cased and whitespace-squished
 (embedded newlines collapsed) on both sides. \code{data} is returned unchanged,
 with the unmatched sites attached as the \code{"polis_new_sites"} attribute, so the
 check composes into \code{\link[=clean_es]{clean_es()}} without writing to disk or touching global

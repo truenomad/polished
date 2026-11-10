@@ -67,15 +67,14 @@
 #' @param fix_issues Whether to repair geometries (in addition to flagging
 #'   them): drop Z/M dimensions, make invalid geometries valid
 #'   ([sf::st_make_valid()]), and strip sliver holes and sliver polygon parts
-#'   smaller than `sliver_area`. Real enclaves, lakes and islands above the
-#'   threshold are kept, and a feature never loses its largest part. Set `FALSE`
-#'   for the fastest run (flag-only). Default `TRUE`.
+#'   smaller than `sliver_area`. This size rule can remove real small features;
+#'   the largest polygon part is retained. Set `FALSE` to run checks without
+#'   geometry repair. Default `TRUE`.
 #' @param sliver_area Area threshold in square metres below which interior holes
 #'   and detached polygon parts are treated as digitising artifacts and removed
 #'   when `fix_issues = TRUE`. Default `1e4` (1 hectare).
 #' @param output_format Serialization format for the cleaned shapes, `"rds"` or
-#'   `"qs2"`. `"qs2"` writes and reads large geometries far faster (needs the
-#'   qs2 package). Default `"rds"`.
+#'   `"qs2"`. The latter requires the optional qs2 package. Default `"rds"`.
 #' @param verbose Whether to print a cli progress summary. Default `TRUE`.
 #'
 #' @return `output_dir`, invisibly. The function's outputs are the files it
@@ -2068,11 +2067,11 @@ resolve_epid_country <- function(
 #' Recover administrative geography from the EPID
 #'
 #' Fills missing administrative names (and optionally GUIDs) using the EPID as
-#' a recovery key, through an ordered, provenance-stamped cascade. Only blank
-#' cells are filled; present values are never overwritten and nothing is
-#' fabricated on ambiguity.
+#' a matching key. Tries the configured strategies in order and records the
+#' source of each filled value. Existing values are retained. Gaps without
+#' a match accepted by a strategy remain missing.
 #'
-#' The cascade, per admin level (Admin0, then Admin1, then Admin2):
+#' The strategies, per admin level (Admin0, then Admin1, then Admin2):
 #' \describe{
 #'   \item{original}{Value already present -- kept.}
 #'   \item{self_ref}{Most-recent non-blank value for the exact same EPID

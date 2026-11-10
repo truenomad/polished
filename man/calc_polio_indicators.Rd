@@ -63,7 +63,12 @@ Absent -> those families are skipped with a warning.}
 frame with columns \code{adm2_guid}, \code{adm0_guid}, optionally \code{adm1_guid}. Build
 it from a district shape with \code{create_long_shape(shape, "adm2")} or
 \code{dplyr::distinct(sf::st_drop_geometry(shape), adm0_guid, adm1_guid, adm2_guid)}. Required for the silent-districts indicator; absent -> it is
-skipped. (\code{\link[=run_pipeline]{run_pipeline()}} derives this from \code{cfg$shape} automatically.)}
+skipped. This lookup also supplies parent mappings for population roll-ups,
+including districts absent from \code{cases}. Optional \code{year} or \code{active_year}
+columns restrict each mapping to its calendar year; missing years apply to
+all years. Conflicting parents for one district/year are rejected.
+\code{\link[=run_pipeline]{run_pipeline()}} derives this from cleaned population, with \code{cfg$shape}
+as a fallback.}
 
 \item{indicators}{Which indicators to compute: the keyword \code{"core"} (default
 -- the core KPI set: NPAFP rate, condition-aware stool adequacy, EV
@@ -143,9 +148,9 @@ and district (\code{adm2}) level, by year. Each indicator is a registry spec; th
 full catalogue is discoverable with \code{\link[=available_indicators]{available_indicators()}}.
 }
 \details{
-Indicators whose source table or required columns are absent are \strong{skipped
-with a warning} rather than erroring, so a partial schema (e.g. \code{cases} +
-\code{population} only) still computes every applicable indicator. Rates that need
+Indicators whose source table or required columns are absent are skipped
+with a warning. The function stops if none of the requested indicators can be
+computed. Rates that need
 a population denominator require a \code{population} table of \emph{under-15} population
 per admin unit per year.
 }

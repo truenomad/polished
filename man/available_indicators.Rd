@@ -27,8 +27,7 @@ Returns a tidy description of every indicator \code{\link[=calc_polio_indicators
 about -- code, label, family, formula, numerator/denominator, source,
 period basis, admin levels, whether it needs a population denominator, WHO
 target/warn thresholds, unit, the POLIS source function and notes. Derived
-from the same registry the engine runs, so the catalogue and the engine never
-drift.
+from the registry used to calculate the indicators.
 }
 \examples{
 available_indicators()

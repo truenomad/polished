@@ -67,7 +67,7 @@ per-district-year table, classifying each lot \strong{two ways}:
 \itemize{
 \item \emph{POLIS} -- the classification POLIS already ships in the download
 (\code{lqas2_classification_name} / \code{lqas3_classification_name}), derived from
-its unexposed \code{REF_LQASThresholds} lookup. This is the faithful answer.
+its unexposed \code{REF_LQASThresholds} lookup. Retains the reported class.
 \item \emph{derived} -- a transparent re-derivation from coverage
 (\code{1 - children_found_unvaccinated / children_checked}) against
 \code{pass_threshold} / \code{warn_threshold}, plus the documented default-60 and

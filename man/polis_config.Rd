@@ -19,7 +19,8 @@ polis_config(
   output_dir = NULL,
   cache_dir = NULL,
   parse_types = TRUE,
-  drop_empty_cols = TRUE
+  drop_empty_cols = TRUE,
+  reference_date = NULL
 )
 }
 \arguments{
@@ -98,6 +99,10 @@ character columns.}
 \item{drop_empty_cols}{If \code{TRUE} (default) each cleaner drops columns that are
 entirely \code{NA} after cleaning. Note this makes the output schema depend on
 the data; set \code{FALSE} for a fixed column set across runs.}
+
+\item{reference_date}{Optional calculation date. \code{NULL} resolves to today at
+the start of each run. A fixed date makes date cleaning and indicators
+reproducible and is included in cache keys.}
 }
 \value{
 An object of class \code{polis_config} (a named list). Also registered as
@@ -106,7 +111,7 @@ the session-active config (see \code{\link[=polis_active_config]{polis_active_co
 \description{
 Creates the settings object shared by the cleaners (\code{\link[=clean_afp]{clean_afp()}},
 \code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_virus]{clean_virus()}}, \code{\link[=clean_sia]{clean_sia()}}) and the orchestrator
-(\code{\link[=run_pipeline]{run_pipeline()}}). Every field has a sensible default and can be overridden.
+(\code{\link[=run_pipeline]{run_pipeline()}}). Arguments control the shared defaults.
 }
 \examples{
 cfg <- polis_config(start_year = 2018)

@@ -16,7 +16,7 @@
 #     period_basis / requires / family / levels) and the documentation fields
 #     (formula / numerator / denominator / target / warn / unit / polis_fn).
 #     `available_indicators()` derives from the same registry, so the catalogue
-#     and the engine can never drift (one source of truth).
+#     and calculations use the same definitions.
 #   * Indicator *families* are built by DRY generators (`.make_count_indicator`,
 #     `.make_percent_indicator`, `.make_rate_indicator`, `.make_bucket_family`,
 #     `.make_dose_band_family`, `.make_sia_count`) -- ~60 indicators from a few
@@ -107,9 +107,9 @@ utils::globalVariables(c(
 #' and district (`adm2`) level, by year. Each indicator is a registry spec; the
 #' full catalogue is discoverable with [available_indicators()].
 #'
-#' Indicators whose source table or required columns are absent are **skipped
-#' with a warning** rather than erroring, so a partial schema (e.g. `cases` +
-#' `population` only) still computes every applicable indicator. Rates that need
+#' Indicators whose source table or required columns are absent are skipped
+#' with a warning. The function stops if none of the requested indicators can be
+#' computed. Rates that need
 #' a population denominator require a `population` table of *under-15* population
 #' per admin unit per year.
 #'
@@ -125,7 +125,12 @@ utils::globalVariables(c(
 #'   it from a district shape with `create_long_shape(shape, "adm2")` or
 #'   `dplyr::distinct(sf::st_drop_geometry(shape), adm0_guid, adm1_guid,
 #'   adm2_guid)`. Required for the silent-districts indicator; absent -> it is
-#'   skipped. ([run_pipeline()] derives this from `cfg$shape` automatically.)
+#'   skipped. This lookup also supplies parent mappings for population roll-ups,
+#'   including districts absent from `cases`. Optional `year` or `active_year`
+#'   columns restrict each mapping to its calendar year; missing years apply to
+#'   all years. Conflicting parents for one district/year are rejected.
+#'   [run_pipeline()] derives this from cleaned population, with `cfg$shape`
+#'   as a fallback.
 #' @param indicators Which indicators to compute: the keyword `"core"` (default
 #'   -- the core KPI set: NPAFP rate, condition-aware stool adequacy, EV
 #'   detection rate, and timely detection), `"all"` (the full registered
@@ -310,7 +315,7 @@ calc_polio_indicators <- function(
     reference_date = reference_date,
     ref_year = as.integer(format(reference_date, "%Y")),
     pop = pop_std,
-    pop_by_level = .polio_pop_by_level(pop_std, parent_map),
+    pop_by_level = .polio_pop_by_level(pop_std, parent_map, admin_std),
     admin_units = admin_std,
     parent_map = parent_map
   )
@@ -951,31 +956,51 @@ calc_polio_indicators <- function(
     dplyr::distinct(guid, year, .keep_all = TRUE)
 }
 
-#' Roll the district (adm2) population up to each admin level.
+#' Roll district populations up using the administrative universe.
 #'
-#' Population denominators arrive keyed on `adm2_guid` only, so the parent
-#' levels have no matching row and their population rates would be all `NA`.
-#' Using the `adm2 -> adm1/adm0` GUID links from the case frame, this sums the
-#' district populations into a per-level lookup (`adm0`/`adm1`/`adm2`), each a
-#' `guid`/`year`/`pop` tibble the rate indicators can join on by `guid` for the
-#' level they compute. Returns `NULL` when no population is supplied.
+#' Explicit district/year mappings take precedence over case-derived links.
+#' The latter are a fallback for callers without an administrative reference.
+#' Ambiguous links are rejected rather than counting a district twice.
 #' @keywords internal
 #' @noRd
-.polio_pop_by_level <- function(pop_std, parent_map) {
+.polio_pop_by_level <- function(pop_std, parent_map, admin_std = NULL) {
   if (is.null(pop_std)) {
     return(NULL)
   }
-  link <- dplyr::distinct(parent_map, g2, g1, g0)
-  joined <- dplyr::left_join(
-    pop_std,
-    link,
-    by = dplyr::join_by(guid == g2)
-  )
+  fallback <- dplyr::distinct(parent_map, g2, g1, g0)
+  years <- sort(unique(pop_std$year))
+  rows <- lapply(years, function(yr) {
+    link <- fallback
+    if (!is.null(admin_std)) {
+      explicit <- admin_std |>
+        dplyr::filter(is.na(year) | year == yr) |>
+        dplyr::select(g2, g1, g0) |>
+        dplyr::distinct()
+      link <- dplyr::bind_rows(
+        explicit,
+        dplyr::anti_join(fallback, explicit, by = "g2")
+      )
+    }
+    if (anyDuplicated(link$g2)) {
+      cli::cli_abort("Conflicting population parent mappings for year {yr}.")
+    }
+    dplyr::left_join(
+      dplyr::filter(pop_std, year == yr),
+      link,
+      by = dplyr::join_by(guid == g2),
+      relationship = "many-to-one"
+    )
+  })
+  joined <- dplyr::bind_rows(rows)
+  if (nrow(joined) == 0L) {
+    empty <- pop_std[0, ]
+    return(list(adm0 = empty, adm1 = empty, adm2 = pop_std))
+  }
   roll_up <- function(parent_col) {
     joined |>
       dplyr::filter(!is.na(.data[[parent_col]])) |>
       dplyr::group_by(guid = .data[[parent_col]], year) |>
-      dplyr::summarise(pop = sum(pop, na.rm = TRUE), .groups = "drop")
+      dplyr::summarise(pop = sum(pop), .groups = "drop")
   }
   list(adm0 = roll_up("g0"), adm1 = roll_up("g1"), adm2 = pop_std)
 }
@@ -999,7 +1024,11 @@ calc_polio_indicators <- function(
     return(NULL)
   }
   flat |>
-    dplyr::distinct(dplyr::across(dplyr::all_of(need))) |>
+    dplyr::distinct(dplyr::across(dplyr::any_of(c(
+      need,
+      "year",
+      "active_year"
+    )))) |>
     dplyr::filter(!is.na(.data[["adm2_guid"]]))
 }
 
@@ -1038,8 +1067,9 @@ calc_polio_indicators <- function(
   } else {
     NA_character_
   }
-  out$year <- if ("year" %in% names(admin_units)) {
-    as.integer(admin_units[["year"]])
+  year_col <- intersect(c("year", "active_year"), names(admin_units))
+  out$year <- if (length(year_col)) {
+    as.integer(admin_units[[year_col[[1L]]]])
   } else {
     NA_integer_
   }
@@ -1938,7 +1968,7 @@ calc_polio_indicators <- function(
 #' `requires_ind`, `family`, `levels`, `kind`) **and** the documentation fields
 #' surfaced by [available_indicators()] (`label`, `formula`, `numerator`,
 #' `denominator`, `target`, `warn`, `unit`, `polis_fn`, `notes`). The dictionary
-#' and the engine therefore share one definition and can never drift.
+#' and calculations therefore use the same definitions.
 #' @keywords internal
 #' @noRd
 .polio_indicator_registry <- function() {
@@ -2990,8 +3020,7 @@ calc_polio_indicators <- function(
 #' about -- code, label, family, formula, numerator/denominator, source,
 #' period basis, admin levels, whether it needs a population denominator, WHO
 #' target/warn thresholds, unit, the POLIS source function and notes. Derived
-#' from the same registry the engine runs, so the catalogue and the engine never
-#' drift.
+#' from the registry used to calculate the indicators.
 #'
 #' @param as_tibble If `TRUE` (default) return a tibble; if `FALSE` return the
 #'   underlying named list of registry specs.

@@ -9,8 +9,8 @@ init_polis_project(root, gitignore = TRUE, quiet = FALSE)
 \arguments{
 \item{root}{Path to the project root. Created (recursively) if absent.}
 
-\item{gitignore}{Write a \code{.gitignore} ignoring the regenerable/precious-but-
-bulky zones (\verb{raw/}, \verb{cache/}, \verb{logs/}) when one is not already present.
+\item{gitignore}{Write a \code{.gitignore} excluding \verb{raw/}, \verb{cache/} and \verb{logs/}
+when one is not already present.
 Default \code{TRUE}.}
 
 \item{quiet}{Suppress the success message. Default \code{FALSE}.}
@@ -23,8 +23,7 @@ A \code{polis_project}: a list with \code{root} and one absolute path per zone
 Sets up the standard project layout under \code{root} and returns a \code{polis_project}
 describing it. The layout has four role-named zones plus logs:
 \describe{
-\item{\code{raw}}{downloaded source tables (precious -- never written by
-cleaning).}
+\item{\code{raw}}{downloaded source tables; cleaners write to \code{processed}.}
 \item{\code{processed}}{cleaned analytic outputs (derived); a natural value for
 \code{polis_config(output_dir = )}.}
 \item{\code{validation}}{data-quality reports and checks.}

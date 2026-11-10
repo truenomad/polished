@@ -102,9 +102,9 @@ polis_afp_diagnosis_class <- function() {
 
 #' Harmonise the AFP clinical diagnosis
 #'
-#' Coalesces the four scattered POLIS diagnosis fields into one canonical
-#' `diagnosis_harmonised` and derives the analytic variables that separate true
-#' non-AFP illness from the acute-flaccid-paralysis differentials. The four
+#' Combines the four POLIS diagnosis fields into one standard
+#' `diagnosis_harmonised` label and classifies the reported diagnosis as non-AFP
+#' illness or an acute-flaccid-paralysis differential. The four
 #' sources are read in priority order -- a confirmed-polio override from
 #' `classification`, then coded `diagnosis_final`, then the ICD-10
 #' `diagnosis_other`, then the free-text `diagnosis_other_specified`, then the
@@ -185,7 +185,7 @@ clean_afp_diagnosis <- function(data) {
 #' Coded `diagnosis_final` labels mapped to their canonical diagnosis.
 #'
 #' Only the specific coded causes; `"Other"` and `"Unknown"` are handled by the
-#' fall-through in [.afp_dx_harmonise()].
+#' fall-through in `.afp_dx_harmonise()`.
 #' @noRd
 .afp_dx_final_map <- c(
   "Traumatic Neuritis" = "Traumatic neuritis",
@@ -198,7 +198,7 @@ clean_afp_diagnosis <- function(data) {
 
 #' Regex for free text that carries no diagnostic information.
 #'
-#' Matched against normalised text (see [.afp_dx_normalise()]); a hit blanks the
+#' Matched against normalised text (see `.afp_dx_normalise()`); a hit blanks the
 #' field so the coalesce falls through to the next source -- AFP/PFA restated,
 #' administrative notes, or pure numeric placeholder codes.
 #' @noRd

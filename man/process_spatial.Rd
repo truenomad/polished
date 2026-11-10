@@ -39,17 +39,16 @@ needlessly. Default \code{TRUE}.}
 \item{fix_issues}{Whether to repair geometries (in addition to flagging
 them): drop Z/M dimensions, make invalid geometries valid
 (\code{\link[sf:valid]{sf::st_make_valid()}}), and strip sliver holes and sliver polygon parts
-smaller than \code{sliver_area}. Real enclaves, lakes and islands above the
-threshold are kept, and a feature never loses its largest part. Set \code{FALSE}
-for the fastest run (flag-only). Default \code{TRUE}.}
+smaller than \code{sliver_area}. This size rule can remove real small features;
+the largest polygon part is retained. Set \code{FALSE} to run checks without
+geometry repair. Default \code{TRUE}.}
 
 \item{sliver_area}{Area threshold in square metres below which interior holes
 and detached polygon parts are treated as digitising artifacts and removed
 when \code{fix_issues = TRUE}. Default \code{1e4} (1 hectare).}
 
 \item{output_format}{Serialization format for the cleaned shapes, \code{"rds"} or
-\code{"qs2"}. \code{"qs2"} writes and reads large geometries far faster (needs the
-qs2 package). Default \code{"rds"}.}
+\code{"qs2"}. The latter requires the optional qs2 package. Default \code{"rds"}.}
 
 \item{verbose}{Whether to print a cli progress summary. Default \code{TRUE}.}
 }

@@ -33,8 +33,7 @@ A data frame with one row per \code{id}.
 \description{
 Combines an existing store with an optional new pull, optionally collapses
 exact duplicate rows at a finer grain, then keeps exactly one row per \code{id}:
-the one with the maximum \code{date}. This is unconditional (no Id-range
-shortcut), so a single primitive governs recency everywhere.
+the one with the maximum \code{date}.
 }
 \examples{
 df <- data.frame(

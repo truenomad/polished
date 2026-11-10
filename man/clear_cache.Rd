@@ -15,9 +15,8 @@ clear_cache(project, quiet = FALSE)
 The \code{project}, invisibly.
 }
 \description{
-Deletes everything in the project's \verb{cache/} zone and nothing else -- the
-precious \verb{raw/} and derived \verb{processed/}/\verb{validation/} zones are never
-touched. Safe to call when the cache is already empty.
+Deletes the contents of the project's \verb{cache/} directory. Leaves \verb{raw/},
+\verb{processed/} and \verb{validation/} unchanged. An empty cache needs no action.
 }
 \examples{
 proj <- init_polis_project(file.path(tempdir(), "polis_demo"), quiet = TRUE)

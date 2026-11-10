@@ -7,11 +7,10 @@
 \title{polished: download and clean WHO POLIS data}
 \description{
 Downloads data from the WHO POLIS OData API and cleans it for analysis.
-\code{\link[=get_polis_data]{get_polis_data()}} handles the downloads (incremental, parallel-friendly),
-a set of standalone cleaners (\code{\link[=clean_afp]{clean_afp()}}, \code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_sia]{clean_sia()}},
-\code{\link[=clean_virus]{clean_virus()}}) wired together by \code{\link[=run_pipeline]{run_pipeline()}} produce the cleaned
-tables, and \code{\link[=impute_geo_from_epid]{impute_geo_from_epid()}} recovers missing administrative
-geography from the EPID.
+\code{\link[=get_polis_data]{get_polis_data()}} downloads tables with caching and optional parallel
+workers. \code{\link[=run_pipeline]{run_pipeline()}} runs the cleaners, including \code{\link[=clean_afp]{clean_afp()}},
+\code{\link[=clean_es]{clean_es()}}, \code{\link[=clean_sia]{clean_sia()}} and \code{\link[=clean_virus]{clean_virus()}}. \code{\link[=impute_geo_from_epid]{impute_geo_from_epid()}}
+fills missing administrative geography using EPID matches.
 }
 \section{NAMESPACE imports}{
 

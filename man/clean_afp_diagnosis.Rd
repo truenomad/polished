@@ -31,9 +31,9 @@ The raw \verb{diagnosis_*} and \code{provisional_diagnosis} columns are left
 untouched.
 }
 \description{
-Coalesces the four scattered POLIS diagnosis fields into one canonical
-\code{diagnosis_harmonised} and derives the analytic variables that separate true
-non-AFP illness from the acute-flaccid-paralysis differentials. The four
+Combines the four POLIS diagnosis fields into one standard
+\code{diagnosis_harmonised} label and classifies the reported diagnosis as non-AFP
+illness or an acute-flaccid-paralysis differential. The four
 sources are read in priority order -- a confirmed-polio override from
 \code{classification}, then coded \code{diagnosis_final}, then the ICD-10
 \code{diagnosis_other}, then the free-text \code{diagnosis_other_specified}, then the

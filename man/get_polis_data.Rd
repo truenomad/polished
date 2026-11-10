@@ -14,12 +14,14 @@ get_polis_data(
   output_format = c("rds", "rda", "csv", "parquet", "qs2"),
   workers = 1L,
   auto_refetch = TRUE,
+  verify_years = 3L,
   log_file = NULL,
   keep_archives = 0L,
   force = FALSE,
   prune_parts = TRUE,
   polis_api_key = Sys.getenv("POLIS_API_KEY"),
-  quiet = FALSE
+  quiet = FALSE,
+  reference_refresh_days = 1
 )
 }
 \arguments{
@@ -48,7 +50,7 @@ filter).}
 \verb{<polis_folder>/}. Default
 \code{tools::R_user_dir("polished", which = "cache")} -- the standard
 per-user cache location, persistent across sessions so incremental
-updates "just work". Pass an explicit path to keep data alongside a
+updates reuse the same cache. Pass an explicit path to keep data alongside a
 project.}
 
 \item{output_format}{Output format. One of \code{"rds"} (default), \code{"rda"},
@@ -60,9 +62,15 @@ sequential loop with a live per-batch progress bar. \verb{> 1} opts into
 a PSOCK cluster that dispatches one year per worker; pass e.g.
 \code{parallel::detectCores() - 1L} to use most cores.}
 
-\item{auto_refetch}{If \code{TRUE} (default), run the metadata-aware
-verification + selective refetch at the end of each table. Set to
-\code{FALSE} to trust whatever is on disk.}
+\item{auto_refetch}{If \code{TRUE} (default), verify fresh downloads and refresh
+completed snapshots as described above. \code{FALSE} trusts a completed
+snapshot with matching scope and skips post-download verification.}
+
+\item{verify_years}{Number of most recent calendar years covered by the
+missing-Id check on a fresh pull, counted back from \code{max_date} and clamped
+to \code{min_date}. Default \code{3L}; \code{NULL} covers the full requested range.
+Revision-based reconciliation always covers the full scope. Ignored when
+\code{auto_refetch = FALSE} and for reference tables with no update date.}
 
 \item{log_file}{Optional path to a per-batch log file (\code{.rds}). Default
 \code{NULL}.}
@@ -71,40 +79,32 @@ verification + selective refetch at the end of each table. Set to
 copy under \verb{archive/} and prunes older copies. Default \code{0} (no
 archive).}
 
-\item{force}{If \code{TRUE}, deletes the \verb{.parts/<table>/} directory and the
-canonical file for each selected table before running -- forces a
-fresh full re-pull instead of resuming. Default \code{FALSE}.}
+\item{force}{If \code{TRUE}, discard resume parts and fetch a fresh snapshot.
+The previous canonical file remains until replacement succeeds.}
 
-\item{prune_parts}{If \code{TRUE} (default), deletes the \verb{.parts/<table>/} resume
-cache after the canonical file has been written and verified. The canonical
-is a complete, Id-deduped checkpoint, so the next run rebuilds the parts
-from it (re-bucketing each row into its current \code{date_field} year). This
-keeps the parts free of stale cross-year duplicate copies that otherwise
-accumulate when a record's update date crosses a year boundary between runs
--- which in turn keeps the "already up to date" short-circuit honest -- at
-the cost of re-splitting the canonical on the next run. Incremental resume
-still works. Set to \code{FALSE} to retain the parts for the fastest possible
-resume (at the risk of the parts row count drifting above the true distinct
-total over many incremental re-pulls).}
+\item{prune_parts}{If \code{TRUE} (default), delete the per-year resume cache
+after publishing the complete snapshot. \code{FALSE} retains completed parts
+for inspection; they are discarded when the snapshot's revisions change.}
 
 \item{polis_api_key}{API key. Defaults to \code{Sys.getenv("POLIS_API_KEY")}.}
 
 \item{quiet}{Suppress headers, progress bars, and the info alert.
 Default \code{FALSE}.}
+
+\item{reference_refresh_days}{Maximum age in days of a completed reference
+table without an update timestamp (currently \code{population}). Default \code{1};
+\code{0} refreshes on every call. Ignored when \code{auto_refetch = FALSE}.}
 }
 \value{
-\code{NULL}, invisibly. \code{get_polis_data()} is called purely for its
-side effect: each selected table is written to
-\verb{<polis_folder>/<table_name>.<ext>} (plus a \verb{.parts/<table_name>/}
-resume cache). The data is never loaded into memory, so a
-multi-million-row pull cannot inflate your session. Read a table back
-from disk yourself when you need it, e.g.
-\code{readRDS(file.path(polis_folder, "im.rds"))}.
+\code{NULL}, invisibly. Each selected table is written to
+\verb{<polis_folder>/<raw_stem>.<ext>}. Pages and year partitions are loaded
+during downloading; the final merge loads the complete table into memory.
+Read a saved table with \code{readRDS(file.path(polis_folder, "raw_im.rds"))}.
 }
 \description{
-The canonical entry point for fetching data from the POLIS OData service.
-Works around three POLIS quirks that make naive OData clients silently
-lose data:
+Downloads tables from the POLIS OData service to a local cache, with
+resumable batches and optional parallel downloads by year. The downloader
+accounts for these API behaviours:
 \itemize{
 \item \strong{Date filters are year-aligned only.} POLIS only honours \verb{field le YYYY-12-31} bounds; any sub-year \code{le} returns 0 rows. The function
 aligns \code{min_date} / \code{max_date} to year boundaries before building any
@@ -115,31 +115,27 @@ only way to walk past 2000 rows is Id-range pagination:
 \verb{$orderby=Id&$top=2000&$filter=... and Id gt <last>}.
 \item \strong{The clinical date columns (\code{CaseDate}, \code{VirusDate}, ...) have NULL
 coverage} for historical records. The function filters on the
-table's "update" column (\code{LastUpdateDate} / \code{UpdatedDate} / \code{Start} /
-\code{PublishDate}) which probes have confirmed is 100\%-populated.
+\code{date_field} in \link{polis_tables_mapping}: a revision date (\code{LastUpdateDate} /
+\code{UpdatedDate}) or an event date (\code{Start} / \code{PublishDate}).
 }
 }
 \details{
-\strong{Cache layout.} Each table is fetched into a per-year part file under
-\verb{<polis_folder>/.parts/<stem>/year_YYYY.<ext>}, with a tiny
-\code{year_YYYY.meta.rds} sidecar capturing row count and min/max Id. After
-all years finish the parts are merged into the canonical
-\verb{<polis_folder>/<stem>.<ext>}. The \verb{<stem>} is the table's \verb{raw_*} name
-(e.g. \code{case} is written as \code{raw_afp}; see \link{polis_tables_mapping}), so the
-download and cleaning halves share one naming convention. By default
-(\code{prune_parts = TRUE}) the parts are deleted once the canonical is written
-and the next call rebuilds them from the canonical; pass \code{prune_parts = FALSE} to keep them on disk so the next call can resume per-year from
-\code{max(Id)} without the re-split. Either way the next call resumes per-year
-from \code{max(Id)} without re-fetching. To force a clean re-pull, pass \code{force = TRUE} or delete \verb{.parts/}.
+\strong{Cache layout and recovery.} Pages are committed under
+\verb{<polis_folder>/.parts/<stem>/year_YYYY.<ext>.pages/}, then compacted once
+per year. A journal records the last committed page. Interrupted pulls
+resume at that page's maximum Id; an uncommitted page is fetched again.
+After all years finish, the verified table replaces
+\verb{<polis_folder>/<stem>.<ext>} atomically. The stem is the table's \verb{raw_*}
+name (e.g. \code{case} is written as \code{raw_afp}; see \link{polis_tables_mapping}).
+Merging requires memory for the complete table.
 
-Files written by older versions under the bare \verb{<table_name>} name (e.g.
-\verb{case.<ext>}) are renamed to their \verb{raw_*} stem in place on the next run --
-no re-download.
-
-\strong{Resume semantics.} The part files ARE the resume marker. If a
-previous run died (network blip, Ctrl-C, OOM), the next call picks up
-at \verb{Id gt max(Id_in_part)} for each year. Worst case lost work: the
-most recent in-flight batch.
+Scope manifests under \verb{.manifests/} record the effective country, region,
+year range and format. Changing those filters starts a fresh pull while
+preserving the previous canonical file until the replacement succeeds.
+Legacy files are renamed to their \verb{raw_*} names, but caches without a scope
+manifest must be downloaded once again because their filters are unknown.
+\code{prune_parts = TRUE} removes completed parts; unchanged snapshots can be
+reused without splitting or reading the full canonical file.
 
 \strong{Parallelism.} Each calendar year between \code{min_date} and \code{max_date}
 is an independent Id-range walk. With \code{workers > 1}, years are
@@ -151,19 +147,25 @@ you see rows accumulate across workers in real time. With
 batch. PSOCK workers need \code{polished} installed in their library
 path -- \code{devtools::load_all()} is not enough.
 
-\strong{Auto-refetch.} When \code{auto_refetch = TRUE} (default) the function
-uses the meta sidecars to detect gaps cheaply (row-count and Id-range
-mismatch against POLIS's \verb{@odata.count}). Only when a gap is detected
-does it issue a \verb{$select=Id} probe and refetch missing rows via OData
-\verb{Id in (...)} chunks. Set to \code{FALSE} to skip the post-download check
-entirely.
+\strong{Freshness.} For tables with \code{LastUpdateDate} or \code{UpdatedDate}, completed
+snapshots are checked against the full scoped list of Ids and revision
+timestamps. Changed and new rows are fetched selectively; deleted rows are
+removed. Equal row counts never establish freshness. This relies on the
+service advancing its revision timestamp when a record changes.
+Tables filtered by event dates (\code{Start} or \code{PublishDate}) are fetched again
+because those dates cannot establish whether a row was edited.
+Reference tables with no update date use \code{reference_refresh_days} instead.
+\code{force = TRUE} always starts a full pull. \code{auto_refetch = FALSE} explicitly
+trusts completed snapshots until forced or their scope changes.
+
+Fresh pulls also check for missing Ids over \code{verify_years} and refetch them.
+Revision-based reconciliation covers the full scope, including after an
+interrupted pull resumes. Verification failures retain checkpoints and
+leave the previous canonical file in place for a later retry.
 
 \strong{Resilience.} Read timeouts are retried inside each request, and a year
-whose worker still fails is requeued up to three times. Parts are
-checkpointed, so a retry resumes from the last Id. A copy slightly ahead
-of the declared row count keeps its cache; only an excess beyond 1\%
-clears the year parts. \code{POLIS_TIMEOUT_SECONDS} overrides the 120-second
-default.
+whose parallel worker still fails is requeued up to three times.
+\code{POLIS_TIMEOUT_SECONDS} overrides the 120-second default.
 }
 \examples{
 \dontrun{
@@ -172,7 +174,7 @@ get_polis_data(tables = "im")
 
 # Read it back from disk when you need it
 cache <- tools::R_user_dir("polished", which = "cache")
-im <- readRDS(file.path(cache, "im.rds"))
+im <- readRDS(file.path(cache, "raw_im.rds"))
 
 # The whole catalogue in parallel into a project folder
 get_polis_data(

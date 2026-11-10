@@ -20,8 +20,7 @@ written) or \code{NULL} (flags are attached as the \code{polis_ambiguous} attrib
 \code{data}, unchanged, possibly carrying a \code{polis_ambiguous} attribute.
 }
 \description{
-A tripwire on the assumed business uniqueness key. After \code{\link[=polis_upsert]{polis_upsert()}} has
-reduced the data to one row per \code{id}, a well-formed dataset should also be
-unique on its business key. Rows that violate this are surfaced to QA -- and
-left in the data -- so a genuine reclassification is never silently dropped.
+After \code{\link[=polis_upsert]{polis_upsert()}} reduces the data to one row per \code{id}, checks whether
+multiple Ids share the supplied business key. Matching rows are flagged for
+review and retained in the data.
 }

@@ -23,9 +23,8 @@ knitr:
 library(polished)
 ```
 
-The download and cleaning halves share **one naming convention** so the whole
-workflow reads top to bottom: `get_polis_data()` writes each table under a
-`raw_*` name, and the pipeline reads those `raw_*` inputs and writes
+`get_polis_data()` writes each table under a `raw_*` name. The cleaning
+pipeline reads those files and writes
 `polished_*` outputs.
 
 | Stream | Downloaded as | Cleaned to |
@@ -42,7 +41,7 @@ re-download.
 
 ## From a directory: `run_pipeline_dir()`
 
-`run_pipeline_dir()` is the one-call file-based workflow: it reads the `raw_*`
+`run_pipeline_dir()` reads the `raw_*`
 tables from a source directory, runs the full pipeline, and writes `polished_*`
 outputs to an output directory. Each output's **format follows its source file**
 (a `raw_afp.rds` yields `polished_afp.rds`; a `raw_es.qs2` yields
@@ -70,7 +69,7 @@ cleaned <- run_pipeline_dir(raw_dir, out_dir)
 list.files(out_dir)
 ```
 
-Two things landed for every cleaned dataset: the `polished_*` table (here
+The output directory contains the `polished_*` table (here
 `polished_afp.rds`, matching the source format, plus the derived
 `polished_virus.qs2`) **and** a `checks_<dataset>.xlsx` data-quality workbook
 (see the *Data-quality checks* article).
@@ -105,8 +104,8 @@ geography; with a `population`, the run also computes the indicator catalogue.
 
 ## A managed workspace: `polis_project`
 
-For a recurring pipeline it helps to keep raw, processed, cache and log data in
-one tidy place. `init_polis_project()` lays out that structure:
+`init_polis_project()` creates directories for raw data, processed outputs,
+validation reports, caches and logs:
 
 ```{r}
 #| label: project-init
@@ -114,8 +113,8 @@ proj <- init_polis_project(file.path(tempdir(), "demo_project"), quiet = TRUE)
 names(proj)
 ```
 
-Point the config at the project zones — `inputs` at `raw/`, `output_dir` at
-`processed/`, `cache_dir` at `cache/` — and the whole run is one call. Drop your
+Point the config at the project directories: `inputs` at `raw/`, `output_dir`
+at `processed/`, and `cache_dir` at `cache/`. Place your
 `raw_*` files in `proj$raw` (or have `get_polis_data(polis_folder = proj$raw)`
 write them there):
 

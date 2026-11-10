@@ -36,7 +36,7 @@ of \code{"reconciled"}, \code{"polis"}, \code{"worldpop"}. Default \code{"reconc
 \item{domains}{Which \verb{01_data} domains to create: any of \code{"shapefiles"},
 \code{"population"}, \code{"polis"}, \code{"vaccination"}. Default all four.}
 
-\item{write_rprofile, write_scripts, gitignore}{Whether to write the wired
+\item{write_rprofile, write_scripts, gitignore}{Whether to write the project
 \code{.Rprofile}, the starter \verb{02_scripts/}, and the \code{.gitignore}. Default
 \code{TRUE}.}
 
@@ -59,13 +59,12 @@ Invisibly, a list with \code{root} and the absolute \code{dirs} created.
 }
 \description{
 Creates the domain-numbered data-pipeline layout this package is built around
-(\verb{01_data/} domains, \verb{02_scripts/}, \verb{03_outputs/}) and writes a wired
-\code{.Rprofile} (the \code{cfg} manifest), a \code{.gitignore}, and starter
-\verb{2a_download_data.R} / \verb{2b_process_data.R} scripts. Everything the generated
-\code{cfg} points at exists on disk, so after dropping the WHO polio GDB layers in
-\verb{01_data/1a_shapefiles/raw/}, sourcing \verb{2a} then \verb{2b} runs the whole
-download -> clean pipeline (downloads POLIS streams + WorldPop, processes the
-shapefile, extracts WorldPop, and runs \code{\link[=run_pipeline]{run_pipeline()}} over every stream).
+(\verb{01_data/} domains, \verb{02_scripts/}, \verb{03_outputs/}). Writes a \code{.Rprofile}
+that defines \code{cfg}, a \code{.gitignore}, and starter \verb{2a_download_data.R} /
+\verb{2b_process_data.R} scripts. Before running the scripts, install their required
+packages, set a POLIS API key and supply the WHO polio GDB layers in
+\verb{01_data/1a_shapefiles/raw/}. The scripts download POLIS and WorldPop data,
+process boundaries, extract population estimates and run \code{\link[=run_pipeline]{run_pipeline()}}.
 }
 \details{
 Distinct from \code{\link[=init_polis_project]{init_polis_project()}}, which scaffolds a lighter generic

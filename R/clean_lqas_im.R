@@ -18,7 +18,7 @@
 #   * LQAS: each lot is classified two ways. POLIS already ships its own
 #     classification (`lqas2_classification_name` / `lqas3_classification_name`,
 #     derived from the unexposed `REF_LQASThresholds` lookup); we roll those up
-#     as the faithful answer AND re-derive a transparent coverage-threshold
+#     as reported AND calculate a separate coverage-threshold
 #     classification alongside it for QA comparison.
 #   * IM: the missed-children fraction `1 - sum(marked)/sum(checked)` (falling
 #     back to `mean(result)` when no children were checked) is computed
@@ -173,7 +173,7 @@ process_sia_quality <- function(
 #' \itemize{
 #'   \item *POLIS* -- the classification POLIS already ships in the download
 #'     (`lqas2_classification_name` / `lqas3_classification_name`), derived from
-#'     its unexposed `REF_LQASThresholds` lookup. This is the faithful answer.
+#'     its unexposed `REF_LQASThresholds` lookup. Retains the reported class.
 #'   \item *derived* -- a transparent re-derivation from coverage
 #'     (`1 - children_found_unvaccinated / children_checked`) against
 #'     `pass_threshold` / `warn_threshold`, plus the documented default-60 and
@@ -243,7 +243,10 @@ process_lqas <- function(
 
   step("Parsing dates and deriving year", "Parsed dates and derived year")
   data <- data |>
-    .lqasim_parse_dates(c("start", "end")) |>
+    .lqasim_parse_dates(
+      c("start", "end"),
+      reference_date = .polis_reference_date(cfg)
+    ) |>
     .lqasim_add_year("year", "start")
 
   data <- .lqasim_clean_geo(data, shape, step)
@@ -555,11 +558,14 @@ process_im <- function(
 
   step("Parsing dates and deriving year", "Parsed dates and derived year")
   data <- data |>
-    .lqasim_parse_dates(c(
-      "activity_planned_date_from",
-      "activity_planned_date_to",
-      "start_sia"
-    )) |>
+    .lqasim_parse_dates(
+      c(
+        "activity_planned_date_from",
+        "activity_planned_date_to",
+        "start_sia"
+      ),
+      reference_date = .polis_reference_date(cfg)
+    ) |>
     .lqasim_add_year(
       "activity_planned_date_from_year",
       "activity_planned_date_from"

@@ -22,8 +22,8 @@
 #'     clash take an `_activity` suffix; the redundant geographic parent copies
 #'     -- region, ISO, admin name/GUID, shape id, IST -- are dropped);
 #'   \item every campaign/planning date parsed to `Date` and sanitised with the
-#'     same "sensible date" rule (a value before `min_year` or in the future is a
-#'     data-entry error and set to `NA`); audit timestamps stay ISO strings for
+#'     same date-range rule (values before `min_year` or after the configured
+#'     reference date are set to `NA`); audit timestamps stay ISO strings for
 #'     the keep-latest dedup;
 #'   \item `year_start` / `month_start` from the sanitised `date_from` (the
 #'     sub-activity start);
@@ -55,8 +55,9 @@
 #'   the same district and `vaccine_type` for them to count as one round; a
 #'   larger gap starts a new round. Default `21`.
 #' @param reference_date Date treated as "today" when sanitising campaign dates:
-#'   any parsed date after it is nulled as a data-entry error (default
-#'   [Sys.Date()]). It is part of the cache key, so a run on a later day does not
+#'   any parsed date after it is nulled as a data-entry error. Defaults to
+#'   `cfg$reference_date`, or [Sys.Date()] when it is `NULL`. It is part of the
+#'   cache key, so a run on a later day does not
 #'   return a stale cached table in which then-future dates are still `NA`. Pin
 #'   it for reproducible output.
 #' @param cache_dir Optional directory for an opt-in, content-addressed cache.
@@ -102,7 +103,7 @@ clean_sia <- function(
   cfg = polis_active_config(),
   shape = NULL,
   round_gap_days = 21L,
-  reference_date = Sys.Date(),
+  reference_date = .polis_reference_date(cfg),
   cache_dir = NULL,
   cache_key = NULL,
   verbose = TRUE
@@ -211,8 +212,15 @@ clean_sia <- function(
     "Deduplicating by id, assigning rounds and finalising",
     "Deduplicated by id, assigned rounds and finalised"
   )
+  revision_col <- if (
+    !is.null(subactivity) && "updated_date" %in% names(data)
+  ) {
+    "updated_date"
+  } else {
+    "last_update_date"
+  }
   out <- data |>
-    polis_upsert(id = "id", date = "last_update_date") |>
+    polis_upsert(id = "id", date = revision_col) |>
     .polis_parse_types(cfg) |>
     .polis_drop_empty(cfg) |>
     .geo_guid_display_cols() |>
@@ -266,7 +274,7 @@ clean_sia <- function(
 
 #' Logic-version tag for the SIA cache; bump when `clean_sia()` output changes.
 #' @noRd
-.sia_cache_version <- 1L
+.sia_cache_version <- 2L
 
 #' Write a cleaned SIA table to the cache atomically
 #'
@@ -356,6 +364,7 @@ clean_sia <- function(
 #' @noRd
 .sia_date_cols <- function(data) {
   audit <- c(
+    "updated_date",
     "last_update_date",
     "last_modification_date",
     "created_date",

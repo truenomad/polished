@@ -61,9 +61,9 @@ sample-level analytic variables ES surveillance relies on:
 \itemize{
 \item canonical snake_case names (via the crosswalk + janitor);
 \item every collection/laboratory date parsed to \code{Date} and sanitised with
-the same "sensible date" rule clean_afp() uses -- a value before the dawn
-of surveillance (\code{min_year}) or in the future is a data-entry error and is
-set to \code{NA}, never dropped (audit timestamps such as \code{last_update_date}
+the same date-range rule \code{\link[=clean_afp]{clean_afp()}} uses: values before \code{min_year} or
+after the configured reference date are set to \code{NA}; rows are retained
+(audit timestamps such as \code{last_update_date}
 stay ISO strings for the keep-latest dedup);
 \item \code{year_collection} / \code{month_collection} from the sanitised
 \code{collection_date};
@@ -89,8 +89,8 @@ The raw POLIS \code{virus_types}, \code{vdpv_classifications}, the per-serotype
 \verb{vaccine*}/\verb{vdpv*}/\verb{wild*} fields and \code{sample_condition} are kept as-is
 alongside the derived columns. The business key \code{sample_id} + \code{adm0} (the ES
 analogue of the AFP \code{epid} + \code{adm0} key, \code{sample_id} being the EPID-equivalent
-sample identifier) is asserted as a tripwire: violations are flagged to QA,
-never dropped. (Unlike AFP, a sample can legitimately yield several virus
+sample identifier) is checked for duplicates: matching rows are flagged for
+review and retained. (Unlike AFP, a sample can yield several virus
 detections, so this key is not collapsed.)
 }
 \examples{

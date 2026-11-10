@@ -1195,3 +1195,25 @@ testthat::test_that("shared geo helpers: .geo_miss_admin counts, plain long shap
     d
   )
 })
+
+testthat::test_that("SIA keeps the latest subactivity revision including same-day updates", {
+  parent <- data.frame(
+    Id = 10L,
+    SIASubActivityCode = "A",
+    LastUpdateDate = "2024-03-01",
+    Admin0Name = "NIGERIA"
+  )
+  sub <- data.frame(
+    Id = c(1L, 1L),
+    SIASubActivityCode = "A",
+    UpdatedDate = c("2024-02-01T09:00:00", "2024-02-01T12:00:00"),
+    marker = c("old", "new"),
+    Admin0Name = "NIGERIA"
+  )
+  out <- polished::clean_sia(parent, sub, verbose = FALSE)
+  testthat::expect_equal(as.character(out$marker), "new")
+  testthat::expect_equal(
+    as.POSIXct(out$updated_date, tz = "UTC"),
+    as.POSIXct("2024-02-01 12:00:00", tz = "UTC")
+  )
+})
