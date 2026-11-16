@@ -517,17 +517,39 @@
   url,
   polis_api_key,
   max_attempts = 5L,
-  timeout_seconds = .polis_timeout_seconds()
+  timeout_seconds = .polis_timeout_seconds(),
+  backoff = function(i) min(60, 2^i)
 ) {
   # retry_on_failure covers curl transport errors; without it a POLIS read
   # timeout bypasses max_tries and kills the run
-  resp <- httr2::request(url) |>
+  req <- httr2::request(url) |>
     httr2::req_headers(`authorization-token` = polis_api_key) |>
     httr2::req_options(accept_encoding = "gzip") |>
     httr2::req_retry(max_tries = max_attempts, retry_on_failure = TRUE) |>
-    httr2::req_timeout(timeout_seconds) |>
-    httr2::req_perform()
-  httr2::resp_body_json(resp)
+    httr2::req_timeout(timeout_seconds)
+
+  # the extranet gateway can answer 200 with an HTML page; retry those too
+  for (i in seq_len(max_attempts)) {
+    resp <- httr2::req_perform(req)
+    type <- httr2::resp_content_type(resp)
+    if (!is.na(type) && grepl("json", type, fixed = TRUE)) {
+      return(httr2::resp_body_json(resp))
+    }
+    if (i < max_attempts) Sys.sleep(backoff(i))
+  }
+
+  title <- tryCatch(
+    regmatches(
+      httr2::resp_body_string(resp),
+      regexpr("(?i)(?<=<title>)[^<]*", httr2::resp_body_string(resp), perl = TRUE)
+    ),
+    error = function(e) character()
+  )
+  cli::cli_abort(c(
+    "POLIS returned {.val {type}} instead of JSON after {max_attempts} tries.",
+    i = "Status {httr2::resp_status(resp)}, page title {.val {title[1] %||% 'none'}}.",
+    i = "This is usually extranet.who.int maintenance or a gateway block. Rerun later."
+  ))
 }
 
 # TRUE when `verify_years` is NULL or a single whole number >= 1.
