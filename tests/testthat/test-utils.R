@@ -507,6 +507,34 @@ testthat::test_that(".polis_get_body retries transport failures, not just HTTP s
   testthat::expect_match(body, "retry_on_failure = TRUE", fixed = TRUE)
 })
 
+testthat::test_that(".polis_get_body retries an HTML body, then returns JSON", {
+  calls <- 0L
+  httr2::local_mocked_responses(function(req) {
+    calls <<- calls + 1L
+    if (calls == 1L) {
+      httr2::response(200, headers = "Content-Type: text/html",
+                      body = charToRaw("<html><title>Maintenance</title></html>"))
+    } else {
+      httr2::response_json(body = list(value = list()))
+    }
+  })
+  body <- polished:::.polis_get_body("https://x.test", "k", backoff = \(i) 0)
+  testthat::expect_identical(calls, 2L)
+  testthat::expect_identical(body, list(value = list()))
+})
+
+testthat::test_that(".polis_get_body names the HTML page when retries run out", {
+  httr2::local_mocked_responses(function(req) {
+    httr2::response(200, headers = "Content-Type: text/html",
+                    body = charToRaw("<html><title>Maintenance</title></html>"))
+  })
+  testthat::expect_error(
+    polished:::.polis_get_body("https://x.test", "k", max_attempts = 2L,
+                               backoff = \(i) 0),
+    "Maintenance"
+  )
+})
+
 testthat::test_that("pipeline and download I/O support the same installed formats", {
   formats <- polished:::.polis_formats
   if (!requireNamespace("arrow", quietly = TRUE))
