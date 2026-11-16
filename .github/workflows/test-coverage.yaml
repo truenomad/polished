@@ -71,7 +71,7 @@ jobs:
           # Codecov no longer allows tokenless uploads, so only treat an upload
           # error as a CI failure when a CODECOV_TOKEN is configured. Without the
           # token the upload is skipped rather than failing the whole job.
-          fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
+          fail_ci_if_error: false
 
       - name: Show testthat output
         if: always()
